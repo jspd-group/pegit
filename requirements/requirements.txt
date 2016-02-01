@@ -1,0 +1,32 @@
+===============================================================================
+                      Pegit - Beep Version Control System
+===============================================================================
+
+
+Problems:
+    1)    While making any project, we have only latest source code of the project.
+          If in any case the changes in the source code results in unexpected
+          behaviour then it is very difficult to trace it.
+
+    2)    Moreover if a user wants to test a new feature in his project, then it
+          is not appropriate to test this feature on the current stable source
+          code.
+
+    3)    Whenever more than one developers are working on a project, then it is
+          difficult to manage the project because changes made by one developer
+          may not be compatible with the work of other developer.
+
+    4)    Possible solution can be cloning the whole source code each time before
+          making even a minute change. This too has time and memory limitations.
+
+
+Solutions:
+    Rather we thought of an automated system that can
+        1)  trace all the changes(only changes) made in the source code,
+        2)  manage the database of the previous version,
+        3)  help in the easy retrieval of the history,
+        4)  store the data in compressed form,
+
+Requirements:
+        A system is required to trace the changes in the source code of a
+        project. This
