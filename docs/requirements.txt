@@ -2,7 +2,6 @@
                       Pegit - Beep Version Control System
 ===============================================================================
 
-
 Problems:
     1)    While making any project, we have only latest source code of the project.
           If in any case the changes in the source code results in unexpected
