@@ -28,4 +28,5 @@ Solutions:
 
 Requirements:
         A system is required to trace the changes in the source code of a
-        project. This
+        project. ThisA version control system serves the following purposes, among others.
+
