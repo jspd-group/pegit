@@ -1,1 +1,3 @@
 docs/temp/
+*.o
+*.exe
