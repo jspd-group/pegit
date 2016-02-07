@@ -1,7 +1,7 @@
 #include "mz.h"
 #include "util.h"
 
-#define CHUNK_LENGTH 1024
+#define CHUNK_LENGTH 16384
 
 void z_stream_init(z_stream *stream) {
   stream->zalloc = Z_NULL;
@@ -16,12 +16,10 @@ int compress(struct strbuf *src, struct strbuf *dest, int level) {
     unsigned have;
     deflateInit(&stream, Z_DEFAULT_COMPRESSION);
     char buffer[CHUNK_LENGTH];
-
+    stream.avail_in = src->len;
+    stream.next_in = src->buf;
     do {
-        stream.avail_in = src->len;
-        stream.next_in = src->buf;
         flush = (stream.avail_in < CHUNK_LENGTH) ? Z_FINISH : Z_NO_FLUSH;
-
         do {
             stream.avail_out = CHUNK_LENGTH;
             stream.next_out = buffer;
