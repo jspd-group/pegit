@@ -9,14 +9,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#ifdef HAVE_STRINGS_H
 #include <strings.h> /* for strcasecmp() */
-#endif
 #include <errno.h>
 #include <limits.h>
-#ifdef NEEDS_SYS_PARAM_H
-#include <sys/param.h>
-#endif
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/time.h>
@@ -24,14 +19,7 @@
 #include <signal.h>
 #include <assert.h>
 #include <utime.h>
-#ifdef HAVE_BSD_SYSCTL
-#include <sys/sysctl.h>
-#endif
-#ifndef NO_INTTYPES_H
-#include <inttypes.h>
-#else
 #include <stdint.h>
-#endif
 
 #define strchrnul gitstrchrnul
 static inline char *gitstrchrnul(const char *s, int c)
@@ -47,7 +35,7 @@ static inline char *gitstrchrnul(const char *s, int c)
 #define die(fmt, ...) { printf(fmt); exit(1); }
 
 #ifndef size_t
-#define size_t unsigned long
+#define size_t unsigned long long
 #endif
 #ifndef ssize_t
 #define ssize_t long
@@ -68,5 +56,10 @@ static inline char *gitstrchrnul(const char *s, int c)
         } \
     } while (0)
 
+#ifndef error
+#define error(...)    \
+    fprintf(stderr, __VA_ARGS__); \
+    exit(1);
+#endif
 
 #endif
