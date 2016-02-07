@@ -1,6 +1,12 @@
 CC=gcc
 CFLAGS=-std=gnu11
 
+all: test
+
+debug: CFLAGS += -g
+
+debug: test
+
 test: strbuf.o test_mz test_strbuf
 
 test_mz: mz.o test-mz.c
