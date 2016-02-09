@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Pegit by jspd-group</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Pegit</h1>
+      <h2 class="project-tagline">A Beep Version Control System</h2>
+      <a href="https://github.com/jspd-group/pegit" class="btn">View on GitHub</a>
+      <a href="https://github.com/jspd-group/pegit/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/jspd-group/pegit/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="-pegit---version-control-system" class="anchor" href="#-pegit---version-control-system" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a> Pegit - Version Control System</h1>
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/Version_control">Version control</a> is a <em>system</em> that 
+records changes to a file or set of files over time so that you can recall
+specific versions later.</p>
+
+<p>A VCS allows you to:</p>
+
+<ul>
+<li>
+<em>revert</em> files back to a previous state,</li>
+<li>
+<em>revert</em> the entire project back to a previous state,</li>
+<li>
+<em>review</em> changes made over time,</li>
+<li>
+<em>check</em> who last modified source code that might be causing a problem.</li>
+</ul>
+
+<p>Using a VCS also means that if someone lose files, they can generally be
+recovered easily. In addition, you get all this for very little overhead.</p>
+
+<h2>
+<a id="need-and-requirement" class="anchor" href="#need-and-requirement" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Need and Requirement</h2>
+
+<p>As a part of their course plan/scheme students of computer science
+branch are required to make coding projects may it be in any language C, C++,
+Java, Python, HTML and so on. What the usual practice is, they make files
+namely(.c ,.h, .py, .html ...), or ReadMe files and various directories.
+They make single source code file and make all the changes in it and save it.
+What happens in this practice is that they keep on losing the original code
+and data. After making many additions and after editing the source code so many
+times, say, one encounters a bug (a software bug is an error, flaw, failure or
+fault in a computer program or system that causes it to produce an incorrect or
+unexpected result, or to behave in unintended ways), it is very difficult to
+trace the bug, meaning, it is very difficult to trace the part of the code which
+is responsible for the unexpected behaviour.</p>
+
+<h2>
+<a id="manual-solution" class="anchor" href="#manual-solution" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Manual Solution</h2>
+
+<p>Possible solution can be cloning the whole source code each time before making
+even a minute change. This takes too much of users time (as code becomes larger)
+and also has memory limitation. There is repetition of those files too in which
+no change was made.</p>
+
+<h2>
+<a id="automated-solution-version-control-system" class="anchor" href="#automated-solution-version-control-system" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Automated Solution (Version Control System)</h2>
+
+<p>Version control system is an automated system which keeps tracks of all the
+changes in the repository of the project. System makes use of computer
+processing and uses database to know which files have been edited, deleted or
+newly created. When changes are made, the system will ask the developer if they
+are to be committed(saved). Developer can give command to the system to save
+them. Developer can retrieve any previous version of the project by accessing
+the database. If developer makes a mistake, he can roll back to a previous
+version. He can reproduce and understand a bug report on a past version of the
+project's source code. He can also undo specific edits without losing all the
+work that was done in the meanwhile. For any part of a file, he can determine
+when and why it was ever edited.</p>
+
+<h2>
+<a id="1st-stage" class="anchor" href="#1st-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1st Stage</h2>
+
+<p>All the information mentioned above will constitute the first stage of our
+project.</p>
+
+<h2>
+<a id="2nd-stage" class="anchor" href="#2nd-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2nd Stage</h2>
+
+<p>In the second stage of this project we will introduce networking concepts into
+our project. Multiple users can work on same project. And it will enable
+multiple people to simultaneously work on a single project. Each person edits
+his or her own copy of the files and chooses when to share those changes with
+the rest of the team. Thus, temporary or partial edits by one person do not
+interfere with another person's work. It will also enable one person to use
+multiple computers to work on a project. It will be able to integrate work done
+simultaneously by different team members. In most cases, edits to different
+files or even the same file will be combined without losing any work. In rare
+cases, when two people make conflicting edits to the same line of a file, then
+it will request human assistance in deciding what to do.</p>
+
+<h2>
+<a id="3rd-stage" class="anchor" href="#3rd-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3rd Stage</h2>
+
+<p>In the third stage, we will introduce graphical user interface into our project.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/jspd-group/pegit">Pegit</a> is maintained by <a href="https://github.com/jspd-group">jspd-group</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
