@@ -355,4 +355,25 @@ static inline void strbuf_complete_line(struct strbuf *sb)
 	strbuf_complete(sb, '\n');
 }
 
+
+/**
+ * print routines
+ * ----------------------------
+ *
+ * print the strbuf's to the standard output
+ */
+static inline void strbuf_print(struct strbuf *sb)
+{
+    fwrite(sb->buf, sizeof(char), sb->len, stdout);
+}
+
+/**
+ * print all the details of the strbuf
+ */
+static inline void strbuf_print_debug(struct strbuf *sb)
+{
+    fprintf(stdout, "Length: %d, Alloc: %d\nContents: %s",
+         sb->len, sb->alloc, sb->buf);
+}
+
 #endif /* STRBUF_H */
