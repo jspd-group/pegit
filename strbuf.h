@@ -118,12 +118,6 @@ extern void strbuf_rtrim(struct strbuf *);
 extern void strbuf_ltrim(struct strbuf *);
 
 /**
- * Replace the contents of the strbuf with a reencoded form.  Returns -1
- * on error, 0 on success.
- */
-extern int strbuf_reencode(struct strbuf *sb, const char *from, const char *to);
-
-/**
  * Lowercase each character in the buffer using `tolower`.
  */
 extern void strbuf_tolower(struct strbuf *sb);
@@ -179,13 +173,6 @@ extern void strbuf_remove(struct strbuf *, size_t pos, size_t len);
  */
 extern void strbuf_splice(struct strbuf *, size_t pos, size_t len,
 			  const void *, size_t);
-
-/**
- * Add a NUL-terminated string to the buffer. Each line will be prepended
- * by a comment character and a blank.
- */
-extern void strbuf_add_commented_lines(struct strbuf *out, const char *buf, size_t size);
-
 
 /**
  * Add data of given length to the buffer.
