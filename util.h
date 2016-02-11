@@ -21,14 +21,6 @@
 #include <utime.h>
 #include <stdint.h>
 
-#define strchrnul gitstrchrnul
-static inline char *gitstrchrnul(const char *s, int c)
-{
-    while (*s && *s != c)
-        s++;
-    return (char *)s;
-}
-
 #define REALLOC_ARRAY(x, alloc) (x) = realloc((x), (alloc) * sizeof(*(x)))
 #define alloc_nr(x) (((x)+16)*3/2)
 
