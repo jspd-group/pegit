@@ -396,3 +396,17 @@ void strbuf_add_lines(struct strbuf *out, const char *prefix,
 {
 	add_lines(out, prefix, NULL, buf, size);
 }
+
+void extract_filename(struct strbuf *name, const char *path)
+{
+    size_t size = strlen(path);
+    size_t len = size;
+
+    while (path[--len] != '/')
+        /* do nothing */;
+
+    len = size - len;
+    strbuf_reset(name);
+    strbuf_grow(len);
+    strbuf_add(name, path + size, len);
+}
