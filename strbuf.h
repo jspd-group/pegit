@@ -339,6 +339,11 @@ extern void strbuf_add_lines(struct strbuf *sb, const char *prefix,
          const char *buf, size_t size);
 
 /**
+ * extract the name of the file from its given path
+ */
+extern void extract_filename(struct strbuf *buf, const char *path);
+
+/**
  * "Complete" the contents of `sb` by ensuring that either it ends with the
  * character `term`, or it is empty.  This can be used, for example,
  * to ensure that text ends with a newline, but without creating an empty

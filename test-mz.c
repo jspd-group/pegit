@@ -5,14 +5,6 @@ void print(struct strbuf buffer) {
     printf("%d byte(s)\n", buffer.len);
 }
 
-// returns the number of characters in the file
-static size_t file_length(FILE *file) {
-    fseek(file, 0, SEEK_END);
-    size_t length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    return length;
-}
-
 // create a sample buffer
 void make_buffer(struct strbuf *buffer) {
     strbuf_init(buffer, 11102809);

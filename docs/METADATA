@@ -1,0 +1,61 @@
+===============================================================================
+                   *  Pegit - Version Control System  *
+===============================================================================
+
+Data Dictionary:
+----------------
+    1) User:         User is a person who is maintaining the project.
+
+    2) Project:      It is complete source code.
+
+    3) TempDB:       A temporary database that contain files that have been
+                     added but still not committed.
+
+    4) SystemDB:     Main database for storing all the project details, history
+                     and changes.
+
+    5) RIR:          Repository Initialization Request
+
+    6) File Comparison System:
+                     This system compares two files by comparing the SHA1 hash
+                     values.
+
+    7) Repository Initialisation System:
+                     Initialises the system's main database on `init' command.
+
+    8) `add' Command Handling System:
+                     This system stores the files input by user in TempDB.
+
+    9) Status Checking System:
+                     Checks the project for any changes and notifies the user
+                     about those changes. Changes are noticed by using File
+                     Comparison System.
+
+    10) Dedicated Command Handling System:
+                     It saves the files present in the TempDB to the SystemDB
+                     in a compressed form.
+
+    11) Repository Initialisation Request:
+                     It is a request from user to the syatem to initialise the
+                     project.
+
+    12) Acknowledgement of RIR:
+                     It is a message which acknowledges the user's repository
+                     initialisation request.
+
+    13) Command to 'add' files:
+                     Add files to temporary database, TempDB.
+
+    14) Acknowledgement of add command:
+                     It is a message which acknowledges the user's command to
+                     add files to TempDB.
+
+    15) Status Information:
+                     It displays the information of the files present in
+                     TempDB, files of project which have been changed but not
+                     still added in TempDB.It also enlists the file which are
+                     present in project but not present in main SystemDB.
+
+    16) Information about Directory Contents:
+                    It contains the data about the files and sub-directories
+                    present in project directory.
