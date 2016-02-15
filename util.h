@@ -24,6 +24,10 @@
 #define REALLOC_ARRAY(x, alloc) (x) = realloc((x), (alloc) * sizeof(*(x)))
 #define alloc_nr(x) (((x)+16)*3/2)
 
+/* number of bytes required by the hash
+ */
+#define HASH_SIZE 20
+
 #define die(fmt, ...) { printf(fmt); exit(1); }
 
 #ifndef size_t
@@ -49,9 +53,24 @@
     } while (0)
 
 #ifndef error
-#define error(...)    \
+#define error(...) ({   \
     fprintf(stderr, __VA_ARGS__); \
     exit(1);
+})
 #endif
+
+#define MEMORY_ERROR(prefix, ...) ({   \
+    fprintf(stderr, "%s: ", prefix);
+    fprintf(stderr, __VA_ARGS__);
+})
+
+
+/**
+ * This global variable stores the name of the program currently being used.
+ */
+char program[30];
+
+#define PROGRAM program
+
 
 #endif
