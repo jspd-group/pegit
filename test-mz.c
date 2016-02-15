@@ -33,7 +33,7 @@ void test_file_compression() {
     strbuf_init(&dest, 0);
 
     // read the data to src buffer
-    FILE *file = fopen("docs/ReadMe.txt", "r");
+    FILE *file = fopen("docs/readme.txt", "r");
 
     // use this function for reading the data
     strbuf_fread(&src, file_length(file), file);
