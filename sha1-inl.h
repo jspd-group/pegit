@@ -7,10 +7,10 @@
 
 #include <string.h>
 
-void sha1(struct strbuf in, char out[20]) {
+void sha1(struct strbuf *in, char out[20]) {
     sha1nfo ctx;
     sha1_init(&ctx);
-    sha1_write(&ctx, in.buf, in.len);
+    sha1_write(&ctx, in->buf, in->len);
 
     strncpy(sha1_result(&ctx), out, 20);
 }
