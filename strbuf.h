@@ -290,51 +290,6 @@ static inline void stripspace(struct strbuf *buf, int skip_comments)
 	strbuf_stripspace(buf, skip_comments);
 }
 
-/**
- * Split str (of length slen) at the specified terminator character.
- * Return a null-terminated array of pointers to strbuf objects
- * holding the substrings.  The substrings include the terminator,
- * except for the last substring, which might be unterminated if the
- * original string did not end with a terminator.  If max is positive,
- * then split the string into at most max substrings (with the last
- * substring containing everything following the (max-1)th terminator
- * character).
- *
- * The most generic form is `strbuf_split_buf`, which takes an arbitrary
- * pointer/len buffer. The `_str` variant takes a NUL-terminated string,
- * the `_max` variant takes a strbuf, and just `strbuf_split` is a convenience
- * wrapper to drop the `max` parameter.
- *
- * For lighter-weight alternatives, see string_list_split() and
- * string_list_split_in_place().
- */
-extern struct strbuf **strbuf_split_buf(const char *, size_t,
-					int terminator, int max);
-
-static inline struct strbuf **strbuf_split_str(const char *str,
-					       int terminator, int max)
-{
-	return strbuf_split_buf(str, strlen(str), terminator, max);
-}
-
-static inline struct strbuf **strbuf_split_max(const struct strbuf *sb,
-						int terminator, int max)
-{
-	return strbuf_split_buf(sb->buf, sb->len, terminator, max);
-}
-
-static inline struct strbuf **strbuf_split(const struct strbuf *sb,
-					   int terminator)
-{
-	return strbuf_split_max(sb, terminator, 0);
-}
-
-/**
- * Free a NULL-terminated list of strbufs (for example, the return
- * values of the strbuf_split*() functions).
- */
-extern void strbuf_list_free(struct strbuf **);
-
 extern void strbuf_add_lines(struct strbuf *sb, const char *prefix,
          const char *buf, size_t size);
 
@@ -380,5 +335,10 @@ static inline void strbuf_print_debug(struct strbuf *sb)
     fprintf(stdout, "Length: %d, Alloc: %d\nContents: %s",
          sb->len, sb->alloc, sb->buf);
 }
+
+/**
+ * split the buffer into the lines using a given buffer
+ */
+extern int strbuf_split(struct strbuf *buf, struct strbuf *out, char delim);
 
 #endif /* STRBUF_H */

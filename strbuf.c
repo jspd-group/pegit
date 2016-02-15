@@ -93,44 +93,6 @@ void strbuf_tolower(struct strbuf *sb)
 		*p = tolower(*p);
 }
 
-struct strbuf **strbuf_split_buf(const char *str, size_t slen,
-				 int terminator, int max)
-{
-	struct strbuf **ret = NULL;
-	size_t nr = 0, alloc = 0;
-	struct strbuf *t;
-
-	while (slen) {
-		int len = slen;
-		if (max <= 0 || nr + 1 < max) {
-			const char *end = memchr(str, terminator, slen);
-			if (end)
-				len = end - str + 1;
-		}
-		t = malloc(sizeof(struct strbuf));
-		strbuf_init(t, len);
-		strbuf_add(t, str, len);
-		ALLOC_GROW(ret, nr + 2, alloc);
-		ret[nr++] = t;
-		str += len;
-		slen -= len;
-	}
-	ALLOC_GROW(ret, nr + 1, alloc); /* In case string was empty */
-	ret[nr] = NULL;
-	return ret;
-}
-
-void strbuf_list_free(struct strbuf **sbs)
-{
-	struct strbuf **s = sbs;
-
-	while (*s) {
-		strbuf_release(*s);
-		free(*s++);
-	}
-	free(sbs);
-}
-
 int strbuf_cmp(const struct strbuf *a, const struct strbuf *b)
 {
 	int len = a->len < b->len ? a->len: b->len;
@@ -409,4 +371,32 @@ void extract_filename(struct strbuf *name, const char *path)
     strbuf_reset(name);
     strbuf_grow(len);
     strbuf_add(name, path + size, len);
+}
+
+size_t line_size(char *str)
+{
+	int count = 0;
+
+	while (*str++ != '\n')
+		count++;
+	return count + 1;
+}
+
+int strbuf_split(struct strbuf *buf, struct strbuf *out, char delim)
+{
+	int i = 0;
+	int hint = 80;
+	int size = 0;
+	char *temp = buf->buf;
+
+	while (*temp) {
+		strbuf_init(out + i, 80);
+		size = line_size(temp);
+
+		strbuf_add(out + i, temp, size);
+		temp = temp + size;
+		i++;
+	}
+
+	return i;
 }
