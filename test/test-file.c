@@ -21,11 +21,10 @@ int main() {
 
     filespec_sha1(&fs, sha);
 
-    for (int i = 0; i < 20; i++)
-        putchar(sha[i]);
-
-    putchar('\n');
-
-
+#if DEBUG
+    for (int i = 0; i < HASH_SIZE; i++)
+        printf("%02x", (uint8_t)sha[i]);
+#endif
+    printf("\n");
     return 0;
 }
