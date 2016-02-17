@@ -1,253 +1,161 @@
-#ifndef SHA1_H_
-#define SHA1_H_
-
-#include <stdint.h>
-#include <string.h>
-
-
-#ifdef __BIG_ENDIAN__
-# define SHA_BIG_ENDIAN
-#elif defined __LITTLE_ENDIAN__
-/* override */
-#elif defined __BYTE_ORDER
-# if __BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__
-# define SHA_BIG_ENDIAN
-# endif
-#else // ! defined __LITTLE_ENDIAN__
-//# include <endian.h> // machine/endian.h
-# if __BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__
-#  define SHA_BIG_ENDIAN
-# endif
-#endif
-
-
-/* header */
-
-#define HASH_LENGTH 20
-#define BLOCK_LENGTH 64
-
-typedef struct sha1nfo {
-	uint32_t buffer[BLOCK_LENGTH/4];
-	uint32_t state[HASH_LENGTH/4];
-	uint32_t byteCount;
-	uint8_t bufferOffset;
-	uint8_t keyBuffer[BLOCK_LENGTH];
-	uint8_t innerHash[HASH_LENGTH];
-} sha1nfo;
-
-/* public API - prototypes - TODO: doxygen*/
-
-/**
+/*
+ * The contents of this file are subject to the Mozilla Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is SHA 180-1 Header File
+ *
+ * The Initial Developer of the Original Code is Paul Kocher of
+ * Cryptography Research.  Portions created by Paul Kocher are
+ * Copyright (C) 1995-9 by Cryptography Research, Inc.  All
+ * Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ *     Paul Kocher
+ *
+ * Alternatively, the contents of this file may be used under the
+ * terms of the GNU General Public License Version 2 or later (the
+ * "GPL"), in which case the provisions of the GPL are applicable
+ * instead of those above.  If you wish to allow use of your
+ * version of this file only under the terms of the GPL and not to
+ * allow others to use your version of this file under the MPL,
+ * indicate your decision by deleting the provisions above and
+ * replace them with the notice and other provisions required by
+ * the GPL.  If you do not delete the provisions above, a recipient
+ * may use your version of this file under either the MPL or the
+ * GPL.
  */
-void sha1_init(sha1nfo *s);
-/**
- */
-void sha1_writebyte(sha1nfo *s, uint8_t data);
-/**
- */
-void sha1_write(sha1nfo *s, const char *data, size_t len);
-/**
- */
-uint8_t* sha1_result(sha1nfo *s);
-/**
- */
-void sha1_initHmac(sha1nfo *s, const uint8_t* key, int keyLength);
-/**
- */
-uint8_t* sha1_resultHmac(sha1nfo *s);
 
+typedef struct {
+  unsigned int H[5];
+  unsigned int W[80];
+  int lenW;
+  unsigned int sizeHi,sizeLo;
+} SHA_CTX;
 
-/* code */
-#define SHA1_K0  0x5a827999
-#define SHA1_K20 0x6ed9eba1
-#define SHA1_K40 0x8f1bbcdc
-#define SHA1_K60 0xca62c1d6
+void SHA1_Init(SHA_CTX *ctx);
+void SHA1_Update(SHA_CTX *ctx, void *dataIn, int len);
+void SHA1_Final(unsigned char hashout[20], SHA_CTX *ctx);
 
-void sha1_init(sha1nfo *s) {
-	s->state[0] = 0x67452301;
-	s->state[1] = 0xefcdab89;
-	s->state[2] = 0x98badcfe;
-	s->state[3] = 0x10325476;
-	s->state[4] = 0xc3d2e1f0;
-	s->byteCount = 0;
-	s->bufferOffset = 0;
+static void shaHashBlock(SHA_CTX *ctx);
+
+void SHA1_Init(SHA_CTX *ctx) {
+  int i;
+
+  ctx->lenW = 0;
+  ctx->sizeHi = ctx->sizeLo = 0;
+
+  /* Initialize H with the magic constants (see FIPS180 for constants)
+   */
+  ctx->H[0] = 0x67452301;
+  ctx->H[1] = 0xefcdab89;
+  ctx->H[2] = 0x98badcfe;
+  ctx->H[3] = 0x10325476;
+  ctx->H[4] = 0xc3d2e1f0;
+
+  for (i = 0; i < 80; i++)
+    ctx->W[i] = 0;
 }
 
-uint32_t sha1_rol32(uint32_t number, uint8_t bits) {
-	return ((number << bits) | (number >> (32-bits)));
+
+void SHA1_Update(SHA_CTX *ctx, void *_dataIn, int len) {
+  unsigned char *dataIn = _dataIn;
+  int i;
+
+  /* Read the data into W and process blocks as they get full
+   */
+  for (i = 0; i < len; i++) {
+    ctx->W[ctx->lenW / 4] <<= 8;
+    ctx->W[ctx->lenW / 4] |= (unsigned int)dataIn[i];
+    if ((++ctx->lenW) % 64 == 0) {
+      shaHashBlock(ctx);
+      ctx->lenW = 0;
+    }
+    ctx->sizeLo += 8;
+    ctx->sizeHi += (ctx->sizeLo < 8);
+  }
 }
 
-void sha1_hashBlock(sha1nfo *s) {
-	uint8_t i;
-	uint32_t a,b,c,d,e,t;
 
-	a=s->state[0];
-	b=s->state[1];
-	c=s->state[2];
-	d=s->state[3];
-	e=s->state[4];
-	for (i=0; i<80; i++) {
-		if (i>=16) {
-			t = s->buffer[(i+13)&15] ^ s->buffer[(i+8)&15]
-                ^ s->buffer[(i+2)&15] ^ s->buffer[i&15];
-			s->buffer[i&15] = sha1_rol32(t,1);
-		}
-		if (i<20) {
-			t = (d ^ (b & (c ^ d))) + SHA1_K0;
-		} else if (i<40) {
-			t = (b ^ c ^ d) + SHA1_K20;
-		} else if (i<60) {
-			t = ((b & c) | (d & (b | c))) + SHA1_K40;
-		} else {
-			t = (b ^ c ^ d) + SHA1_K60;
-		}
-		t+=sha1_rol32(a,5) + e + s->buffer[i&15];
-		e=d;
-		d=c;
-		c=sha1_rol32(b,30);
-		b=a;
-		a=t;
-	}
-	s->state[0] += a;
-	s->state[1] += b;
-	s->state[2] += c;
-	s->state[3] += d;
-	s->state[4] += e;
+void SHA1_Final(unsigned char hashout[20], SHA_CTX *ctx) {
+  unsigned char pad0x80 = 0x80;
+  unsigned char pad0x00 = 0x00;
+  unsigned char padlen[8];
+  int i;
+
+  /* Pad with a binary 1 (e.g. 0x80), then zeroes, then length
+   */
+  padlen[0] = (unsigned char)((ctx->sizeHi >> 24) & 255);
+  padlen[1] = (unsigned char)((ctx->sizeHi >> 16) & 255);
+  padlen[2] = (unsigned char)((ctx->sizeHi >> 8) & 255);
+  padlen[3] = (unsigned char)((ctx->sizeHi >> 0) & 255);
+  padlen[4] = (unsigned char)((ctx->sizeLo >> 24) & 255);
+  padlen[5] = (unsigned char)((ctx->sizeLo >> 16) & 255);
+  padlen[6] = (unsigned char)((ctx->sizeLo >> 8) & 255);
+  padlen[7] = (unsigned char)((ctx->sizeLo >> 0) & 255);
+  SHA1_Update(ctx, &pad0x80, 1);
+  while (ctx->lenW != 56)
+    SHA1_Update(ctx, &pad0x00, 1);
+  SHA1_Update(ctx, padlen, 8);
+
+  /* Output hash
+   */
+  for (i = 0; i < 20; i++) {
+    hashout[i] = (unsigned char)(ctx->H[i / 4] >> 24);
+    ctx->H[i / 4] <<= 8;
+  }
+
+  /*
+   *  Re-initialize the context (also zeroizes contents)
+   */
+  SHA1_Init(ctx);
 }
 
-void sha1_addUncounted(sha1nfo *s, uint8_t data) {
-	uint8_t * const b = (uint8_t*) s->buffer;
-#ifdef SHA_BIG_ENDIAN
-	b[s->bufferOffset] = data;
-#else
-	b[s->bufferOffset ^ 3] = data;
-#endif
-	s->bufferOffset++;
-	if (s->bufferOffset == BLOCK_LENGTH) {
-		sha1_hashBlock(s);
-		s->bufferOffset = 0;
-	}
+
+#define SHA_ROT(X,n) (((X) << (n)) | ((X) >> (32-(n))))
+
+static void shaHashBlock(SHA_CTX *ctx) {
+  int t;
+  unsigned int A,B,C,D,E,TEMP;
+
+  for (t = 16; t <= 79; t++)
+    ctx->W[t] =
+      SHA_ROT(ctx->W[t-3] ^ ctx->W[t-8] ^ ctx->W[t-14] ^ ctx->W[t-16], 1);
+
+  A = ctx->H[0];
+  B = ctx->H[1];
+  C = ctx->H[2];
+  D = ctx->H[3];
+  E = ctx->H[4];
+
+  for (t = 0; t <= 19; t++) {
+    TEMP = SHA_ROT(A,5) + (((C^D)&B)^D)     + E + ctx->W[t] + 0x5a827999;
+    E = D; D = C; C = SHA_ROT(B, 30); B = A; A = TEMP;
+  }
+  for (t = 20; t <= 39; t++) {
+    TEMP = SHA_ROT(A,5) + (B^C^D)           + E + ctx->W[t] + 0x6ed9eba1;
+    E = D; D = C; C = SHA_ROT(B, 30); B = A; A = TEMP;
+  }
+  for (t = 40; t <= 59; t++) {
+    TEMP = SHA_ROT(A,5) + ((B&C)|(D&(B|C))) + E + ctx->W[t] + 0x8f1bbcdc;
+    E = D; D = C; C = SHA_ROT(B, 30); B = A; A = TEMP;
+  }
+  for (t = 60; t <= 79; t++) {
+    TEMP = SHA_ROT(A,5) + (B^C^D)           + E + ctx->W[t] + 0xca62c1d6;
+    E = D; D = C; C = SHA_ROT(B, 30); B = A; A = TEMP;
+  }
+
+  ctx->H[0] += A;
+  ctx->H[1] += B;
+  ctx->H[2] += C;
+  ctx->H[3] += D;
+  ctx->H[4] += E;
 }
 
-void sha1_writebyte(sha1nfo *s, uint8_t data) {
-	++s->byteCount;
-	sha1_addUncounted(s, data);
-}
-
-void sha1_write(sha1nfo *s, const char *data, size_t len) {
-	for (;len--;) sha1_writebyte(s, (uint8_t) *data++);
-}
-
-void sha1_pad(sha1nfo *s) {
-	// Implement SHA-1 padding (fips180-2 Â§5.1.1)
-
-	// Pad with 0x80 followed by 0x00 until the end of the block
-	sha1_addUncounted(s, 0x80);
-	while (s->bufferOffset != 56) sha1_addUncounted(s, 0x00);
-
-	// Append length in the last 8 bytes
-	sha1_addUncounted(s, 0); // We're only using 32 bit lengths
-	sha1_addUncounted(s, 0); // But SHA-1 supports 64 bit lengths
-	sha1_addUncounted(s, 0); // So zero pad the top bits
-	sha1_addUncounted(s, s->byteCount >> 29); // Shifting to multiply by 8
-
-    // as SHA-1 supports bitstreams as well as
-	sha1_addUncounted(s, s->byteCount >> 21);
-	sha1_addUncounted(s, s->byteCount >> 13); // byte.
-	sha1_addUncounted(s, s->byteCount >> 5);
-	sha1_addUncounted(s, s->byteCount << 3);
-}
-
-uint8_t* sha1_result(sha1nfo *s) {
-	// Pad to complete the last block
-	sha1_pad(s);
-
-#ifndef SHA_BIG_ENDIAN
-	// Swap byte order back
-	int i;
-	for (i=0; i<5; i++) {
-		s->state[i]=
-			  (((s->state[i])<<24)& 0xff000000)
-			| (((s->state[i])<<8) & 0x00ff0000)
-			| (((s->state[i])>>8) & 0x0000ff00)
-			| (((s->state[i])>>24)& 0x000000ff);
-	}
-#endif
-
-	// Return pointer to hash (20 characters)
-	return (uint8_t*) s->state;
-}
-
-#define HMAC_IPAD 0x36
-#define HMAC_OPAD 0x5c
-
-void sha1_initHmac(sha1nfo *s, const uint8_t* key, int keyLength) {
-	uint8_t i;
-	memset(s->keyBuffer, 0, BLOCK_LENGTH);
-	if (keyLength > BLOCK_LENGTH) {
-		// Hash long keys
-		sha1_init(s);
-		for (;keyLength--;) sha1_writebyte(s, *key++);
-		memcpy(s->keyBuffer, sha1_result(s), HASH_LENGTH);
-	} else {
-		// Block length keys are used as is
-		memcpy(s->keyBuffer, key, keyLength);
-	}
-	// Start inner hash
-	sha1_init(s);
-	for (i=0; i<BLOCK_LENGTH; i++) {
-		sha1_writebyte(s, s->keyBuffer[i] ^ HMAC_IPAD);
-	}
-}
-
-uint8_t* sha1_resultHmac(sha1nfo *s) {
-	uint8_t i;
-	// Complete inner hash
-	memcpy(s->innerHash,sha1_result(s),HASH_LENGTH);
-	// Calculate outer hash
-	sha1_init(s);
-	for (i=0; i<BLOCK_LENGTH; i++) sha1_writebyte(s, s->keyBuffer[i] ^ HMAC_OPAD);
-	for (i=0; i<HASH_LENGTH; i++) sha1_writebyte(s, s->innerHash[i]);
-	return sha1_result(s);
-}
-
-/* self-test */
-
-//#if SHA1TEST
-#include <stdio.h>
-
-uint8_t hmacKey1[]={
-	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
-	0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
-	0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f
-};
-uint8_t hmacKey2[]={
-	0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
-	0x40,0x41,0x42,0x43
-};
-uint8_t hmacKey3[]={
-	0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5a,0x5b,0x5c,0x5d,0x5e,0x5f,
-	0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
-	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
-	0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
-	0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
-	0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
-	0xb0,0xb1,0xb2,0xb3
-};
-uint8_t hmacKey4[]={
-	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
-	0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
-	0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
-	0xa0
-};
-
-void printHash(uint8_t* hash) {
-	int i;
-	for (i=0; i<20; i++) {
-		printf("%02x", hash[i]);
-	}
-	printf("\n");
-}
-
-#endif /* self-test */
