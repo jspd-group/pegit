@@ -4,12 +4,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#define DEBUG 1
+
 int filecache_init(struct filecache *fi)
 {
 	fi->data = (struct strbuf*) malloc(sizeof(struct strbuf));
 	if (!fi->data)
 		error("out of memory\n");
-	strbuf_init(fi->data);
+	strbuf_init(fi->data, 0);
 }
 
 int filecache_init_fd(struct filecache *out, int fd, size_t size)
@@ -29,7 +31,7 @@ int filecache_init_file(struct filecache *out, FILE* f, size_t size)
 {
     ssize_t rd;
 
-    rd = strbuf_fread(out->data, size, file);
+    rd = strbuf_fread(out->data, size, f);
     if (rd < 0)
         return rd;
 
@@ -42,7 +44,7 @@ void filecache_free(struct filecache *fc)
 	free(fc->data);
 }
 
-void filespec_setname_and_dir(struct file_spec *fs, const char *name)
+void filespec_setname_and_dir(struct filespec *fs, const char *name)
 {
     struct strbuf t;
     strbuf_init(&t, 0);
@@ -51,7 +53,7 @@ void filespec_setname_and_dir(struct file_spec *fs, const char *name)
     extract_filename(&fs->fname, name);
     strbuf_init(&fs->dir_name, 0);
 
-    if (!strcpy(name, fs->fname))
+    if (!strcmp(name, fs->fname.buf))
         strbuf_addstr(&fs->dir_name, "./");
 
     strbuf_add(&fs->dir_name, t.buf, t.len - fs->fname.len);
@@ -91,6 +93,9 @@ int filespec_stat(struct filespec *fs, const char *name)
 int filespec_init(struct filespec *fs, const char *name, const char *mode)
 {
     /* set name and directory subfield of the directory */
+#if DEBUG
+    printf("Setting name and directory\n");
+#endif
     filespec_setname_and_dir(fs, name);
     fs->file = fopen(name, mode);
     if (!fs->file) {
@@ -109,17 +114,25 @@ int filespec_init(struct filespec *fs, const char *name, const char *mode)
 
     /* postpone the file caching until call to filespec read takes place */
     filecache_init(&fs->cache);
-    fs->cached = false;
+    fs->cached = 0;
     return 0;
 }
 
 int filespec_cachefile(struct filespec *fs)
 {
 	int size = file_length(fs->file);
-	if (!filecache_init_file(&fs->cache, fs->file, size)) {
-		error("%s: error occurred while caching file.\n", 
-			  filespec_getfullpath(fs));
-		return -1;
+#if DEBUG
+    printf("Size of the file is %d byte(s)\n", size);
+#endif
+
+    struct strbuf err;
+
+	if (filecache_init_file(&fs->cache, fs->file, size) < 0) {
+        strbuf_init(&err, 0);
+        filespec_getfullpath(fs, &err);
+		error("%s: error occurred while caching file.\n", err.buf);
+		strbuf_release(&err);
+        return -1;
 	}
 	fs->cached = 1;
 	return 0;
@@ -133,9 +146,10 @@ int filespec_read_unsafe(struct filespec *fs,
 	if (!fs->cached) {
 		err = filespec_cachefile(fs);
 #ifdef DEBUG
-		if (err)
+		if (err < 0) {
 			printf("filespec: unable to read file.\n");
-		return -1;
+            return -1;
+        }
 #else
 		if (err)
 			return -1;
@@ -163,8 +177,10 @@ int filespec_read_unsafe(struct filespec *fs,
 int filespec_read_safe(struct filespec *fs, struct strbuf *buf)
 {
 	strbuf_init(buf, fs->length);
-	if (strbuf_fread(buf, fs->length, fs->file) < 0)
+	if (strbuf_fread(buf, fs->length, fs->file) < 0) {
+        error("Can't read the '<%s>' file", fs->fname.buf);
 		return -1;
+    }
 	return 0;
 }
 
@@ -177,18 +193,19 @@ void filespec_remove_cache(struct filespec *fs)
 int filespec_sha1(struct filespec *fs, char sha1[20])
 {
 	struct strbuf buf;
-	strbuf_init(&buf, sizeof(time_t) + fs->fname.len + fs->dir_name.len 
+	strbuf_init(&buf, sizeof(time_t) + fs->fname.len + fs->dir_name.len
 		+ fs->length);
 
-	if (fs->cached || filespec_cachefile(fs)) {
-		return -1;
+	if (!fs->cached) {
+        if (filespec_cachefile(fs) < 0)
+		    return -1;
 	}
-	
-	filespec_read_safe(fs, &buf);
+
 	strbuf_addbuf(&buf, &fs->fname);
 	strbuf_addbuf(&buf, &fs->dir_name);
 	strbuf_add(&buf, (char*)&fs->last_modified, sizeof(time_t));
-	sha1(&buf, sha1);
+    strbuf_addbuf(&buf, fs->cache.data);
+	strtosha1(&buf, sha1);
 
 	strbuf_release(&buf);
 	return 0;
@@ -196,8 +213,8 @@ int filespec_sha1(struct filespec *fs, char sha1[20])
 
 void filespec_free(struct filespec *fs)
 {
-	strbuf_release(fs->fname);
-	strbuf_release(fs->dir_name);
-	filecache_free(fs->cache);
+	strbuf_release(&fs->fname);
+	strbuf_release(&fs->dir_name);
+	filecache_free(&fs->cache);
 	fclose(fs->file);
 }
