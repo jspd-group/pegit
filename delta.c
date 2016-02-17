@@ -1,9 +1,10 @@
 #include "delta.h"
+#include "strbuf-list.h"
 #include <string.h>
 #include <unistd.h>
 
 /* arrow types used in delta algorithms */
-enum arrow_t : char {
+enum arrow_t {
     DELTA_UP,
     DELTA_DOWN,
     DELTA_LEFT,
