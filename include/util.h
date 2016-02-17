@@ -5,9 +5,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stddef.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <strings.h> /* for strcasecmp() */
 #include <errno.h>
@@ -28,7 +26,9 @@
  */
 #define HASH_SIZE 20
 
-#define die(fmt, ...) { printf(fmt); exit(1); }
+#define die(fmt...) { printf(fmt); exit(1); }
+
+#define DEBUG 1
 
 #ifndef size_t
 #define size_t unsigned long long
@@ -53,22 +53,19 @@
     } while (0)
 
 #ifndef error
-#define error(...) ({   \
-    fprintf(stderr, __VA_ARGS__); \
-    exit(1);
-})
+#define error(args...) \
+    fprintf(stderr, args);
 #endif
 
-#define MEMORY_ERROR(prefix, ...) ({   \
-    fprintf(stderr, "%s: ", prefix);
-    fprintf(stderr, __VA_ARGS__);
-})
-
+#define MEMORY_ERROR(prefix, args...) {   \
+    fprintf(stderr, "%s: ", prefix);    \
+    fprintf(stderr, args);            \
+}
 
 /**
  * This global variable stores the name of the program currently being used.
  */
-char program[30];
+static char program[30];
 
 #define PROGRAM program
 
