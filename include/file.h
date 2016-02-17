@@ -59,19 +59,19 @@ extern size_t file_length(FILE *file);
  */
 
 /**
- * Make a file_internal from a given file descritpor. Returns 0 if successful,
+ * Make a filecache from a given file descritpor. Returns 0 if successful,
  * -1 if failed or some error occurred. size is the number of characters to
  * read from the file. Memory will be allocated to the out->data.
  */
-extern int filecache_init_fd(struct file_internal *out,
+extern int filecache_init_fd(struct filecache *out,
                                  int fd, size_t size);
 
 
 /**
- * Make a file_internal from a given FILE pointer. Returns 0 if reading was
+ * Make a filecache from a given FILE pointer. Returns 0 if reading was
  * successful from the given FILE pointer, otherwise return -1 on error.
  */
-extern int filecache_init_file(struct file_internal *out,
+extern int filecache_init_file(struct filecache *out,
                                    FILE *f, size_t size);
 
 /**
@@ -83,7 +83,7 @@ extern int filecache_init_file(struct file_internal *out,
  * Initialise a file_spec structure from a given file_name or its path.
  * returns 0 if successful otherwise -1 on error.
  */
-extern int filespec_init(struct filespec *fs, const char *name);
+extern int filespec_init(struct filespec *fs, const char *name, const char*);
 
 
 /**
@@ -93,7 +93,7 @@ extern void filespec_free(struct filespec *fs);
 
 /**
  * Calculate 20 byte SHA1 hash from a given filespec structure.
- * 
+ *
  */
 extern int filespec_sha1(struct filespec *fs, char sha1[20]);
 
