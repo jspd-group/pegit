@@ -4,8 +4,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define DEBUG 1
-
 int filecache_init(struct filecache *fi)
 {
 	fi->data = (struct strbuf*) malloc(sizeof(struct strbuf));
