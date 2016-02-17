@@ -2,17 +2,28 @@
 #define SHA1_INL_H_
 
 #include "util.h"
-#include "sha1.h"
+#include "../sha1/sha1.h"
 #include "strbuf.h"
 
 #include <string.h>
 
-void sha1(struct strbuf *in, char out[20]) {
+void mystrcpy(char *dest, const char *src, size_t size) {
+    for (int i = 0; i < size; i++)
+        dest[i] = src[i];
+}
+
+void strtosha1(struct strbuf *in, char out[20])
+{
     sha1nfo ctx;
     sha1_init(&ctx);
     sha1_write(&ctx, in->buf, in->len);
+    char *res = sha1_result(&ctx);
+#if DEBUG
+    for (int i = 0; i < HASH_SIZE; i++)
+        printf("%c", res[i]);
+#endif
 
-    strncpy(sha1_result(&ctx), out, 20);
+    mystrcpy(out, res, HASH_SIZE);
 }
 
 
