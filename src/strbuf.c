@@ -362,15 +362,18 @@ void strbuf_add_lines(struct strbuf *out, const char *prefix,
 void extract_filename(struct strbuf *name, const char *path)
 {
     size_t size = strlen(path);
-    size_t len = size;
+    int len = (int)size;
 
-    while (path[--len] != '/')
+    while (--len >= 0 && path[len] != '/')
         /* do nothing */;
 
-    len = size - len;
+    if (len >= 0)
+        size = size - len - 1;
+    else {
+        len = 0;
+    }
     strbuf_reset(name);
-    strbuf_grow(len);
-    strbuf_add(name, path + size, len);
+    strbuf_add(name, path + len + 1, size);
 }
 
 size_t line_size(char *str)
