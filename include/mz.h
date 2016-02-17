@@ -1,7 +1,7 @@
 #ifndef MZ_WRAPPER_H_
 #define MZ_WRAPPER_H_
 
-#include "miniz/miniz.h"
+#include "../miniz/miniz.h"
 #include "strbuf.h"
 
 #ifdef compress
