@@ -23,6 +23,7 @@ test_strbuf: $(TEST)test-strbuf.c
 
 test-file: $(TEST)test-file.c
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-file.c
+	$(CC) strbuf.o file.o test-file.o -o test-file
 
 strbuf.o: $(SRC)strbuf.c $(INC)strbuf.h $(INC)util.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)strbuf.c
