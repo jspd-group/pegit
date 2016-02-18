@@ -61,9 +61,10 @@ void filespec_setname_and_dir(struct filespec *fs, const char *name)
 
 size_t file_length(FILE *file)
 {
+    size_t pos = ftell(file);
     fseek(file, 0, SEEK_END);
     size_t length = ftell(file);
-    fseek(file, 0, SEEK_SET);
+    fseek(file, pos, SEEK_SET);
     return length;
 }
 
