@@ -3,22 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/* arrow types used in delta algorithms */
-enum arrow_t {
-    DELTA_UP,
-    DELTA_DOWN,
-    DELTA_LEFT,
-    DELTA_TILT
-};
-
-/** delta_table used to run the main algorithm */
-struct delta_table {
-    enum arrow_t **table;    /* two dimensional arrow table */
-    int *prev;    /* previous table entries */
-    int *sol;    /* actual solution entry */
-    int row;      /* number of rows */
-    int col;        /* number of columns */
-};
 
 int delta_table_init(struct delta_table *table, int row, int col)
 {
@@ -62,14 +46,6 @@ void delta_table_free(struct delta_table *table)
     free(table->sol);
 }
 
-struct delta_input {
-    struct filespec *fs1;
-    struct filespec *fs2;
-
-    struct deltafile df1;
-    struct deltafile df2;
-};
-
 
 int delta_input_init(struct delta_input *di, struct filespec *fs1,
                             struct filespec *fs2)
@@ -77,10 +53,10 @@ int delta_input_init(struct delta_input *di, struct filespec *fs1,
     di->fs1 = fs1;
     di->fs2 = fs2;
 
-    if (deltafile_init_filespec(&di->df1, fs1) < 0)
+    if (deltafile_init_filespec(&di->df1, fs1, DELIM) < 0)
         return -1;
 
-    if (deltafile_init_filespec(&di->df2, fs2) < 0)
+    if (deltafile_init_filespec(&di->df2, fs2, DELIM) < 0)
         return -1;
 
     return 0;
@@ -92,6 +68,14 @@ void delta_input_free(struct delta_input *di)
     deltafile_free(&di->df2);
 }
 
+void print_table(const char *str, int *t, int len)
+{
+    printf("%s: ", str);
+    for (int i = 0; i <= len; i++)
+    {
+        printf("%d ", t[i]);
+    }
+}
 
 size_t delta_basic_comparison(struct delta_table *out,
              struct strbuf *a, struct strbuf *b)
@@ -104,8 +88,12 @@ size_t delta_basic_comparison(struct delta_table *out,
     int n = out->row - 1;
 
     while (++i <= n) {
+// #if DEBUG
+//         print_table("prev table", out->prev, m);
+// #endif
+
         while (++j <= m) {
-            if (!strbuf_cmp(a[j - 1], b[i - 1])) {
+            if (!strbuf_cmp(a + i - 1, b + j - 1)) {
                 out->sol[j] = prev + 1;
                 out->table[i][j] = DELTA_TILT;
             }
@@ -122,7 +110,11 @@ size_t delta_basic_comparison(struct delta_table *out,
             out->prev[j] = out->sol[j];
             sol = out->sol[j];
         }
-
+#if DEBUG
+        print_table("", out->prev, m);
+        printf("\t%d, %d", i, j);
+        printf("\n");
+#endif
         prev = out->prev[0];
         sol = out->sol[0];
 
@@ -132,16 +124,14 @@ size_t delta_basic_comparison(struct delta_table *out,
     return out->sol[m];
 }
 
-struct basic_delta_result {
-    size_t insertions;    /* number of insertions */
-    size_t deletions;   /* number of deletions */
-    size_t common;  /* common number of lines */
-
-    struct strbuf_list common_lines; /* buffer to store the
-                                        similar lines */
-
-    struct strbuf_list diff_lines; /* buffer to store the non-similar lines */
-};
+void basic_delta_result_init(struct basic_delta_result *bdr)
+{
+    bdr->insertions = 0;
+    bdr->deletions = 0;
+    bdr->common = 0;
+    strbuf_list_init(&bdr->common_lines);
+    strbuf_list_init(&bdr->diff_lines);
+}
 
 int delta_backtrace_table(struct basic_delta_result *result,
                           struct delta_table *table,
@@ -151,11 +141,11 @@ int delta_backtrace_table(struct basic_delta_result *result,
     result->common = table->sol[table->col - 1];
 
     int i, j;    // index of the current cell
-    int **tab = table->table;
+    enum arrow_t **tab = table->table;
     int row = table->row, col = table->col;
 
-    i = row;
-    j = col - 1;
+    i = row - 2;
+    j = col - 2;
     while (i != -1 && j != -1) {
         switch (tab[i][j]) {
         case DELTA_UP:
@@ -179,6 +169,10 @@ int delta_backtrace_table(struct basic_delta_result *result,
         default:
             die("some error occurred in delta\n");
         }
+#if DEBUG
+        printf("I: %d, D: %d, C: %d\n", result->insertions, result->deletions);
+#endif
+
     }
 
     return 0;
