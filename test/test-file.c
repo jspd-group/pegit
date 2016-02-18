@@ -10,8 +10,10 @@ int main() {
     struct strbuf buf;
     strbuf_init(&buf, 0);
     printf("Reading %s\n", fs.fname.buf);
-    filespec_read_unsafe(&fs, &buf, 0);
+    filespec_read_safe(&fs, &buf);
 
+    strbuf_reset(&buf);
+    filespec_read_safe(&fs, &buf);
 
     printf("Printing fs\n");
     strbuf_print(&buf);
