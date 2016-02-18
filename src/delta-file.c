@@ -38,13 +38,13 @@ int deltafile_init_strbuf(struct deltafile *df, struct strbuf *buf, char delim)
 {
 	size_t lines = count_lines(buf);
 	deltafile_init(df, lines, delim);
-	df->size = strbuf_split(buf, df->arr, delim) + 1;
+	df->size = strbuf_split(buf, df->arr, delim);
 	return 0;
 }
 
 void deltafile_free(struct deltafile *df)
 {
-	for (int i = 0; i < df->size; i++) 
+	for (int i = 0; i < df->size; i++)
 		strbuf_release(df->arr + i);
 	free(df->arr);
 	df->size = 0;
