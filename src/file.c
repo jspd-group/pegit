@@ -172,6 +172,12 @@ int filespec_read_unsafe(struct filespec *fs,
 	return 0;
 }
 
+void filespec_reset(struct filespec *fs)
+{
+    if (fseek(fs->file, 0, SEEK_SET) < 0)
+        error("Unable to seek <%s> to the beginning\n", fs->fname.buf);
+}
+
 int filespec_read_safe(struct filespec *fs, struct strbuf *buf)
 {
 	strbuf_init(buf, fs->length);
@@ -179,6 +185,8 @@ int filespec_read_safe(struct filespec *fs, struct strbuf *buf)
         error("Can't read the '<%s>' file", fs->fname.buf);
 		return -1;
     }
+
+    filespec_reset(fs);
 	return 0;
 }
 
