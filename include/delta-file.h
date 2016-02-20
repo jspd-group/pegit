@@ -11,7 +11,8 @@
  * useful for making the delta faster (a little). It may take more memory.
  */
 struct deltafile {
-    struct strbuf *arr;    /* main array */
+    struct strbuf file; /* file contents */
+    size_t *arr;    /* main array */
     size_t size;        /* size of the array */
     char delim;        /* delimiter on which we are dividing the lines */
 };
