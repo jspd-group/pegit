@@ -60,5 +60,8 @@ extern int delta_backtrace_table(struct basic_delta_result *result,
                           struct strbuf *b);
 extern void basic_delta_result_init(struct basic_delta_result *bdr);
 
+extern size_t delta_basic_comparison_m(struct delta_table *out,
+struct deltafile *af, struct deltafile *bf);
+
 #define DELIM '\n'
 #endif
