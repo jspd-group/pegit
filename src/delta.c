@@ -1,7 +1,6 @@
 #include "delta.h"
 #include "strbuf-list.h"
 #include <string.h>
-#include <unistd.h>
 
 
 int delta_table_init(struct delta_table *table, int row, int col)
@@ -88,12 +87,57 @@ size_t delta_basic_comparison(struct delta_table *out,
     int n = out->row - 1;
 
     while (++i <= n) {
-// #if DEBUG
-//         print_table("prev table", out->prev, m);
-// #endif
-
         while (++j <= m) {
             if (!strbuf_cmp(a + i - 1, b + j - 1)) {
+                out->sol[j] = prev + 1;
+                out->table[i][j] = DELTA_TILT;
+            }
+            else if (prev < sol) {
+                out->sol[j] = sol;
+                out->table[i][j] = DELTA_LEFT;
+            }
+            else {
+                out->sol[j] = out->prev[j];
+                out->table[i][j] = DELTA_UP;
+            }
+
+            prev = out->prev[j];
+            out->prev[j] = out->sol[j];
+            sol = out->sol[j];
+        }
+#if DEBUG
+        print_table("", out->prev, m);
+        printf("\t%d, %d", i, j);
+        printf("\n");
+#endif
+        prev = out->prev[0];
+        sol = out->sol[0];
+
+        j = 0;
+    }
+
+    return out->sol[m];
+}
+
+
+size_t delta_basic_comparison_m(struct delta_table *out,
+             struct deltafile *af, struct deltafile *bf)
+{
+    int i = 0;
+    int j = 0;
+    int prev = 0;
+    int sol = 0;
+    int m = out->col - 1;
+    int n = out->row - 1;
+    int sa = af->arr[1] - af->arr[0] + 1;
+    int sb = bf->arr[1] - bf->arr[0] + 1;
+
+    while (++i <= n) {
+        while (++j <= m) {
+            if (!inplace_compare(af->file.buf + af->arr[j - 1], 
+                                 bf->file.buf + bf->arr[i - 1],
+                                 af->arr[j] - af->arr[j - 1] + 1,
+                                 bf->arr[i] - af->arr[i - 1] + 1)) {
                 out->sol[j] = prev + 1;
                 out->table[i][j] = DELTA_TILT;
             }
@@ -144,9 +188,9 @@ int delta_backtrace_table(struct basic_delta_result *result,
     enum arrow_t **tab = table->table;
     int row = table->row, col = table->col;
 
-    i = row - 2;
-    j = col - 2;
-    while (i != -1 && j != -1) {
+    i = row - 1;
+    j = col - 1;
+    while (i != 0 && j != 0) {
         switch (tab[i][j]) {
         case DELTA_UP:
             result->deletions++;
