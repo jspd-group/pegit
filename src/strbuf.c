@@ -403,3 +403,12 @@ int strbuf_split(struct strbuf *buf, struct strbuf *out, char delim)
 
 	return i;
 }
+
+int inplace_compare(const char *a, const char *b, size_t sa, size_t sb)
+{
+  int len = sa < sb ? sa : sb;
+  int cmp = memcmp(a, b, len);
+  if (cmp)
+    return cmp;
+  return sa < sb ? -1 : sa != sb;
+}

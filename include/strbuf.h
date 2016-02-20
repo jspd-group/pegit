@@ -332,7 +332,7 @@ static inline void strbuf_print(struct strbuf *sb)
  */
 static inline void strbuf_print_debug(struct strbuf *sb)
 {
-    fprintf(stdout, "Length: %d, Alloc: %d\nContents: %s",
+    fprintf(stdout, "Length: %ld, Alloc: %ld\nContents: %s",
          sb->len, sb->alloc, sb->buf);
 }
 
@@ -340,5 +340,7 @@ static inline void strbuf_print_debug(struct strbuf *sb)
  * split the buffer into the lines using a given buffer
  */
 extern int strbuf_split(struct strbuf *buf, struct strbuf *out, char delim);
+
+extern int inplace_compare(const char *a, const char *b, size_t sa, size_t sb);
 
 #endif /* STRBUF_H */
