@@ -10,7 +10,7 @@ void z_stream_init(z_stream *stream) {
   stream->opaque = Z_NULL;
 }
 
-int compress(struct strbuf *src, struct strbuf *dest, int level) {
+int __compress__(struct strbuf *src, struct strbuf *dest, int level) {
     z_stream stream;
     z_stream_init(&stream);
     int ret, flush, i;
@@ -38,7 +38,7 @@ int compress(struct strbuf *src, struct strbuf *dest, int level) {
 }
 
 int compress_default(struct strbuf *src, struct strbuf *dest) {
-  return compress(src, dest, Z_DEFAULT_COMPRESSION);
+  return __compress__(src, dest, Z_DEFAULT_COMPRESSION);
 }
 
 void uncompress_setup(z_stream *stream, struct strbuf *src,
@@ -59,7 +59,7 @@ int uncompress_chunk(z_stream *stream, struct strbuf *dest) {
     return ret;
 }
 
-int uncompress(struct strbuf *src, struct strbuf *dest) {
+int decompress(struct strbuf *src, struct strbuf *dest) {
     z_stream stream;
     int ret, i = 1;
     struct strbuf temp;
