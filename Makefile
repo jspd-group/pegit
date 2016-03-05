@@ -13,7 +13,7 @@ debug: test
 
 test: test-mz test-strbuf test-file test-delta test-deltafile
 
-test-mz: strbuf.o file.o test-mz.o
+test-mz: strbuf.o file.o mz.o test-mz.o
 	$(CC) strbuf.o mz.o test-mz.o file.o -l$(ZLIB) -o test-mz.exe
 
 test-strbuf: test-strbuf.o strbuf.o
@@ -26,6 +26,9 @@ test-deltafile: test-deltafile.o delta-file.o file.o strbuf.o
 
 strbuf.o: $(SRC)strbuf.c $(INC)strbuf.h $(INC)util.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)strbuf.c
+
+mz.o: $(SRC)mz.c $(INC)mz.h
+	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)mz.c
 
 file.o: $(SRC)file.c $(INC)file.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)file.c
