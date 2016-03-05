@@ -12,7 +12,7 @@
  */
 struct deltafile {
     struct strbuf file; /* file contents */
-    size_t *arr;    /* main array */
+    ssize_t *arr;    /* main array */
     size_t size;        /* size of the array */
     char delim;        /* delimiter on which we are dividing the lines */
 };
