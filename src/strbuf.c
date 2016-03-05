@@ -184,66 +184,66 @@ size_t strbuf_fread(struct strbuf *sb, size_t size, FILE *f)
 	return res;
 }
 
-ssize_t strbuf_read(struct strbuf *sb, int fd, size_t hint)
-{
-	size_t oldlen = sb->len;
-	size_t oldalloc = sb->alloc;
+// ssize_t strbuf_read(struct strbuf *sb, int fd, size_t hint)
+// {
+// 	size_t oldlen = sb->len;
+// 	size_t oldalloc = sb->alloc;
 
-	strbuf_grow(sb, hint ? hint : 8192);
-	for (;;) {
-		ssize_t want = sb->alloc - sb->len - 1;
-		ssize_t got = read(fd, sb->buf + sb->len, want);
+// 	strbuf_grow(sb, hint ? hint : 8192);
+// 	for (;;) {
+// 		ssize_t want = sb->alloc - sb->len - 1;
+// 		ssize_t got = read(fd, sb->buf + sb->len, want);
 
-		if (got < 0) {
-			if (oldalloc == 0)
-				strbuf_release(sb);
-			else
-				strbuf_setlen(sb, oldlen);
-			return -1;
-		}
-		sb->len += got;
-		if (got < want)
-			break;
-		strbuf_grow(sb, 8192);
-	}
+// 		if (got < 0) {
+// 			if (oldalloc == 0)
+// 				strbuf_release(sb);
+// 			else
+// 				strbuf_setlen(sb, oldlen);
+// 			return -1;
+// 		}
+// 		sb->len += got;
+// 		if (got < want)
+// 			break;
+// 		strbuf_grow(sb, 8192);
+// 	}
 
-	sb->buf[sb->len] = '\0';
-	return sb->len - oldlen;
-}
+// 	sb->buf[sb->len] = '\0';
+// 	return sb->len - oldlen;
+// }
 
-ssize_t strbuf_read_once(struct strbuf *sb, int fd, size_t hint)
-{
-	ssize_t cnt;
+// ssize_t strbuf_read_once(struct strbuf *sb, int fd, size_t hint)
+// {
+// 	ssize_t cnt;
 
-	strbuf_grow(sb, hint ? hint : 8192);
-	cnt = read(fd, sb->buf + sb->len, sb->alloc - sb->len - 1);
-	if (cnt > 0)
-		strbuf_setlen(sb, sb->len + cnt);
-	return cnt;
-}
+// 	strbuf_grow(sb, hint ? hint : 8192);
+// 	cnt = read(fd, sb->buf + sb->len, sb->alloc - sb->len - 1);
+// 	if (cnt > 0)
+// 		strbuf_setlen(sb, sb->len + cnt);
+// 	return cnt;
+// }
 
 #define STRBUF_MAXLINK (2*PATH_MAX)
 
-int strbuf_getcwd(struct strbuf *sb)
-{
-	size_t oldalloc = sb->alloc;
-	size_t guessed_len = 128;
+// int strbuf_getcwd(struct strbuf *sb)
+// {
+// 	size_t oldalloc = sb->alloc;
+// 	size_t guessed_len = 128;
 
-	for (;; guessed_len *= 2) {
-		strbuf_grow(sb, guessed_len);
-		if (getcwd(sb->buf, sb->alloc)) {
-			strbuf_setlen(sb, strlen(sb->buf));
-			return 0;
-		}
-		if (errno != ERANGE)
-			break;
-	}
-	if (oldalloc == 0)
-		strbuf_release(sb);
-	else
-		strbuf_reset(sb);
-	return -1;
-}
+// 	for (;; guessed_len *= 2) {
+// 		strbuf_grow(sb, guessed_len);
+// 		if (getcwd(sb->buf, sb->alloc)) {
+// 			strbuf_setlen(sb, strlen(sb->buf));
+// 			return 0;
+// 		}
+// 		if (errno != ERANGE)
+// 			break;
+// 	}
+// 	if (oldalloc == 0)
+// 		strbuf_release(sb);
+// 	else
+// 		strbuf_reset(sb);
+// 	return -1;
+// }
 
 #ifdef HAS_GETDELIM
 
@@ -321,37 +321,37 @@ int strbuf_getline(struct strbuf *sb, FILE *fp, int term)
 	return 0;
 }
 
-int strbuf_getwholeline_fd(struct strbuf *sb, int fd, int term)
-{
-	strbuf_reset(sb);
+// int strbuf_getwholeline_fd(struct strbuf *sb, int fd, int term)
+// {
+// 	strbuf_reset(sb);
 
-	while (1) {
-		char ch;
-		ssize_t len = read(fd, &ch, 1);
-		if (len <= 0)
-			return EOF;
-		strbuf_addch(sb, ch);
-		if (ch == term)
-			break;
-	}
-	return 0;
-}
+// 	while (1) {
+// 		char ch;
+// 		ssize_t len = read(fd, &ch, 1);
+// 		if (len <= 0)
+// 			return EOF;
+// 		strbuf_addch(sb, ch);
+// 		if (ch == term)
+// 			break;
+// 	}
+// 	return 0;
+// }
 
-ssize_t strbuf_read_file(struct strbuf *sb, const char *path, size_t hint)
-{
-	int fd;
-	ssize_t len;
+// ssize_t strbuf_read_file(struct strbuf *sb, const char *path, size_t hint)
+// {
+// 	int fd;
+// 	ssize_t len;
 
-	fd = open(path, O_RDONLY);
-	if (fd < 0)
-		return -1;
-	len = strbuf_read(sb, fd, hint);
-	close(fd);
-	if (len < 0)
-		return -1;
+// 	fd = open(path, O_RDONLY);
+// 	if (fd < 0)
+// 		return -1;
+// 	len = strbuf_read(sb, fd, hint);
+// 	close(fd);
+// 	if (len < 0)
+// 		return -1;
 
-	return len;
-}
+// 	return len;
+// }
 
 void strbuf_add_lines(struct strbuf *out, const char *prefix,
 		      const char *buf, size_t size)
@@ -402,6 +402,35 @@ int strbuf_split(struct strbuf *buf, struct strbuf *out, char delim)
 	}
 
 	return i;
+}
+
+void strbuf_addf(struct strbuf *sb, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    strbuf_vaddf(sb, fmt, ap);
+    va_end(ap);
+}
+
+void strbuf_vaddf(struct strbuf *sb, const char *fmt, va_list ap)
+{
+    int len;
+    va_list cp;
+
+    if (!strbuf_avail(sb))
+        strbuf_grow(sb, 64);
+    va_copy(cp, ap);
+    len = vsnprintf(sb->buf + sb->len, sb->alloc - sb->len, fmt, cp);
+    va_end(cp);
+    if (len < 0)
+        die("BUG: your vsnprintf is broken (returned %d)", len);
+    if (len > strbuf_avail(sb)) {
+        strbuf_grow(sb, len);
+        len = vsnprintf(sb->buf + sb->len, sb->alloc - sb->len, fmt, ap);
+        if (len > strbuf_avail(sb))
+            die("BUG: your vsnprintf is broken (insatiable)");
+    }
+    strbuf_setlen(sb, sb->len + len);
 }
 
 int inplace_compare(const char *a, const char *b, size_t sa, size_t sb)
