@@ -1,4 +1,5 @@
 #include "strbuf.h"
+#include "file.h"
 #include "util.h"
 
 void print(struct strbuf buffer) {
@@ -74,9 +75,9 @@ void test_file_decompression() {
     strbuf_fread(&src, file_length(file), file);
     printf("\n%d Characters read\n", src.len, src.buf);
 
-    // uncompress the data read
+    // decompress the data read
     // ### your data should be valid otherwise it will stuck here
-    uncompress(&src, &dest);
+    decompress(&src, &dest);
     printf("%s\n", dest.buf);
 
     // cleanup
@@ -120,7 +121,7 @@ int main() {
     print(dest);
 
     // uncompress the compressed data to temp
-    uncompress(&dest, &temp);
+    decompress(&dest, &temp);
 
 
     printf("After dempression: ");
