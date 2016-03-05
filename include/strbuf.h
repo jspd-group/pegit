@@ -343,4 +343,13 @@ extern int strbuf_split(struct strbuf *buf, struct strbuf *out, char delim);
 
 extern int inplace_compare(const char *a, const char *b, size_t sa, size_t sb);
 
+/**
+ * Add a formatted string to the buffer.
+ */
+__attribute__((format (printf,2,3)))
+extern void strbuf_addf(struct strbuf *sb, const char *fmt, ...);
+
+__attribute__((format (printf,2,0)))
+extern void strbuf_vaddf(struct strbuf *sb, const char *fmt, va_list ap);
+
 #endif /* STRBUF_H */
