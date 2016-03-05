@@ -3,3 +3,4 @@ docs/temp/
 *.exe
 docs/temp.xxx
 build
+.vs
