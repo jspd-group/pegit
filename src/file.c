@@ -12,18 +12,18 @@ int filecache_init(struct filecache *fi)
 	strbuf_init(fi->data, 0);
 }
 
-int filecache_init_fd(struct filecache *out, int fd, size_t size)
-{
-    ssize_t rd;
+// int filecache_init_fd(struct filecache *out, int fd, size_t size)
+// {
+//     ssize_t rd;
 
-    rd = strbuf_read(out->data, fd, size);
+//     rd = strbuf_read(out->data, fd, size);
 
-    /* now if rd was -1 then an error has occurred */
-    if (rd < 0)
-        return rd;
+//     /* now if rd was -1 then an error has occurred */
+//     if (rd < 0)
+//         return rd;
 
-    return 0;
-}
+//     return 0;
+// }
 
 int filecache_init_file(struct filecache *out, FILE* f, size_t size)
 {
