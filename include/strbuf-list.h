@@ -19,7 +19,7 @@ struct strbuf_list {
 
 static int strbuf_list_init(struct strbuf_list *sbl)
 {
-    sbl->head = (struct strbuf_list_node*)malloc(sizeof(struct strbuf_list_node));
+    sbl->head = MALLOC(struct strbuf_list_node, 1);
 
     if (!sbl->head || !sbl->last)
         die("Out of memory\n");
@@ -30,21 +30,18 @@ static int strbuf_list_init(struct strbuf_list *sbl)
     return 0;
 }
 
-static int strbuf_list_add(struct strbuf_list *sbl,
-                           struct strbuf *buf, char sign, size_t index)
+static int strbuf_list_add(struct strbuf_list *sbl, const void *buf,
+                           size_t size, char sign, size_t index)
 {
-    struct strbuf_list_node *node = (struct strbuf_list_node*)
-                                malloc(sizeof(struct strbuf_list_node));
+    struct strbuf_list_node *node = MALLOC(struct strbuf_list_node, 1);
 
     if (!node)
         die("Out of memory\n");
 
-    strbuf_init(&node->buf, buf->len);
-    strbuf_addbuf(&node->buf, buf);
-
-    node->next = NULL;
-    sbl->last->next = node;
-    sbl->last = sbl->last->next;
+    strbuf_init(&node->buf, size);
+    strbuf_add(&node->buf, buf, size);
+    node->next = sbl->head->next;
+    sbl->head->next = node;
     sbl->size += 1;
     node->sign = sign;
     node->index = index;
@@ -58,7 +55,7 @@ static void strbuf_list_free(struct strbuf_list *sbl)
     do {
         sbl->head = sbl->head->next;
         free(node);
-    } while (node = sbl->head);
+    } while ((node = sbl->head));
 }
 
 #endif /* STRBUF_LIST_H_ */
