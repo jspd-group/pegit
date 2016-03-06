@@ -17,9 +17,9 @@ int main(int argc, char *argv[]) {
 
     deltafile_init_filespec(&df, &fs, '\n');
 
-    printf("%d\n", df.size);
+    printf("%zu\n", df.size);
     for (int i = 0; i < df.size; i++) {
-        printf("%d, ", df.arr[i]);
+        printf("%zd, ", df.arr[i]);
     }
     getc(stdin);
     deltafile_free(&df);
