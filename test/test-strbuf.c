@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 void print(struct strbuf buffer) {
-    printf("%d, %d, %s\n", buffer.alloc, buffer.len, buffer.buf);
+    printf("%zd, %zd, %s\n", buffer.alloc, buffer.len, buffer.buf);
 }
 
 int main() {
@@ -16,7 +16,7 @@ int main() {
     strbuf_insert(&buffer, 40, "prince dhaliwal", 15);
     strbuf_fread(&buffer, 100, stdin);
     print(buffer);
-    printf("%d", strbuf_avail(&buffer));
+    printf("%zd", strbuf_avail(&buffer));
     strbuf_release(&buffer);
     return 0;
 }
