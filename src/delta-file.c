@@ -46,6 +46,7 @@ int deltafile_init(struct deltafile *df, size_t size, char delim)
 
     df->size = size;
     df->delim = delim;
+    return 0;
 }
 
 int deltafile_init_filespec(struct deltafile *df, struct filespec *fs, char d)
