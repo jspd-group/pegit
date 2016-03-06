@@ -19,62 +19,59 @@
 #include <signal.h>
 #include <assert.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define REALLOC_ARRAY(x, alloc) (x) = realloc((x), (alloc) * sizeof(*(x)))
-#define alloc_nr(x) (((x)+16)*3/2)
+#define alloc_nr(x) (((x) + 16) * 3 / 2)
 
 /* number of bytes required by the hash
  */
 #define HASH_SIZE 20
 
-#define die(...) { printf(__VA_ARGS__); exit(1); }
+#define die(...)                                                               \
+    {                                                                          \
+        printf(__VA_ARGS__);                                                   \
+        exit(1);                                                               \
+    }
 
 #define DEBUG 0
 
-#ifndef ssize_t
-#define ssize_t long
-#endif
-#ifndef off_t
-#define off_t unsigned long long
-#endif
-
 #define comment_line_char '#'
-#define ALLOC_GROW(x, nr, alloc) \
-    do { \
-        if ((nr) > alloc) { \
-            if (alloc_nr(alloc) < (nr)) \
-                alloc = (nr); \
-            else \
-                alloc = alloc_nr(alloc); \
-            REALLOC_ARRAY(x, alloc); \
-        } \
+#define ALLOC_GROW(x, nr, alloc)                                               \
+    do {                                                                       \
+        if ((nr) > alloc) {                                                    \
+            if (alloc_nr(alloc) < (nr))                                        \
+                alloc = (nr);                                                  \
+            else                                                               \
+                alloc = alloc_nr(alloc);                                       \
+            REALLOC_ARRAY(x, alloc);                                           \
+        }                                                                      \
     } while (0)
 
-#define MALLOC(type, size)    \
-    (type*)malloc(sizeof(type) * size)
+#define MALLOC(type, size) (type *) malloc(sizeof(type) * size)
 
 #ifndef error
-#define error(...) \
-    fprintf(stderr, __VA_ARGS__);
+#define error(...) fprintf(stderr, __VA_ARGS__);
 #endif
 
-#define MEMORY_ERROR(prefix, ...) {   \
-    fprintf(stderr, "%s: ", prefix);    \
-    fprintf(stderr, __VA_ARGS__);            \
+#define MEMORY_ERROR(prefix, ...)                                              \
+    {                                                                          \
+        fprintf(stderr, "%s: ", prefix);                                       \
+        fprintf(stderr, __VA_ARGS__);                                          \
+    \
 }
 
 #ifndef isspace
-#define isspace(x)     ((x) == ' ')
+#define isspace(x) ((x) == ' ')
 #endif
 
-
 #ifndef tolower
-#define tolower(x)    ((x) - 'A' + 'a')
+#define tolower(x) ((x) - 'A' + 'a')
 #endif
 /**
  * This global variable stores the name of the program currently being used.
  */
-static char program[30];
+// static char program[30];
 
 #ifdef compress
 #undef compress
@@ -91,6 +88,6 @@ extern int compress_default(struct strbuf *src, struct strbuf *dest);
 extern int decompress(struct strbuf *src, struct strbuf *dest);
 
 #define PROGRAM program
-
+#define PEG_DIR ".peg"
 
 #endif
