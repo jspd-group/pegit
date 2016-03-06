@@ -8,13 +8,16 @@
  * access to the string itself.
  */
 struct strbuf {
-	size_t alloc;
-	size_t len;
-	char *buf;
+    size_t alloc;
+    size_t len;
+    char *buf;
 };
 
 extern char strbuf_slopbuf[];
-#define STRBUF_INIT  { 0, 0, strbuf_slopbuf }
+#define STRBUF_INIT                                                            \
+    {                                                                          \
+        0, 0, strbuf_slopbuf                                                   \
+    }
 
 /**
  * Life Cycle Functions
@@ -55,11 +58,10 @@ extern void strbuf_attach(struct strbuf *, void *, size_t, size_t);
  */
 static inline void strbuf_swap(struct strbuf *a, struct strbuf *b)
 {
-	struct strbuf tmp = *a;
-	*a = *b;
-	*b = tmp;
+    struct strbuf tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
-
 
 /**
  * Functions related to the size of the buffer
@@ -71,7 +73,7 @@ static inline void strbuf_swap(struct strbuf *a, struct strbuf *b)
  */
 static inline size_t strbuf_avail(const struct strbuf *sb)
 {
-	return sb->alloc ? sb->alloc - sb->len - 1 : 0;
+    return sb->alloc ? sb->alloc - sb->len - 1 : 0;
 }
 
 /**
@@ -92,17 +94,16 @@ extern void strbuf_grow(struct strbuf *, size_t);
  */
 static inline void strbuf_setlen(struct strbuf *sb, size_t len)
 {
-	if (len > (sb->alloc ? sb->alloc - 1 : 0))
-		die("BUG: strbuf_setlen() beyond buffer");
-	sb->len = len;
-	sb->buf[len] = '\0';
+    if (len > (sb->alloc ? sb->alloc - 1 : 0))
+        die("BUG: strbuf_setlen() beyond buffer");
+    sb->len = len;
+    sb->buf[len] = '\0';
 }
 
 /**
  * Empty the buffer by setting the size of it to zero.
  */
-#define strbuf_reset(sb)  strbuf_setlen(sb, 0)
-
+#define strbuf_reset(sb) strbuf_setlen(sb, 0)
 
 /**
  * Functions related to the contents of the buffer
@@ -129,7 +130,6 @@ extern void strbuf_tolower(struct strbuf *sb);
  */
 extern int strbuf_cmp(const struct strbuf *, const struct strbuf *);
 
-
 /**
  * Adding data to the buffer
  * -------------------------
@@ -145,10 +145,9 @@ extern int strbuf_cmp(const struct strbuf *, const struct strbuf *);
  */
 static inline void strbuf_addch(struct strbuf *sb, int c)
 {
-	if (!strbuf_avail(sb))
-		strbuf_grow(sb, 1);
-	sb->buf[sb->len++] = c;
-	sb->buf[sb->len] = '\0';
+    if (!strbuf_avail(sb)) strbuf_grow(sb, 1);
+    sb->buf[sb->len++] = c;
+    sb->buf[sb->len] = '\0';
 }
 
 /**
@@ -171,8 +170,8 @@ extern void strbuf_remove(struct strbuf *, size_t pos, size_t len);
  * Remove the bytes between `pos..pos+len` and replace it with the given
  * data.
  */
-extern void strbuf_splice(struct strbuf *, size_t pos, size_t len,
-			  const void *, size_t);
+extern void strbuf_splice(struct strbuf *, size_t pos, size_t len, const void *,
+                          size_t);
 
 /**
  * Add data of given length to the buffer.
@@ -190,7 +189,7 @@ extern void strbuf_add(struct strbuf *, const void *, size_t);
  */
 static inline void strbuf_addstr(struct strbuf *sb, const char *s)
 {
-	strbuf_add(sb, s, strlen(s));
+    strbuf_add(sb, s, strlen(s));
 }
 
 /**
@@ -198,8 +197,8 @@ static inline void strbuf_addstr(struct strbuf *sb, const char *s)
  */
 static inline void strbuf_addbuf(struct strbuf *sb, const struct strbuf *sb2)
 {
-	strbuf_grow(sb, sb2->len);
-	strbuf_add(sb, sb2->buf, sb2->len);
+    strbuf_grow(sb, sb2->len);
+    strbuf_add(sb, sb2->buf, sb2->len);
 }
 
 /**
@@ -237,7 +236,8 @@ extern ssize_t strbuf_read_once(struct strbuf *, int fd, size_t hint);
  * Read the contents of a file, specified by its path. The third argument
  * can be used to give a hint about the file size, to avoid reallocs.
  */
-extern ssize_t strbuf_read_file(struct strbuf *sb, const char *path, size_t hint);
+extern ssize_t strbuf_read_file(struct strbuf *sb, const char *path,
+                                size_t hint);
 
 /**
  * Read a line from a FILE *, overwriting the existing contents
@@ -287,11 +287,11 @@ extern void strbuf_stripspace(struct strbuf *buf, int skip_comments);
  */
 static inline void stripspace(struct strbuf *buf, int skip_comments)
 {
-	strbuf_stripspace(buf, skip_comments);
+    strbuf_stripspace(buf, skip_comments);
 }
 
 extern void strbuf_add_lines(struct strbuf *sb, const char *prefix,
-         const char *buf, size_t size);
+                             const char *buf, size_t size);
 
 /**
  * extract the name of the file from its given path
@@ -306,15 +306,13 @@ extern void extract_filename(struct strbuf *buf, const char *path);
  */
 static inline void strbuf_complete(struct strbuf *sb, char term)
 {
-	if (sb->len && sb->buf[sb->len - 1] != term)
-		strbuf_addch(sb, term);
+    if (sb->len && sb->buf[sb->len - 1] != term) strbuf_addch(sb, term);
 }
 
 static inline void strbuf_complete_line(struct strbuf *sb)
 {
-	strbuf_complete(sb, '\n');
+    strbuf_complete(sb, '\n');
 }
-
 
 /**
  * print routines
@@ -332,8 +330,8 @@ static inline void strbuf_print(struct strbuf *sb)
  */
 static inline void strbuf_print_debug(struct strbuf *sb)
 {
-    fprintf(stdout, "Length: %ld, Alloc: %ld\nContents: %s",
-         sb->len, sb->alloc, sb->buf);
+    fprintf(stdout, "Length: %zu, Alloc: %zu\nContents: %s", sb->len, sb->alloc,
+            sb->buf);
 }
 
 /**
@@ -346,10 +344,10 @@ extern int inplace_compare(const char *a, const char *b, size_t sa, size_t sb);
 /**
  * Add a formatted string to the buffer.
  */
-__attribute__((format (printf,2,3)))
-extern void strbuf_addf(struct strbuf *sb, const char *fmt, ...);
+__attribute__((format(printf, 2, 3))) extern void
+strbuf_addf(struct strbuf *sb, const char *fmt, ...);
 
-__attribute__((format (printf,2,0)))
-extern void strbuf_vaddf(struct strbuf *sb, const char *fmt, va_list ap);
+__attribute__((format(printf, 2, 0))) extern void
+strbuf_vaddf(struct strbuf *sb, const char *fmt, va_list ap);
 
 #endif /* STRBUF_H */
