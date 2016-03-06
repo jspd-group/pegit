@@ -12,9 +12,9 @@
  */
 struct deltafile {
     struct strbuf file; /* file contents */
-    ssize_t *arr;    /* main array */
+    ssize_t *arr;       /* main array */
     size_t size;        /* size of the array */
-    char delim;        /* delimiter on which we are dividing the lines */
+    char delim;         /* delimiter on which we are dividing the lines */
 };
 
 /**
@@ -30,14 +30,14 @@ extern int deltafile_init(struct deltafile *df, size_t size, char delim);
 /**
  * Initialise  deltafile from a given filespec
  */
-extern int deltafile_init_filespec(struct deltafile *df,
-								   struct filespec *fs, char delim);
+extern int deltafile_init_filespec(struct deltafile *df, struct filespec *fs,
+                                   char delim);
 
 /**
  * Initialise the deltafile from a strbuf
  */
-extern int deltafile_init_strbuf(struct deltafile *df,
-								 struct strbuf *buf, char delim);
+extern int deltafile_init_strbuf(struct deltafile *df, struct strbuf *buf,
+                                 char delim);
 
 /**
  * free the memory
