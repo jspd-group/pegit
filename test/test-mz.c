@@ -3,7 +3,7 @@
 #include "util.h"
 
 void print(struct strbuf buffer) {
-    printf("%d byte(s)\n", buffer.len);
+    printf("%zd byte(s)\n", buffer.len);
 }
 
 // create a sample buffer
@@ -30,7 +30,7 @@ void test_file_compression() {
 
     // use this function for reading the data
     strbuf_fread(&src, file_length(file), file);
-    printf("%d Characters before compression\n", src.len);
+    printf("%llu Characters before compression\n", src.len);
     fclose(file);
 
     // compress the data and store the result to the dest buffer
@@ -48,7 +48,7 @@ void test_file_compression() {
 
     // write the compressed data buffer to the file
     fwrite(dest.buf, sizeof(char), dest.len, file);
-    printf("%d Characters after compression\n", dest.len);
+    printf("%llu Characters after compression\n", dest.len);
 
     // cleanup
     fclose(file);
@@ -73,7 +73,7 @@ void test_file_decompression() {
     // use this function to read from file specifying the
     // number of characters to read
     strbuf_fread(&src, file_length(file), file);
-    printf("\n%d Characters read\n", src.len, src.buf);
+    printf("\n%llu Characters read\n", src.len);
 
     // decompress the data read
     // ### your data should be valid otherwise it will stuck here
