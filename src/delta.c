@@ -2,7 +2,6 @@
 #include "strbuf-list.h"
 #include <string.h>
 
-
 int delta_table_init(struct delta_table *table, int col, int row)
 {
     table->table = MALLOC(enum arrow_t *, row);
@@ -117,7 +116,8 @@ size_t delta_basic_comparison_m(struct delta_table *out, struct deltafile *af,
     return out->sol[m];
 }
 
-void basic_delta_result_init(struct basic_delta_result *bdr, struct delta_input *di)
+void basic_delta_result_init(struct basic_delta_result *bdr,
+                             struct delta_input *di)
 {
     bdr->input = di;
     bdr->insertions = 0;
@@ -173,8 +173,8 @@ int delta_backtrace_table(struct basic_delta_result *result,
 
 void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
 {
-    strbuf_addf(stat, "@@@ delta %s %s @@@\n",
-                bdr->input->fs1->fname.buf, bdr->input->fs2->fname.buf);
+    strbuf_addf(stat, "@@@ delta %s %s @@@\n", bdr->input->fs1->fname.buf,
+                bdr->input->fs2->fname.buf);
     if ((bdr->insertions == 0) && (bdr->deletions == 0)) {
         strbuf_addf(stat, "No difference\n");
         return;
@@ -182,16 +182,22 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
 
     if (bdr->insertions || bdr->deletions == 0) {
         strbuf_addf(stat, "(%llu) %s ", bdr->insertions,
-            (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
+                    (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
     }
     if (bdr->deletions || bdr->insertions == 0) {
         strbuf_addf(stat, "(%llu) %s ", bdr->deletions,
-            (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
+                    (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
     return;
 }
 
 void delta_summary(struct basic_delta_result *bdr, struct strbuf *summary)
 {
-
+    struct strbuf_list_node *node;
+    node = bdr->diff_lines.head->next;
+    while (node != NULL) {
+        printf(" %c", node->sign);
+        printf("%s", node->buf.buf);
+        node = node->next;
+    }
 }

@@ -22,20 +22,20 @@ struct delta_table {
 };
 
 struct delta_input {
-    struct filespec *fs1;    /* filespec of the first file */
-    struct filespec *fs2;    /* filespec of the second file */
+    struct filespec *fs1; /* filespec of the first file */
+    struct filespec *fs2; /* filespec of the second file */
     struct deltafile df1;
     struct deltafile df2;
 };
 
 struct basic_delta_result {
-    size_t insertions; /* number of insertions */
-    size_t deletions;  /* number of deletions */
-    size_t common;     /* common number of lines */
-    struct delta_input *input;    /* input to the delta */
+    size_t insertions;               /* number of insertions */
+    size_t deletions;                /* number of deletions */
+    size_t common;                   /* common number of lines */
+    struct delta_input *input;       /* input to the delta */
     struct strbuf_list common_lines; /* buffer to store the
                                         similar lines */
-    struct strbuf_list diff_lines; /* buffer to store the non-similar lines */
+    struct strbuf_list diff_lines;   /* buffer to store the non-similar lines */
 };
 
 /**
@@ -73,7 +73,8 @@ extern int delta_backtrace_table(struct basic_delta_result *result,
  * initialise the basic_delta_result which stores the delta result in readable
  * form. delta_table can be converted into basic_delta_result by backtracking.
  */
-extern void basic_delta_result_init(struct basic_delta_result *bdr, struct delta_input *di);
+extern void basic_delta_result_init(struct basic_delta_result *bdr,
+                                    struct delta_input *di);
 
 /**
  * main delta algorithm. It uses Longest Common Subsequence.
@@ -87,6 +88,11 @@ extern size_t delta_basic_comparison_m(struct delta_table *out,
  */
 extern void delta_stat(struct basic_delta_result *result, struct strbuf *stat);
 
+/**
+ * print the summary to a given buffer
+ */
+extern void delta_summary(struct basic_delta_result *bdr,
+                          struct strbuf *summary);
 
 #define DELIM '\n'
 #endif
