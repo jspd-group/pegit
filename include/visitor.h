@@ -21,6 +21,10 @@ struct visitor {
 extern void visitor_init(struct visitor *v);
 
 /**
+ * close directory pointed by visitor
+ */
+extern void visitor_close(struct visitor *v);
+/**
  * Visit a given directory. Sets the visitor to the given directory. This
  * must be done before visiting a particular entry in the directory.
  * returns 0 if successful, else -1.
