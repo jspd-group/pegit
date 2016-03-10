@@ -161,6 +161,11 @@ extern void strbuf_addchars(struct strbuf *sb, int c, size_t n);
  */
 extern void strbuf_insert(struct strbuf *, size_t pos, const void *, size_t);
 
+static inline void strbuf_setstr(struct strbuf *sb, const char *str)
+{
+    strbuf_insert(sb, 0, str, strlen(str));
+}
+
 /**
  * Remove given amount of data from a given position of the buffer.
  */
@@ -349,5 +354,28 @@ strbuf_addf(struct strbuf *sb, const char *fmt, ...);
 
 __attribute__((format(printf, 2, 0))) extern void
 strbuf_vaddf(struct strbuf *sb, const char *fmt, va_list ap);
+
+/**
+ * count the number of characters present in the string
+ */
+static inline size_t strbuf_count(struct strbuf *buf, char ch)
+{
+    size_t count = 0;
+
+    for (size_t i = 0; i < buf->len; i++) {
+        if (buf->buf[i] == ch)
+            count++;
+    }
+    return count;
+}
+
+static inline size_t strbuf_findch(struct strbuf *buf, char ch)
+{
+    for (size_t i = 0; i < buf->len; i++) {
+        if (buf->buf[i] == ch)
+            return i;
+    }
+    return -1;
+}
 
 #endif /* STRBUF_H */
