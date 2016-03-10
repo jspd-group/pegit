@@ -40,13 +40,9 @@ typedef struct {
   unsigned int sizeHi,sizeLo;
 } SHA_CTX;
 
-void SHA1_Init(SHA_CTX *ctx);
-void SHA1_Update(SHA_CTX *ctx, void *dataIn, int len);
-void SHA1_Final(unsigned char hashout[20], SHA_CTX *ctx);
-
 static void shaHashBlock(SHA_CTX *ctx);
 
-void SHA1_Init(SHA_CTX *ctx) {
+static void SHA1_Init(SHA_CTX *ctx) {
   int i;
 
   ctx->lenW = 0;
@@ -65,8 +61,8 @@ void SHA1_Init(SHA_CTX *ctx) {
 }
 
 
-void SHA1_Update(SHA_CTX *ctx, void *_dataIn, int len) {
-  unsigned char *dataIn = _dataIn;
+static void SHA1_Update(SHA_CTX *ctx, void *_dataIn, int len) {
+  unsigned char *dataIn = (unsigned char*)_dataIn;
   int i;
 
   /* Read the data into W and process blocks as they get full
@@ -84,7 +80,7 @@ void SHA1_Update(SHA_CTX *ctx, void *_dataIn, int len) {
 }
 
 
-void SHA1_Final(unsigned char hashout[20], SHA_CTX *ctx) {
+static void SHA1_Final(unsigned char hashout[20], SHA_CTX *ctx) {
   unsigned char pad0x80 = 0x80;
   unsigned char pad0x00 = 0x00;
   unsigned char padlen[8];
