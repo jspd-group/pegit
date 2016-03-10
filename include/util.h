@@ -87,7 +87,13 @@ extern int __compress__(struct strbuf *src, struct strbuf *dest, int level);
 extern int compress_default(struct strbuf *src, struct strbuf *dest);
 extern int decompress(struct strbuf *src, struct strbuf *dest);
 
-#define PROGRAM program
-#define PEG_DIR ".peg"
+#define PROGRAM             program
+#define PEG_DIR             ".peg"
+#define PEG_NAME            "peg"
+#define CACHE_DIR           "cache"
+#define DB_DIR              "db"
+#define DESCRIPTION_FILE    ".peg/desc"
+#define CACHE_INDEX_FILE    ".peg/cache/cache.idx"
+#define CACHE_PACK_FILE     ".peg/cache/cache.pack"
 
 #endif
