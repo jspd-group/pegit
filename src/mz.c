@@ -1,6 +1,7 @@
 #include "mz.h"
 #include "util.h"
 #include "file.h"
+#include <zlib.h>
 
 #define CHUNK_LENGTH 16384
 
