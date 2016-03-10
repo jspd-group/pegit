@@ -91,6 +91,7 @@ int filespec_init(struct filespec *fs, const char *name, const char *mode)
     if (!fs->file) {
         fprintf(stderr, "%s: file doesn't exists.\n", name);
         clean_on_error(fs); /* remove the memory allocated */
+        exit(EXIT_FAILURE);
         return -1;
     }
 
