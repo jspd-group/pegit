@@ -7,16 +7,12 @@
 struct author {
     struct strbuf name;
     struct strbuf email;
-    struct strbuf uid;
-    struct strbuf pswd;
 };
 
 static inline void author_init(struct author *auth)
 {
     strbuf_init(&auth->name, 256);
     strbuf_init(&auth->email, 256);
-    strbuf_init(&auth->uid, 10);
-    strbuf_init(&auth->pswd, 12);
 }
 
 static inline
@@ -26,8 +22,30 @@ void author_create(struct author *auth, const char *name,
 {
     strbuf_addstr(&auth->name, name);
     strbuf_addstr(&auth->email, email);
-    strbuf_addstr(&auth->uid, uid);
-    strbuf_addstr(&auth->pswd, pswd);
+}
+
+static inline void author_write(struct author *auth, FILE *f)
+{
+    size_t len = auth->name.len;
+    fwrite(&len, sizeof(size_t), 1, f);
+    len = fwrite(auth->name.buf, sizeof(char), auth->name.len, f);
+    if (len != auth->name.len)
+        die("fatal: unable to write\n\t:(\n");
+    fwrite(&auth->email.len, sizeof(size_t), 1, f);
+    len = fwrite(auth->email.buf, sizeof(char), auth->email.len, f);
+
+    if (len != auth->email.len)
+        die("fatal: unable to write\n\t:(\n");
+}
+
+static inline void author_read(struct author *auth, FILE *f)
+{
+    size_t len;
+
+    fread(&len, sizeof(size_t), 1, f);
+    strbuf_fread(&auth->name, len, f);
+    fread(&len, sizeof(size_t), 1, f);
+    strbuf_fread(&auth->email, len, f);
 }
 
 #endif
