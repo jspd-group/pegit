@@ -97,5 +97,5 @@ test-visitor.o: $(TEST)test-visitor.c tree.o visitor.o
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-visitor.c
 
 clean:
-	@rm *.o *.exe
-	@rm -r .peg
+	-@rm *.o *.exe
+	-@rm -r .peg
