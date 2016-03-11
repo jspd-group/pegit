@@ -81,6 +81,10 @@
 #undef uncompress
 #endif
 
+#ifndef HINT
+# define HINT 2048
+#endif
+
 struct strbuf;
 
 extern int __compress__(struct strbuf *src, struct strbuf *dest, int level);
@@ -95,5 +99,9 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #define DESCRIPTION_FILE    ".peg/desc"
 #define CACHE_INDEX_FILE    ".peg/cache/cache.idx"
 #define CACHE_PACK_FILE     ".peg/cache/cache.pack"
+#define FILE_INDEX_FILE     ".peg/db/db.idx"
+#define COMMIT_INDEX_FILE   ".peg/commit/commit.idx"
+#define PACK_FILE           ".peg/db/db/pack"
+#define HEAD_FILE           ".peg/HEAD"
 
 #endif
