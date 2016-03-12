@@ -3,6 +3,8 @@
 
 #include "util.h"
 #include "strbuf.h"
+#include "commit.h"
+#include "cache.h"
 
 struct stage_stats {
     size_t files_modified;
