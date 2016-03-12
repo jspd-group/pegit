@@ -1,6 +1,4 @@
 #include "stage.h"
-#include "cache.h"
-#include "strbuf-list.h"
 #include "sha1-inl.h"
 #include "tree.h"
 #include "file.h"
@@ -16,9 +14,10 @@ PEG_NAME " stage : add project files to the stage area\n"
 
 int read_file_from_database(const char *path, struct strbuf *buf)
 {
+    find_file_from_head_commit(path, buf);
+    if (buf->len) return 0;
     return 1;
 }
-
 
 struct file_list *last, *head;
 struct stage_options opts;
@@ -74,9 +73,17 @@ void load_old_cache_file(struct cache_object *co)
 
 bool is_marked_as_ignored(const char *name)
 {
+    struct strbuf temp = STRBUF_INIT;
     for (int i = 0; i < opts.ignore; i++) {
-        if (!strcmp(name, opts.ignarr[i].buf))
+        strbuf_addstr(&temp, "./");
+        strbuf_addbuf(&temp, &opts.ignarr[i]);
+        if (!strncmp(name, opts.ignarr[i].buf, opts.ignarr[i].len - 1)
+            || !strncmp(name, temp.buf, temp.len - 1)) {
+            strbuf_release(&temp);
             return true;
+        }
+        strbuf_release(&temp);
+        strbuf_init(&temp, 0);
     }
     return false;
 }
@@ -103,20 +110,23 @@ int is_modified(const char *name)
         node->file.buf = a.buf;
         node->file.len = a.len;
         node->file.alloc = a.alloc;
+        node->next = NULL;
         file_list_add(node);
         return 0;
     }
-    if (!strbuf_cmp(&a, &b)) {
+    if (strbuf_cmp(&a, &b)) {
         stats.files_modified++;
         node = MALLOC(struct file_list, 1);
         if (!node)
             die("fatal: no memory available\n\t:(\n");
         node->old = true;
+        strbuf_init(&node->path, 0);
         strbuf_addstr(&node->path, name);
         strbuf_release(&b);
         node->file.buf = a.buf;
         node->file.len = a.len;
         node->file.alloc = a.alloc;
+        node->next = NULL;
         file_list_add(node);
         return 0;
     }
@@ -137,6 +147,11 @@ void process_node(struct cache_object *cache, struct file_list *node)
     cache_object_addindex(cache, &node->file, n);
 }
 
+void print_file_list_node(struct file_list *node)
+{
+    printf("%s\t%s\n", node->old ? "M" : "N", node->path.buf);
+}
+
 void cache_files()
 {
     struct cache_object cache;
@@ -144,7 +159,13 @@ void cache_files()
 
     cache_object_init(&cache);
     while (node) {
-        process_node(&cache, node);
+        if (!find_file_from_cache(node->path.buf, &cache)) {
+            print_file_list_node(node);
+            process_node(&cache, node);
+        }
+        else {
+            printf("ignored: %s: already staged\n", node->path.buf);
+        }
         node = node->next;
     }
     cache_object_write(&cache);
@@ -170,14 +191,22 @@ void print_stage_usage()
     fprintf(stdout, "%s", stage_usage);
 }
 
+size_t findch(char *a, char delim)
+{
+    char *temp = a;
+    while (*a++ != '\0') if (*a == delim) return a - temp;
+    return -1;
+}
+
 void parse_ignore_list(char *argv)
 {
     struct strbuf buf = STRBUF_INIT;
-    strbuf_addstr(&buf, argv + strbuf_findch(&buf, ';'));
+    strbuf_addstr(&buf, argv + findch(argv, '=') + 1);
 
     size_t size = strbuf_count(&buf, ';') + 1;
     size_t i = 0;
     opts.ignarr = MALLOC(struct strbuf, size);
+    opts.ignore = size;
     char *tok = strtok(buf.buf, ";");
 
     while (tok != NULL) {
@@ -203,6 +232,12 @@ void process_argument(int i, char *argv)
     }
     else if (!strncmp(argv, "-i", 2) || !strncmp(argv, "--ignore", 8)) {
         parse_ignore_list(argv);
+    }
+    else if (!strcmp(argv, "reset")) {
+        struct cache_object co;
+        cache_object_init(&co);
+        cache_object_clean(&co);
+        exit(0);
     }
     else if (!opts.all) {
         if (!is_modified(argv))
