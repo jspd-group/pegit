@@ -17,8 +17,7 @@ static inline void author_init(struct author *auth)
 
 static inline
 void author_create(struct author *auth, const char *name,
-                    const char *email, const char *uid,
-                    const char *pswd)
+                    const char *email)
 {
     strbuf_addstr(&auth->name, name);
     strbuf_addstr(&auth->email, email);
@@ -27,6 +26,7 @@ void author_create(struct author *auth, const char *name,
 static inline void author_write(struct author *auth, FILE *f)
 {
     size_t len = auth->name.len;
+
     fwrite(&len, sizeof(size_t), 1, f);
     len = fwrite(auth->name.buf, sizeof(char), auth->name.len, f);
     if (len != auth->name.len)
@@ -43,8 +43,10 @@ static inline void author_read(struct author *auth, FILE *f)
     size_t len;
 
     fread(&len, sizeof(size_t), 1, f);
+    if (len > auth->name.alloc) die("fatal: `len' outside `alloc'\n");
     strbuf_fread(&auth->name, len, f);
     fread(&len, sizeof(size_t), 1, f);
+    if (len > auth->name.alloc) die("fatal: `len' outside `alloc'\n");
     strbuf_fread(&auth->email, len, f);
 }
 
