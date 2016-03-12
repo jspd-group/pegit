@@ -18,7 +18,10 @@ struct index *make_new_index(const char *fn, size_t s,
 
 int cache_index_file(struct index_file_cache *cache)
 {
-    return strbuf_read_file(&cache->cache, cache->index_file_path, 1024);
+    FILE *f = fopen(FILE_INDEX_FILE, "r");
+    if (!f) die("fatal: unable to open %s\n\t:(\n", FILE_INDEX_FILE);
+    size_t size = file_length(f);
+    return strbuf_fread(&cache->cache, size, f);
 }
 
 struct index *make_index_from_cache(struct index_file_cache *cache,
