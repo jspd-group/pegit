@@ -223,6 +223,19 @@ struct index_list *get_head_commit_list(struct commit_list *head)
     return ret;
 }
 
+void find_file_from_head_commit(const char *name, struct strbuf *buf)
+{
+    struct commit_list *head;
+    struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
+    make_commit_list(&head);
+    struct index_list *last = get_head_commit_list(head);
+    struct index *idx = find_file_index_list(last, name);
+    if (!idx) return;
+    cache_pack_file(&cache);
+    strbuf_add(buf, cache.cache.buf + idx->pack_start, idx->pack_len);
+    strbuf_release(&cache.cache);
+}
+
 struct index_list *copy_index_list(struct index_list *src)
 {
     struct index_list *node = src, *temp = NULL, *new = NULL, *last;
@@ -248,6 +261,8 @@ void write_index_list(struct index_list *head, struct strbuf *cache)
     struct index_list *node = head;
     while (node) {
         strbuf_add(cache, (void*)node->idx, sizeof(struct index));
+        printf("  %s <%llu:%llu>\n", node->idx->filename,
+            node->idx->pack_start, node->idx->pack_len);
         node = node->next;
     }
 }
@@ -297,8 +312,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head)
     strbuf_release(&cache.cache);
 }
 
-
-void log_commit(struct commit *cm)
+int log_commit(struct commit *cm)
 {
     fprintf(stdout, "commit:  ");
     for (int i = 0; i < HASH_SIZE; i++)
@@ -310,6 +324,14 @@ void log_commit(struct commit *cm)
     if (cm->cmt_desc.len)
         fprintf(stdout, "\n\t%s\n\n", cm->cmt_desc.buf);
     fprintf(stdout, "Date:    %s\n", asctime(cm->stamp._tm));
+    return 0;
+}
+
+void print_commits()
+{
+    struct commit_list *cm;
+    make_commit_list(&cm);
+    for_each_commit(cm, log_commit);
 }
 
 void finalize_commit(struct commit_list *head, struct commit *new)
@@ -389,6 +411,11 @@ int commit(int argc, char *argv[])
         }
         if (!strcmp(argv[i], "-d"))
             strbuf_addstr(&desc, argv[i + 1]);
+        if (!strcmp(argv[i], "log")) {
+            print_commits();
+            exit(0);
+        }
+
     }
     if (!msg.len)
         die("fatal: no message provided\n\t:(\n");

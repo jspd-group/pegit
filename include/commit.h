@@ -39,4 +39,6 @@ typedef bool(commit_match_fn)(struct commit *);
 extern int generate_new_commit(struct strbuf *cmt, struct strbuf *det);
 
 extern int commit(int argc, char *argv[]);
+
+extern void find_file_from_head_commit(const char *name, struct strbuf *buf);
 #endif
