@@ -69,7 +69,7 @@ size_t make_commit_list(struct commit_list **head)
     size_t count = 0;
     struct commit_list *node = NULL, *new = NULL, *last = NULL;
     struct commit *cm = NULL;
-    FILE *f = fopen(COMMIT_INDEX_FILE, "r");
+    FILE *f = fopen(COMMIT_INDEX_FILE, "rb");
 
     if (!f)
         die("fatal: unable to open %s\n\t:(\n", COMMIT_INDEX_FILE);
@@ -136,7 +136,7 @@ size_t for_each_commit(struct commit_list *head, commit_fn *callback)
 
 void flush_commit_list(struct commit_list *head)
 {
-    FILE *commit_file = fopen(COMMIT_INDEX_FILE, "w");
+    FILE *commit_file = fopen(COMMIT_INDEX_FILE, "wb");
     struct commit_list *node = head;
 
     if (!(commit_file))

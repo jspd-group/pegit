@@ -30,7 +30,7 @@ extern struct index *make_index_from_cache(struct index_file_cache *cache,
 static inline int flush_index(struct index_file_cache *cache)
 {
     int ret = 0;
-    FILE *idx_file = fopen(cache->index_file_path, "w");
+    FILE *idx_file = fopen(cache->index_file_path, "wb");
 
     if (!idx_file)
         die("fatal: unable to open index file\n\t:(\n");
