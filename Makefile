@@ -26,8 +26,10 @@ test-deltafile: test-deltafile.o delta-file.o file.o strbuf.o
 
 test-init: strbuf.o timestamp.o project-config.o visitor.o project-init.o test-init.o
 
-test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o
-	$(CC) strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o -lz -o test-stage
+test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o \
+	delta-file.o timestamp.o index.o
+	$(CC) strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o \
+	delta.o delta-file.o timestamp.o index.o -lz -o test-stage
 
 test-commit: strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o
 	$(CC) strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o \
