@@ -185,7 +185,7 @@ int filespec_sha1(struct filespec *fs, char sha1[20])
     strbuf_addbuf(&buf, &fs->dir_name);
     strbuf_add(&buf, (char *)&fs->last_modified, sizeof(time_t));
     strbuf_addbuf(&buf, fs->cache.data);
-    strtosha1(&buf, sha1);
+    strtosha1(&buf, (short*)sha1);
 
     strbuf_release(&buf);
     return 0;
