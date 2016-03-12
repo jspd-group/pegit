@@ -38,6 +38,8 @@ int make_peg_directories()
         die("error occurred\n");
     if (visitor_make_folder(&vt, DB_DIR) < 0)
         die("error occurred\n");
+    if (visitor_make_folder(&vt, COMMIT_DIR) < 0)
+        die("error occurred\n");
     visitor_close(&vt);
     return 0;
 }
@@ -76,6 +78,21 @@ void create_cache_files(struct project_cache *pc)
     fwrite(&size, sizeof(size_t), 1, idx);
     fclose(cache);
     fclose(idx);
+}
+
+void create_database_files(struct project_cache *pc)
+{
+    size_t size = 0;
+    FILE *pack = fopen(COMMIT_INDEX_FILE, "w");
+    if (!pack) die("fatal: unable to open %s\n\t:(\n", COMMIT_INDEX_FILE);
+    fwrite(&size, sizeof(size_t), 1, pack);
+    fclose(pack);
+    pack = fopen(FILE_INDEX_FILE, "w");
+    if (!pack) die("fatal: unable to open %s\n\t:(\n", FILE_INDEX_FILE);
+    fclose(pack);
+    pack = fopen(PACK_FILE, "w");
+    if (!pack) die("fatal: unable to open %s\n\t:(\n", PACK_FILE);
+    fclose(pack);
 }
 
 const char *init_usage = PEG_NAME " init [options] [VALUES]\n"
@@ -155,5 +172,6 @@ int initialize_empty_project(int argc, char *argv[])
     if (!create_description_file(&pc))
         fprintf(stderr, "Initialised an empty project\n");
     create_cache_files(&pc);
+    create_database_files(&pc);
     return 0;
 }
