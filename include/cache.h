@@ -43,3 +43,15 @@ extern void cache_object_write(struct cache_object *co);
 extern void cache_object_init(struct cache_object *co);
 extern void cache_object_addindex(struct cache_object *co, struct strbuf *buf,
                            struct cache_index_entry_list *node);
+
+static inline void cache_object_clean(struct cache_object *co)
+{
+    size_t size = 0;
+    FILE *f = fopen(CACHE_INDEX_FILE, "w");
+    if (!f) die("fatal: unable to clear the staged data\n\t:(\n");
+    fwrite(&size, sizeof(size_t), 1, f);
+    fclose(f);
+    f = fopen(CACHE_PACK_FILE, "w");
+    if (!f) die("fatal: unable to clear the staged data\n\t:(\n");
+    fclose(f);
+}
