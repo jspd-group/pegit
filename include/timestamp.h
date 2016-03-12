@@ -15,4 +15,14 @@ extern void time_stamp_init(struct timestamp *);
 
 extern void time_stamp_make(struct timestamp *);
 
+static inline void time_stamp_read(struct timestamp *ts, FILE *f)
+{
+    fread(&ts->_time, sizeof(time_t), 1, f);
+}
+
+static inline void write_time_stamp(struct timestamp *ts, FILE *f)
+{
+    fwrite(&ts->_time, sizeof(time_t), 1, f);
+}
+
 #endif
