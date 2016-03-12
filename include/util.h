@@ -82,7 +82,7 @@
 #endif
 
 #ifndef HINT
-# define HINT 2048
+#define HINT 2048
 #endif
 
 struct strbuf;
@@ -96,12 +96,13 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #define PEG_NAME            "peg"
 #define CACHE_DIR           "cache"
 #define DB_DIR              "db"
+#define COMMIT_DIR          "commit"
 #define DESCRIPTION_FILE    ".peg/desc"
 #define CACHE_INDEX_FILE    ".peg/cache/cache.idx"
 #define CACHE_PACK_FILE     ".peg/cache/cache.pack"
-#define FILE_INDEX_FILE     ".peg/db/db.idx"
-#define COMMIT_INDEX_FILE   ".peg/commit/commit.idx"
-#define PACK_FILE           ".peg/db/db/pack"
-#define HEAD_FILE           ".peg/HEAD"
+#define FILE_INDEX_FILE ".peg/db/db.idx"
+#define COMMIT_INDEX_FILE ".peg/commit/commit.idx"
+#define PACK_FILE ".peg/db/db.pack"
+#define HEAD_FILE ".peg/HEAD"
 
 #endif
