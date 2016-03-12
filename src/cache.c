@@ -52,7 +52,7 @@ void cache_index_init(struct cache_index *idx)
 
 void open_index_file(struct cache_index *idx)
 {
-    idx->idxfile = fopen(CACHE_INDEX_FILE, "rw");
+    idx->idxfile = fopen(CACHE_INDEX_FILE, "rwb");
     if (!idx->idxfile)
         die("fatal: can't read %s\n\t:(\n", CACHE_INDEX_FILE);
 }
@@ -110,7 +110,7 @@ int write_index_file(struct cache_index *idx)
     int ret;
     struct cache_index_entry_list *n;
 
-    idx->idxfile = fopen(CACHE_INDEX_FILE, "w");
+    idx->idxfile = fopen(CACHE_INDEX_FILE, "wb");
     ret = fwrite(&idx->num, sizeof(size_t), 1, idx->idxfile);
     if (ret < 1)
         return -1;
@@ -165,7 +165,7 @@ void cache_release(struct cache *c)
 
 void open_cache_file(struct cache *c)
 {
-    c->cachefile = fopen(CACHE_PACK_FILE, "rw");
+    c->cachefile = fopen(CACHE_PACK_FILE, "rwb");
     if (!c->cachefile)
         die("fatal: can't open %s\n\t:(\n", CACHE_PACK_FILE);
 }
@@ -188,7 +188,7 @@ void write_cache_file(struct cache *c)
 {
     int ret;
 
-    c->cachefile = fopen(CACHE_PACK_FILE, "w");
+    c->cachefile = fopen(CACHE_PACK_FILE, "wb");
     ret = fwrite(c->cache_buf.buf, sizeof(char),
                 c->cache_buf.len, c->cachefile);
     if (ret < c->cache_buf.len)

@@ -1,3 +1,6 @@
+#ifndef PACK_H_
+#define PACK_H_
+
 #include "strbuf.h"
 #include "util.h"
 #include "file.h"
@@ -36,16 +39,18 @@ struct pack_file_cache {
 
 static inline int cache_pack_file(struct pack_file_cache *cache)
 {
-    FILE *f = fopen(PACK_FILE, "r");
+    FILE *f = fopen(PACK_FILE, "rb");
     if (!f) die("fatal: unable to open pack file\n\t:(\n");
     size_t size = file_length(f);
-    return strbuf_fread(&cache->cache, size, f);
+    strbuf_fread(&cache->cache, size, f);
+    fclose(f);
+    return 0;
 }
 
 static inline int flush_pack_cache(struct pack_file_cache *cache)
 {
     int ret = 0;
-    FILE *cache_file = fopen(cache->pack_file_path, "w");
+    FILE *cache_file = fopen(cache->pack_file_path, "wb");
 
     if (!cache_file)
         die("fatal: unable to pack file\n\t:(\n");
@@ -68,3 +73,5 @@ static inline void invalidate_cache(struct pack_file_cache *cache)
 {
     strbuf_release(&cache->cache);
 }
+
+#endif
