@@ -1,3 +1,6 @@
+#ifndef CACHE_H_
+#define CACHE_H_
+
 #include "strbuf.h"
 #include "mz.h"
 #include "tree.h"
@@ -55,3 +58,15 @@ static inline void cache_object_clean(struct cache_object *co)
     if (!f) die("fatal: unable to clear the staged data\n\t:(\n");
     fclose(f);
 }
+
+static bool find_file_from_cache(const char *name, struct cache_object *co)
+{
+    struct cache_index_entry_list *node = co->ci.entries;
+    while (node) {
+        if (!strcmp(node->file_path.buf, name))
+            return true;
+        node = node->next;
+    }
+}
+
+#endif
