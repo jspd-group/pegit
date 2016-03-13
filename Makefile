@@ -11,6 +11,10 @@ debug: CFLAGS += -g
 
 debug: all
 
+release: CFLAGS += -O2
+
+release: all
+
 test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage
 
 test-mz: strbuf.o file.o mz.o test-mz.o
