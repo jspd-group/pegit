@@ -29,10 +29,10 @@
 #define HASH_SIZE 20
 
 #define die(...)                                                               \
-    {                                                                          \
+    do {                                                                       \
         printf(__VA_ARGS__);                                                   \
         exit(1);                                                               \
-    }
+    } while(0);
 
 #define DEBUG 0
 
