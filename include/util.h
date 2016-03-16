@@ -29,10 +29,10 @@
 #define HASH_SIZE 20
 
 #define die(...)                                                               \
-    {                                                                          \
+    do {                                                                       \
         printf(__VA_ARGS__);                                                   \
         exit(1);                                                               \
-    }
+    } while(0);
 
 #define DEBUG 0
 
@@ -81,13 +81,28 @@
 #undef uncompress
 #endif
 
+#ifndef HINT
+#define HINT 2048
+#endif
+
 struct strbuf;
 
 extern int __compress__(struct strbuf *src, struct strbuf *dest, int level);
 extern int compress_default(struct strbuf *src, struct strbuf *dest);
 extern int decompress(struct strbuf *src, struct strbuf *dest);
 
-#define PROGRAM program
-#define PEG_DIR ".peg"
+#define PROGRAM             program
+#define PEG_DIR             ".peg"
+#define PEG_NAME            "peg"
+#define CACHE_DIR           "cache"
+#define DB_DIR              "db"
+#define COMMIT_DIR          "commit"
+#define DESCRIPTION_FILE    ".peg/desc"
+#define CACHE_INDEX_FILE    ".peg/cache/cache.idx"
+#define CACHE_PACK_FILE     ".peg/cache/cache.pack"
+#define FILE_INDEX_FILE ".peg/db/db.idx"
+#define COMMIT_INDEX_FILE ".peg/commit/commit.idx"
+#define PACK_FILE ".peg/db/db.pack"
+#define HEAD_FILE ".peg/HEAD"
 
 #endif

@@ -184,43 +184,43 @@ size_t strbuf_fread(struct strbuf *sb, size_t size, FILE *f)
 	return res;
 }
 
-// ssize_t strbuf_read(struct strbuf *sb, int fd, size_t hint)
-// {
-// 	size_t oldlen = sb->len;
-// 	size_t oldalloc = sb->alloc;
+ssize_t strbuf_read(struct strbuf *sb, int fd, size_t hint)
+{
+	size_t oldlen = sb->len;
+	size_t oldalloc = sb->alloc;
 
-// 	strbuf_grow(sb, hint ? hint : 8192);
-// 	for (;;) {
-// 		ssize_t want = sb->alloc - sb->len - 1;
-// 		ssize_t got = read(fd, sb->buf + sb->len, want);
+	strbuf_grow(sb, hint ? hint : 8192);
+	for (;;) {
+		ssize_t want = sb->alloc - sb->len - 1;
+		ssize_t got = read(fd, sb->buf + sb->len, want);
 
-// 		if (got < 0) {
-// 			if (oldalloc == 0)
-// 				strbuf_release(sb);
-// 			else
-// 				strbuf_setlen(sb, oldlen);
-// 			return -1;
-// 		}
-// 		sb->len += got;
-// 		if (got < want)
-// 			break;
-// 		strbuf_grow(sb, 8192);
-// 	}
+		if (got < 0) {
+			if (oldalloc == 0)
+				strbuf_release(sb);
+			else
+				strbuf_setlen(sb, oldlen);
+			return -1;
+		}
+		sb->len += got;
+		if (got < want)
+			break;
+		strbuf_grow(sb, 8192);
+	}
 
-// 	sb->buf[sb->len] = '\0';
-// 	return sb->len - oldlen;
-// }
+	sb->buf[sb->len] = '\0';
+	return sb->len - oldlen;
+}
 
-// ssize_t strbuf_read_once(struct strbuf *sb, int fd, size_t hint)
-// {
-// 	ssize_t cnt;
+ssize_t strbuf_read_once(struct strbuf *sb, int fd, size_t hint)
+{
+	ssize_t cnt;
 
-// 	strbuf_grow(sb, hint ? hint : 8192);
-// 	cnt = read(fd, sb->buf + sb->len, sb->alloc - sb->len - 1);
-// 	if (cnt > 0)
-// 		strbuf_setlen(sb, sb->len + cnt);
-// 	return cnt;
-// }
+	strbuf_grow(sb, hint ? hint : 8192);
+	cnt = read(fd, sb->buf + sb->len, sb->alloc - sb->len - 1);
+	if (cnt > 0)
+		strbuf_setlen(sb, sb->len + cnt);
+	return cnt;
+}
 
 #define STRBUF_MAXLINK (2*PATH_MAX)
 
@@ -337,21 +337,21 @@ int strbuf_getline(struct strbuf *sb, FILE *fp, int term)
 // 	return 0;
 // }
 
-// ssize_t strbuf_read_file(struct strbuf *sb, const char *path, size_t hint)
-// {
-// 	int fd;
-// 	ssize_t len;
+ssize_t strbuf_read_file(struct strbuf *sb, const char *path, size_t hint)
+{
+	int fd;
+	ssize_t len;
 
-// 	fd = open(path, O_RDONLY);
-// 	if (fd < 0)
-// 		return -1;
-// 	len = strbuf_read(sb, fd, hint);
-// 	close(fd);
-// 	if (len < 0)
-// 		return -1;
+	fd = open(path, O_RDONLY);
+	if (fd < 0)
+		return -1;
+	len = strbuf_read(sb, fd, hint);
+	close(fd);
+	if (len < 0)
+		return -1;
 
-// 	return len;
-// }
+	return len;
+}
 
 void strbuf_add_lines(struct strbuf *out, const char *prefix,
 		      const char *buf, size_t size)

@@ -5,7 +5,7 @@
 #include "../sha1/sha1.h"
 #include "strbuf.h"
 
-void strtosha1(struct strbuf *in, char out[20])
+static inline void strtosha1(struct strbuf *in, short out[20])
 {
     SHA_CTX ctx;
     SHA1_Init(&ctx);

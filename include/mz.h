@@ -1,7 +1,6 @@
 #ifndef MZ_WRAPPER_H_
 #define MZ_WRAPPER_H_
 
-#include <zlib.h>
 #include "strbuf.h"
 
 #ifdef compress

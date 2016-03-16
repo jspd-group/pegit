@@ -11,6 +11,7 @@ void visitor_init(struct visitor *v)
 void visitor_close(struct visitor *v)
 {
     if (v->root) closedir(v->root);
+    strbuf_release(&v->path);
     v->root = NULL;
 }
 
@@ -107,7 +108,11 @@ int visitor_make_folder(struct visitor *v, const char *name)
     strbuf_addbuf(&absolute_path, &v->path);
     strbuf_addch(&absolute_path, '/');
     strbuf_addstr(&absolute_path, name);
+#if defined(_WIN32)
     if (mkdir(absolute_path.buf) < 0) {
+#else
+    if (mkdir(absolute_path.buf, S_IXGRP) < 0) {
+#endif
         fprintf(stderr, "fatal: %s: can't make a folder permission denied.\n",
                 absolute_path.buf);
         return -1;
