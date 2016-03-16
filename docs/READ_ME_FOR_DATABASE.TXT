@@ -24,4 +24,11 @@
 *
 *  Also make changes in MAKEFILE accordingly to change the path 
 *  in the macro definitions.
+* 
+* IMPORTANT NOTE:
+* The storage occurs on local host . So , to run this project you need to 
+* install localhost server on your PC . Either you may install WAMP /LAMP
+* server or run localhost program . You need to know username and password to
+* connect to this local host . As these are passed as arguments for initializing
+* MYSQL connection.
 * /
