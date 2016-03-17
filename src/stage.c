@@ -136,7 +136,7 @@ int is_modified(const char *name)
 void process_node(struct cache_object *cache, struct file_list *node)
 {
     struct cache_index_entry_list *n = MALLOC(struct cache_index_entry_list, 1);
-    short sha1[HASH_SIZE];
+    char sha1[HASH_SIZE];
 
     n->len = node->file.len;
     strbuf_init(&n->file_path, 0);
