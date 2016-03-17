@@ -14,6 +14,12 @@ struct index {
     size_t pack_len;
 };
 
+enum index_flag {
+    IF_MODIFIED,
+    IF_NEW,
+    IF_DELETED
+};
+
 struct index_file_cache {
     char *index_file_path;    /* path of the index file */
     struct strbuf cache; /* whole file cache */
