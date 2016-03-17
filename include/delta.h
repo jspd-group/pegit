@@ -9,6 +9,8 @@
 /* arrow types used in delta algorithms */
 enum arrow_t { DELTA_UP, DELTA_LEFT, DELTA_TILT, DELTA_DOWN };
 
+#define DELTA_FLAG (0x1 << 1)
+
 /**
  * delta_table used to store the raw result
  */
