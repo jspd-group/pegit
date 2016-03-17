@@ -1,5 +1,6 @@
 #include "commit.h"
 #include "global.h"
+#include "sha1-inl.h"
 
 void commit_init(struct commit *cm)
 {
@@ -22,7 +23,7 @@ int read_commit_object(struct commit *cm, FILE *f)
 {
     size_t len;
 
-    if (fread(cm->sha1, sizeof(short), HASH_SIZE, f) < HASH_SIZE)
+    if (fread(cm->sha1, sizeof(char), HASH_SIZE, f) < HASH_SIZE)
         die("fatal: error occurred while reading commit file\n\t:(\n");
     cm->auth = MALLOC(struct author, 1);
     author_init(cm->auth);
@@ -39,7 +40,7 @@ int read_commit_object(struct commit *cm, FILE *f)
 
 int write_commit_object(struct commit *cm, FILE *f)
 {
-    fwrite(cm->sha1, sizeof(short), HASH_SIZE, f);
+    fwrite(cm->sha1, sizeof(char), HASH_SIZE, f);
     author_write(cm->auth, f);
     fwrite(&cm->cmt_msg.len, sizeof(size_t), 1, f);
     fwrite(cm->cmt_msg.buf, sizeof(char), cm->cmt_msg.len, f);
@@ -62,6 +63,27 @@ void commit_list_add(struct commit_list **last, struct commit_list *node)
 {
     (*last)->next = node;
     (*last) = node;
+}
+
+void commit_del(struct commit *cm)
+{
+    author_del(cm->auth);
+    strbuf_release(&cm->cmt_msg);
+    strbuf_release(&cm->cmt_desc);
+}
+
+void commit_list_del(struct commit_list **head)
+{
+    struct commit_list *node = *head;
+    struct commit_list *del = node;
+
+    while (node) {
+        del = node;
+        node = node->next;
+        commit_del(del->item);
+        free(del->item);
+        free(del);
+    }
 }
 
 size_t make_commit_list(struct commit_list **head)
@@ -97,7 +119,7 @@ size_t make_commit_list(struct commit_list **head)
     return 0;
 }
 
-struct commit *find_commit_hash(struct commit_list *cl, short sha1[HASH_SIZE])
+struct commit *find_commit_hash(struct commit_list *cl, char sha1[HASH_SIZE])
 {
     struct commit_list *node = cl;
 
@@ -147,6 +169,7 @@ void flush_commit_list(struct commit_list *head)
         node = node->next;
     }
     fclose(commit_file);
+    commit_list_del(&head);
 }
 
 void insert_index_list(struct index_list **last, struct index_list *node)
@@ -223,17 +246,18 @@ struct index_list *get_head_commit_list(struct commit_list *head)
     return ret;
 }
 
-void find_file_from_head_commit(const char *name, struct strbuf *buf)
+bool find_file_from_head_commit(const char *name, struct strbuf *buf)
 {
     struct commit_list *head;
     struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
     make_commit_list(&head);
     struct index_list *last = get_head_commit_list(head);
     struct index *idx = find_file_index_list(last, name);
-    if (!idx) return;
+    if (!idx) return false;
     cache_pack_file(&cache);
     strbuf_add(buf, cache.cache.buf + idx->pack_start, idx->pack_len);
     strbuf_release(&cache.cache);
+    return true;
 }
 
 struct index_list *copy_index_list(struct index_list *src)
@@ -261,20 +285,21 @@ void write_index_list(struct index_list *head, struct strbuf *cache)
     struct index_list *node = head;
     while (node) {
         strbuf_add(cache, (void*)node->idx, sizeof(struct index));
-        printf("  %s <%llu:%llu>\n", node->idx->filename,
-            node->idx->pack_start, node->idx->pack_len);
         node = node->next;
     }
 }
 
-void transfer_staged_data(struct cache_object *co, struct index_list **head)
+void transfer_staged_data(struct cache_object *co, struct index_list **head,
+    char *sha1)
 {
     struct cache_index_entry_list *node = co->ci.entries;
     struct index *exist;
     struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
     size_t idx;
     struct index_list *last = NULL, *new;
+    peg_sha_ctx ctx;
 
+    sha1_init(&ctx);
     cache_pack_file(&cache);
     // last can be NULL also in case head is NULL;
     last = get_last_node(*head);
@@ -289,6 +314,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head)
             // write to pack file
             strbuf_add(&cache.cache, co->cc.cache_buf.buf + node->start,
                 node->len);
+            sha1_update(&ctx, co->cc.cache_buf.buf + node->start, node->len);
             idx = cache.cache.len;
             new = MALLOC(struct index_list, 1);
             new->idx = exist;
@@ -305,9 +331,11 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head)
         exist->pack_len = node->len;
         strbuf_add(&cache.cache, co->cc.cache_buf.buf + node->start,
                 node->len);
+        sha1_update(&ctx, co->cc.cache_buf.buf + node->start, node->len);
         idx = cache.cache.len;
         node = node->next;
     }
+    sha1_final((unsigned char*)sha1, &ctx);
     flush_pack_cache(&cache);
     strbuf_release(&cache.cache);
 }
@@ -315,8 +343,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head)
 int log_commit(struct commit *cm)
 {
     fprintf(stdout, "commit:  ");
-    for (int i = 0; i < HASH_SIZE; i++)
-        fprintf(stdout, "%.2x", cm->sha1[i]);
+    print_hash(cm->sha1, stdout);
     fprintf(stdout, "\n");
     fprintf(stdout, "Author:  %s <%s>\n", cm->auth->name.buf,
         cm->auth->email.buf);
@@ -332,6 +359,7 @@ void print_commits()
     struct commit_list *cm;
     make_commit_list(&cm);
     for_each_commit(cm, log_commit);
+    commit_list_del(&cm);
 }
 
 void finalize_commit(struct commit_list *head, struct commit *new)
@@ -380,7 +408,7 @@ int generate_new_commit(struct strbuf *cmt, struct strbuf *det)
     cache_index_file(&cache);
     get_global_author(a);
     new->auth = a;
-    transfer_staged_data(&co, &copy);
+    transfer_staged_data(&co, &copy, new->sha1);
     strbuf_addbuf(&new->cmt_msg, cmt);
     strbuf_addbuf(&new->cmt_desc, det);
     start = cache.cache.len;
