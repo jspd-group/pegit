@@ -44,4 +44,5 @@ extern int deltafile_init_strbuf(struct deltafile *df, struct strbuf *buf,
  */
 extern void deltafile_free(struct deltafile *df);
 
+extern size_t count_lines(struct strbuf *buf);
 #endif // DELTA_FILE_H_

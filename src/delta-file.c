@@ -1,7 +1,7 @@
 #include "delta-file.h"
 #include "strbuf.h"
 
-static size_t count_lines(struct strbuf *buf)
+size_t count_lines(struct strbuf *buf)
 {
     int count, ch, completely_empty = 1, nl = 0;
     int len = buf->len;
@@ -60,7 +60,7 @@ int deltafile_init_strbuf(struct deltafile *df, struct strbuf *buf, char delim)
 {
     size_t lines = count_lines(buf);
     deltafile_init(df, lines + 1, delim);
-    df->size = split_in_place(&df->file, df->arr, delim);
+    df->size = split_in_place(buf, df->arr, delim);
     return 0;
 }
 
