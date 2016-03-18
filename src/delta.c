@@ -211,11 +211,11 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
     }
 
     if (bdr->insertions || bdr->deletions == 0) {
-        strbuf_addf(stat, "(%llu) %s ", bdr->insertions,
+        strbuf_addf(stat, "%llu %s ", bdr->insertions,
                     (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
     }
     if (bdr->deletions || bdr->insertions == 0) {
-        strbuf_addf(stat, "(%llu) %s ", bdr->deletions,
+        strbuf_addf(stat, "%llu %s ", bdr->deletions,
                     (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
     return;
@@ -226,7 +226,7 @@ void delta_summary(struct basic_delta_result *bdr, struct strbuf *summary)
     struct strbuf_list_node *node;
     node = bdr->diff_lines.head->next;
     while (node != NULL) {
-        printf(" %c", node->sign);
+        printf("%c", node->sign);
         printf("%s", node->buf.buf);
         node = node->next;
     }
@@ -238,7 +238,7 @@ struct delta_stat {
 };
 
 bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
-    struct strbuf *a, struct strbuf *b)
+    struct strbuf *b, struct strbuf *a)
 {
     struct deltafile af, bf;
     struct delta_table table;
@@ -250,12 +250,11 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
     delta_backtrace_table_minimal(result, &table, &af, &bf);
     if (!(result->insertions || result->deletions)) return false;
     if (out) delta_stat(result, out);
-    strbuf_replace_chars(out, '\0', ' ');
     return true;
 }
 
 bool strbuf_delta_enhanced(struct strbuf *out,
-    struct basic_delta_result *result, struct strbuf *a, struct strbuf *b)
+    struct basic_delta_result *result, struct strbuf *b, struct strbuf *a)
 {
     struct strbuf_list_node *node;
     struct deltafile af, bf;
@@ -484,7 +483,7 @@ void do_single_file_delta(const char *path, bool minimal)
 {
     struct strbuf buf = STRBUF_INIT;
     struct strbuf filebuf = STRBUF_INIT;
-    FILE *file = fopen(path, "rb");
+    FILE *file = fopen(path, "r");
     bool result = find_file_from_head_commit(path, &buf);
 
     if (result && file) {
