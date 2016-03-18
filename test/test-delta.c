@@ -36,6 +36,8 @@ void print_delta_result(struct strbuf_list *list)
 }
 
 int main(int argc, char *argv[]) {
+    delta_main(argc, argv);
+    return 0;
     /* tests for delta */
     struct delta_input input;
     struct filespec a, b;
