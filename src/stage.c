@@ -203,16 +203,16 @@ void parse_ignore_list(char *argv)
     struct strbuf buf = STRBUF_INIT;
     strbuf_addstr(&buf, argv + findch(argv, '=') + 1);
 
-    size_t size = strbuf_count(&buf, ';') + 1;
+    size_t size = strbuf_count(&buf, ':') + 1;
     size_t i = 0;
     opts.ignarr = MALLOC(struct strbuf, size);
     opts.ignore = size;
-    char *tok = strtok(buf.buf, ";");
+    char *tok = strtok(buf.buf, ":");
 
     while (tok != NULL) {
         strbuf_init(opts.ignarr + i, 128);
         strbuf_addstr(opts.ignarr + i, tok);
-        tok = strtok(NULL, ";");
+        tok = strtok(NULL, ":");
         i++;
     }
 }
