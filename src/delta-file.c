@@ -58,6 +58,8 @@ int deltafile_init_filespec(struct deltafile *df, struct filespec *fs, char d)
 
 int deltafile_init_strbuf(struct deltafile *df, struct strbuf *buf, char delim)
 {
+    strbuf_init(&df->file, buf->len);
+    strbuf_addbuf(&df->file, buf);
     size_t lines = count_lines(buf);
     deltafile_init(df, lines + 1, delim);
     df->size = split_in_place(buf, df->arr, delim);
