@@ -24,7 +24,8 @@ test-strbuf: test-strbuf.o strbuf.o
 
 test-file: test-file.o strbuf.o file.o test-file.o
 
-test-delta: test-delta.o strbuf.o delta.o file.o delta-file.o
+test-delta: test-delta.o strbuf.o delta.o file.o delta-file.o commit.o stage.o mz.o visitor.o timestamp.o index.o cache.o tree.o
+	$(CC) strbuf.o test-delta.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o delta-file.o timestamp.o index.o -lz -o test-delta
 
 test-deltafile: test-deltafile.o delta-file.o file.o strbuf.o
 
