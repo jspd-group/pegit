@@ -468,7 +468,7 @@ void do_single_file_delta(const char *path, bool minimal)
         strbuf_fread(&filebuf, file_length(file), file);
         minimal ?
             do_file_delta_minimal(path, &buf, &filebuf)
-            : ;
+            : do_file_delta_enhanced(path, &buf, &filebuf);
 
     }
     else if (result && !file) {
@@ -550,12 +550,13 @@ struct delta_options {
     bool file;
     bool commit;
     bool help;
+    bool guessed;
     char *hash_arg1;
     char *hash_arg2;
     char *file_name;
 };
 
-#define DELTA_OPTIONS_DEFAULT { 0, 0, 0, 0, 0, NULL, NULL }
+#define DELTA_OPTIONS_DEFAULT { 0, 0, 0, 0, 0, 0, NULL, NULL }
 
 /**
  * following options will be provided by delta for now:
@@ -578,14 +579,10 @@ void delta_parse_single_option(struct delta_options *opts,
 {
     struct stat st;
 
-    if (is("--help") || is("-h"))
-        opts->help = true;
-    else if (is("-m") || is("--minimal"))
-        opts->minimal = true;
-    else if (is("--hash"))
-        opts->commit = true;
-    else if (is("--file") || is("-f"))
-        opts->file = true;
+    if (is("--help") || is("-h"))         opts->help = true;
+    else if (is("-m") || is("--minimal")) opts->minimal = true;
+    else if (is("--hash"))                opts->commit = true;
+    else if (is("--file") || is("-f"))    opts->file = true;
     else if (opts->file && !opts->commit) {
         opts->file_name = argv[count];
         if (stat(opts->file_name, &st) < 0) {
@@ -598,12 +595,9 @@ void delta_parse_single_option(struct delta_options *opts,
                 fprintf(stderr, "unknown error occurred\n");
             die("");
         }
-        if (S_ISDIR(st.st_mode))
-            opts->recursive = true;
-        else if (S_ISREG(st.st_mode))
-            opts->file = true;
-        else
-            die("fatal: %s: file is of unknown type.\n", argv[count]);
+        if (S_ISDIR(st.st_mode))         opts->recursive = true;
+        else if (S_ISREG(st.st_mode))    opts->file = true;
+        else die("fatal: %s: file is of unknown type.\n", argv[count]);
     }
     else if (opts->commit && !opts->file) {
         if (!is_valid_hash(argv[count], strlen(argv[count])))
@@ -612,17 +606,15 @@ void delta_parse_single_option(struct delta_options *opts,
             (opts->hash_arg2 = argv[count])
             : (opts->hash_arg2 = argv[count]);
     }
-    else if (!opts->commit && !opts->file && ) {
+    else if (!opts->commit || !opts->file) {
         if (stat(argv[count], &st) < 0) {
             // now it can be a sha, check for its validity
             if (!is_valid_hash(argv[count], strlen(argv[count]))) {
                 fprintf(stderr, "fatal: %s: ", opts->file_name);
-                if (errno == EPERM)
-                    fprintf(stderr, "permission denied\n");
+                if (errno == EPERM) fprintf(stderr, "permission denied\n");
                 else if (errno == ENOENT)
                     fprintf(stderr, "file or directory doesn't exists\n");
-                else
-                    fprintf(stderr, "unknown error occurred\n");
+                else fprintf(stderr, "unknown error occurred\n");
                 die("");
             }
             opts->commit = true;
@@ -636,6 +628,7 @@ void delta_parse_single_option(struct delta_options *opts,
             opts->file = true;
         else
             die("fatal: %s: file is of unknown type.\n", argv[count]);
+        opts->guessed = true;
     }
     else {
         die("fatal: invalid option `%s'\n", argv[count])
@@ -654,5 +647,44 @@ void delta_main(int argc, char *argv[])
     struct delta_options opts = DELTA_OPTIONS_DEFAULT;
 
     delta_parse_options(&opts, argc, argv);
-
+    if (opts.help) {
+        printf("Usage: delta (options) (commits) | (commit) | (path)\n");
+        printf("\n");
+        printf("options: \n");
+        printf(" (-r | --recursive) | (-h | --help) | (--hash) | (--file)\n");
+        die("");
+    }
+    if (opts.commit && !opts.file) {
+        if (opts.hash_arg1 && opts.hash_arg2) {
+            commit_delta(opts.hash_arg1, opts.hash_arg2, opts.minimal);
+        }
+        else if (opts.hash_arg1) {
+            do_single_commit_delta(opts.hash_arg1, opts.minimal);
+        }
+        else if (opts.hash_arg2) {
+            do_single_commit_delta(opts.hash_arg2, opts.minimal);
+        }
+        else if (opts.guessed) {
+            die("fatal: no sha1 or path specified.\n");
+        }
+        else {
+            die("fatal: please provide atleast one argument for sha1.");
+        }
+    }
+    else if (!opts.commit && opts.file) {
+        if (opts.recursive) {
+            die("fatal: not implemented yet.\n");
+        }
+        else if (!opts.file_name && opts.guessed) {
+            die("fatal: no sha1 or path specified.\n");
+        }
+        else if (opts.guessed || opts.file_name) {
+            do_single_file_delta(opts.file_name, opts.minimal);
+        }
+        else {
+            die("fatal: no path specified.\n");
+        }
+    }
+    else
+        die("fatal: invalid options.\n");
 }
