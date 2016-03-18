@@ -35,12 +35,9 @@ int delta_table_init(struct delta_table *table, int col, int row)
 
 void delta_table_free(struct delta_table *table)
 {
-    while (table->row--) {
-        free(table->table[table->row]);
-    }
-    free(table->table);
-    free(table->prev);
-    free(table->sol);
+    //free(table->table);
+    //free(table->prev);
+    //free(table->sol);
 }
 
 int delta_input_init(struct delta_input *di, struct filespec *fs1,
@@ -251,11 +248,9 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
     delta_table_init(&table, af.size, bf.size);
     delta_basic_comparison_m(&table, &af, &bf);
     delta_backtrace_table_minimal(result, &table, &af, &bf);
-    delta_table_free(&table);
-    deltafile_free(&af);
-    deltafile_free(&bf);
     if (!(result->insertions || result->deletions)) return false;
     if (out) delta_stat(result, out);
+    strbuf_replace_chars(out, '\0', ' ');
     return true;
 }
 
@@ -271,9 +266,6 @@ bool strbuf_delta_enhanced(struct strbuf *out,
     delta_table_init(&table, af.size, bf.size);
     delta_basic_comparison_m(&table, &af, &bf);
     delta_backtrace_table(result, &table, &af, &bf);
-    delta_table_free(&table);
-    deltafile_free(&af);
-    deltafile_free(&bf);
     if (!(result->insertions || result->deletions)) return false;
 
     node = result->diff_lines.head->next;
