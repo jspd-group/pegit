@@ -96,5 +96,7 @@ extern void delta_stat(struct basic_delta_result *result, struct strbuf *stat);
 extern void delta_summary(struct basic_delta_result *bdr,
                           struct strbuf *summary);
 
+extern void delta_main(int argc, char *argv[]);
+
 #define DELIM '\n'
 #endif

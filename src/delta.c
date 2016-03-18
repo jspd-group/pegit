@@ -5,14 +5,14 @@ int delta_table_init(struct delta_table *table, int col, int row)
 {
     table->table = MALLOC(enum arrow_t *, row);
     if (!table->table) {
-        die("Out of memory\n");
+        die("Out of memory. Can't make table:%d\n", row);
         return -1;
     }
 
     for (int i = 0; i <= row; i++) {
         table->table[i] = MALLOC(enum arrow_t, col);
         if (!table->table[i]) {
-            die("Out of memory\n");
+            die("Out of memory. Can't make a col:%d\n", col);
             return -1;
         }
         // memset(table->table[i], DELTA_DOWN, sizeof(enum arrow_t) * col);
@@ -22,7 +22,7 @@ int delta_table_init(struct delta_table *table, int col, int row)
     table->sol = (int *)malloc(sizeof(int) * col);
 
     if (!table->prev || !table->sol) {
-        die("Out of memory");
+        die("Out of memory. Can't make a table:%d\n", col);
     }
 
     memset(table->prev, 0, sizeof(int) * (col));
@@ -270,7 +270,7 @@ bool strbuf_delta_enhanced(struct strbuf *out,
     deltafile_init_strbuf(&bf, b, DELIM);
     delta_table_init(&table, af.size, bf.size);
     delta_basic_comparison_m(&table, &af, &bf);
-    delta_backtrace_table_minimal(result, &table, &af, &bf);
+    delta_backtrace_table(result, &table, &af, &bf);
     delta_table_free(&table);
     deltafile_free(&af);
     deltafile_free(&bf);
@@ -278,7 +278,8 @@ bool strbuf_delta_enhanced(struct strbuf *out,
 
     node = result->diff_lines.head->next;
     while (node) {
-        strbuf_addf(out, "%c%s", node->sign, node->buf.buf);
+        strbuf_addch(out, node->sign);
+        strbuf_add(out, node->buf.buf, node->buf.len);
         node = node->next;
     }
     return true;
@@ -356,7 +357,6 @@ void print_insertion_lines(struct strbuf *buf)
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
-    deltafile_free(&file);
 }
 
 void print_insertion_only(struct pack_file_cache *cache, struct index *idx)
@@ -654,10 +654,14 @@ void delta_parse_single_option(struct delta_options *opts,
                 (opts->hash_arg2 = argv[count])
                 : (opts->hash_arg2 = argv[count]);
         }
-        if (S_ISDIR(st.st_mode))
+        if (S_ISDIR(st.st_mode)) {
             opts->recursive = true;
-        else if (S_ISREG(st.st_mode))
+            opts->file_name = argv[count];
+        }
+        else if (S_ISREG(st.st_mode)) {
             opts->file = true;
+            opts->file_name = argv[count];
+        }
         else
             die("fatal: %s: file is of unknown type.\n", argv[count]);
         opts->guessed = true;
