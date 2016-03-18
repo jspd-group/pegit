@@ -1,6 +1,38 @@
 #include "delta.h"
 #include "commit.h"
 
+int delta_table_init(struct delta_table *table, int col, int row)
+{
+    table->table = MALLOC(enum arrow_t *, row);
+    if (!table->table) {
+        die("Out of memory\n");
+        return -1;
+    }
+
+    for (int i = 0; i <= row; i++) {
+        table->table[i] = MALLOC(enum arrow_t, col);
+        if (!table->table[i]) {
+            die("Out of memory\n");
+            return -1;
+        }
+        // memset(table->table[i], DELTA_DOWN, sizeof(enum arrow_t) * col);
+    }
+
+    table->prev = (int *)malloc(sizeof(int) * col);
+    table->sol = (int *)malloc(sizeof(int) * col);
+
+    if (!table->prev || !table->sol) {
+        die("Out of memory");
+    }
+
+    memset(table->prev, 0, sizeof(int) * (col));
+    memset(table->sol, 0, sizeof(int) * (col));
+
+    table->row = row;
+    table->col = col;
+    return 0;
+}
+
 void delta_table_free(struct delta_table *table)
 {
     while (table->row--) {
