@@ -96,7 +96,7 @@ test-delta.o: $(TEST)test-delta.c
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-delta.c
 
 test-mz.o: $(TEST)test-mz.c
-	$(CC) -I $(INC) -c $(TEST)test-mz.c
+	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-mz.c
 
 test-deltafile.o: $(TEST)test-deltafile.c
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-deltafile.c
