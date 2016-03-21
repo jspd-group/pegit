@@ -24,18 +24,18 @@ test-strbuf: test-strbuf.o strbuf.o
 
 test-file: test-file.o strbuf.o file.o test-file.o
 
-test-delta: test-delta.o strbuf.o delta.o file.o delta-file.o commit.o stage.o mz.o visitor.o timestamp.o index.o cache.o tree.o
-	$(CC) strbuf.o test-delta.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o delta-file.o timestamp.o index.o -lz -o test-delta
+test-delta: test-delta.o strbuf.o delta.o file.o delta-file.o commit.o stage.o mz.o visitor.o timestamp.o index.o cache.o tree.o path.o
+	$(CC) strbuf.o test-delta.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o delta-file.o timestamp.o index.o path.o -lz -o test-delta
 
 test-deltafile: test-deltafile.o delta-file.o file.o strbuf.o
 
 test-init: strbuf.o timestamp.o project-config.o visitor.o project-init.o test-init.o
 
-test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o 	delta-file.o timestamp.o index.o
-	$(CC) strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o delta-file.o timestamp.o index.o -lz -o test-stage
+test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o 	delta-file.o timestamp.o index.o path.o
+	$(CC) strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o delta-file.o timestamp.o index.o path.o -lz -o test-stage
 
-test-commit: strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o
-	$(CC) strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o -lz -o test-commit
+test-commit: strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o path.o
+	$(CC) strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o path.o -lz -o test-commit
 
 test-tree: strbuf.o tree.o test-tree.o
 
@@ -67,6 +67,9 @@ delta-file.o:$(SRC)delta-file.c $(INC)delta-file.h
 
 index.o:$(SRC)index.c $(INC)index.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)index.c
+
+path.o:$(SRC)path.c $(INC)path.h
+	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)path.c
 
 project-config.o: $(SRC)project-config.c $(INC)project-config.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)project-config.c
