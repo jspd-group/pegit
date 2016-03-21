@@ -39,7 +39,7 @@ static inline int flush_index(struct index_file_cache *cache)
     FILE *idx_file = fopen(cache->index_file_path, "wb");
 
     if (!idx_file)
-        die("fatal: unable to open index file\n\t:(\n");
+        die("unable to open index file\n");
     ret = fwrite(cache->cache.buf, sizeof(char), cache->cache.len, idx_file);
     fclose(idx_file);
     return (ret == cache->cache.len);

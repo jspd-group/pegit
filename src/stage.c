@@ -9,15 +9,15 @@ char stage_usage[] = PEG_NAME
     "    Usage:    " PEG_NAME " stage [options] <files...>\n\n"
     "        options include:\n"
     "        -a, --all\n"
-    "                add all the files that have been modified,\n\n"
+    "                add all the files that have been modified,\n"
     "        -i, --ignore=path1;path2...   \n"
-    "                ignore the given files and add all other,\n\n"
+    "                ignore the given files and add all other,\n"
     "        -v, --verbose\n"
     "                print the name of the added files, similar to -a.\n"
     "\n\n"
-    "    Example usage: \n\n\t" PEG_NAME " stage -a (or " PEG_NAME " stage .)\n"
+    "    Example usage: \n\t" PEG_NAME " stage -a (or " PEG_NAME " stage .)\n"
     "        will add all the files in the current directory\n"
-    "\n\t" PEG_NAME " stage -i=docs/file.txt docs\n"
+    "\t" PEG_NAME " stage -i=docs/file.txt docs\n"
     "        will add all the files in the docs directory except file.txt."
     "\n";
 
@@ -126,7 +126,7 @@ int is_modified(const char *name)
     if (read_file_from_database(name, &b)) {
         stats.new_files++;
         node = MALLOC(struct file_list, 1);
-        if (!node) die("fatal: no memory available.\n");
+        if (!node) die("no memory available.\n");
         file_list_init(node);
         node->old = false;
         strbuf_init(&node->path, 0);
@@ -142,7 +142,7 @@ int is_modified(const char *name)
     if (strbuf_cmp(&a, &b)) {
         stats.files_modified++;
         node = MALLOC(struct file_list, 1);
-        if (!node) die("fatal: no memory available.\n");
+        if (!node) die("no memory available.\n");
         node->old = true;
         strbuf_init(&node->path, 0);
         strbuf_addstr(&node->path, name);
@@ -174,7 +174,7 @@ void process_node(struct cache_object *cache, struct file_list *node)
 static inline void print_file_list_node(struct file_list *node)
 {
     printf(YELLOW);
-    printf(" %s %s\n", node->old ? "M" : "N", node->path.buf);
+    printf("\t%s %s\n", node->old ? "M" : "N", node->path.buf);
     fflush(stdout);
     printf(RESET);
 }
@@ -199,6 +199,7 @@ void cache_files()
         }
         node = node->next;
     }
+    printf("\n");
     cache_object_write(&cache);
 
     /* a little memory management is required here */
@@ -278,7 +279,7 @@ void process_argument(int i, char *argv)
             break;
 
         default:
-            fprintf(stderr, "fatal: %s: %s\n", argv, strerror(errno));
+            fatal("%s: %s\n", argv, strerror(errno));
             exit(0);
         }
     }
@@ -287,7 +288,7 @@ void process_argument(int i, char *argv)
 int parse_arguments(int argc, char *argv[])
 {
     if (argc < 2) {
-        die("fatal: atleast one argument is required.\n"
+        die("atleast one argument is required.\n"
             "    (See --help or -h)\n");
     }
     for (int i = 1; i < argc; i++) {

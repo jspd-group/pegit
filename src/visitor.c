@@ -19,7 +19,7 @@ int visitor_visit(struct visitor *v, const char *path)
 {
     v->root = opendir(path);
     if (!v->root) {
-        fprintf(stderr, "fatal: %s: Not a directory.\n", path);
+        fatal("%s: Not a directory.\n", path);
         return -1;
     }
     strbuf_addstr(&v->path, path);
@@ -41,7 +41,8 @@ int visitor_visit_next_entry(struct visitor *v)
             strbuf_addch(&v->path, '/');
             strbuf_addstr(&v->path, v->current_entry->d_name);
             if (stat(v->path.buf, &st) < 0) {
-                fprintf(stderr, "fatal: %s: can't do stat\n", v->path.buf);
+                fatal("%s: can't do stat, %s\n", v->path.buf,
+                    strerror(errno));
                 strbuf_setlen(&v->path,
                     v->path.len - strlen(v->current_entry->d_name) - 1);
                 return -1;
@@ -70,12 +71,12 @@ int visitor_visit_next_entry(struct visitor *v)
 int visitor_visit_child_directory(struct visitor *v)
 {
     if (v->current_entry == NULL) {
-        die("BUG: v->current_entry uninitialised.\n");
+        fatal("BUG: v->current_entry uninitialised.\n");
         return -1;
     }
 
     if (v->entry_type != _FOLDER) {
-        fprintf(stderr, "%s: %s: not a directory\n", v->path.buf,
+        fatal("%s: %s: not a directory\n", v->path.buf,
                 v->current_entry->d_name);
         return -1;
     }
@@ -87,7 +88,7 @@ int visitor_visit_child_directory(struct visitor *v)
 int visitor_visit_parent(struct visitor *v)
 {
     if (!v->root) {
-        die("BUG: v->root uninitialised\n");
+        fatal("BUG: v->root uninitialised\n");
         return -1;
     }
     if ((v->path.len == 0) || v->path.buf[v->path.len - 1] == '.') {
@@ -111,10 +112,10 @@ int visitor_make_folder(struct visitor *v, const char *name)
 #if defined(_WIN32)
     if (mkdir(absolute_path.buf) < 0) {
 #else
-    if (mkdir(absolute_path.buf, S_IXGRP) < 0) {
+    if (mkdir(absolute_path.buf, 0777) < 0) {
 #endif
-        fprintf(stderr, "fatal: %s: can't make a folder permission denied.\n",
-                absolute_path.buf);
+        fatal("%s: can't make a folder, %s.\n",
+                absolute_path.buf, strerror(errno));
         return -1;
     }
     return 0;
