@@ -71,12 +71,12 @@ int visitor_visit_next_entry(struct visitor *v)
 int visitor_visit_child_directory(struct visitor *v)
 {
     if (v->current_entry == NULL) {
-        fatal("BUG: v->current_entry uninitialised.\n");
+        die("BUG: v->current_entry uninitialised.\n");
         return -1;
     }
 
     if (v->entry_type != _FOLDER) {
-        fatal("%s: %s: not a directory\n", v->path.buf,
+        die("%s: %s: not a directory\n", v->path.buf,
                 v->current_entry->d_name);
         return -1;
     }
@@ -88,7 +88,7 @@ int visitor_visit_child_directory(struct visitor *v)
 int visitor_visit_parent(struct visitor *v)
 {
     if (!v->root) {
-        fatal("BUG: v->root uninitialised\n");
+        die("BUG: v->root uninitialised\n");
         return -1;
     }
     if ((v->path.len == 0) || v->path.buf[v->path.len - 1] == '.') {
@@ -114,7 +114,7 @@ int visitor_make_folder(struct visitor *v, const char *name)
 #else
     if (mkdir(absolute_path.buf, 0777) < 0) {
 #endif
-        fatal("%s: can't make a folder, %s.\n",
+        die("%s: can't make a folder, %s.\n",
                 absolute_path.buf, strerror(errno));
         return -1;
     }
