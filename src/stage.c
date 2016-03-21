@@ -4,30 +4,29 @@
 #include "file.h"
 #include "path.h"
 
-char stage_usage[] =
-PEG_NAME " stage : add project files to the stage area\n\n"
-"    Usage:    " PEG_NAME " stage [options] <files...>\n\n"
-"        options include:\n"
-"        -a, --all\n"
-"                add all the files that have been modified,\n\n"
-"        -i, --ignore=path1;path2...   \n"
-"                ignore the given files and add all other,\n\n"
-"        -v, --verbose\n"
-"                print the name of the added files, similar to -a.\n"
-"\n\n"
-"    Example usage: \n\n\t"PEG_NAME" stage -a (or "PEG_NAME" stage .)\n"
-"        will add all the files in the current directory\n"
-"\n\t"PEG_NAME" stage -i=docs/file.txt docs\n"
-"        will add all the files in the docs directory except file.txt."
-"\n";
-
+char stage_usage[] = PEG_NAME
+    " stage : add project files to the stage area\n\n"
+    "    Usage:    " PEG_NAME " stage [options] <files...>\n\n"
+    "        options include:\n"
+    "        -a, --all\n"
+    "                add all the files that have been modified,\n\n"
+    "        -i, --ignore=path1;path2...   \n"
+    "                ignore the given files and add all other,\n\n"
+    "        -v, --verbose\n"
+    "                print the name of the added files, similar to -a.\n"
+    "\n\n"
+    "    Example usage: \n\n\t" PEG_NAME " stage -a (or " PEG_NAME " stage .)\n"
+    "        will add all the files in the current directory\n"
+    "\n\t" PEG_NAME " stage -i=docs/file.txt docs\n"
+    "        will add all the files in the docs directory except file.txt."
+    "\n";
 
 struct stage_stats {
     size_t files_modified;
     size_t new_files;
     size_t ignored;
     size_t total;
-} stats = { 0, 0, 0, 0 };
+} stats = {0, 0, 0, 0};
 
 int read_file_from_database(const char *path, struct strbuf *buf)
 {
@@ -46,7 +45,6 @@ void init_stage()
     opts.verbose = 0;
     opts.ignarr = NULL;
     opts.add = NULL;
-
 }
 
 void file_list_init(struct file_list *fl)
@@ -68,28 +66,34 @@ void file_list_add(struct file_list *node)
     last = node;
 }
 
-#define STAGE_DATA_INIT { 0, 0 }
+#define STAGE_DATA_INIT                                                        \
+    {                                                                          \
+        0, 0                                                                   \
+    }
 
 void print_stage_stats(struct stage_stats *data)
 {
     if (data->files_modified)
-        fprintf(stdout, "\t%llu %s modified\n", data->files_modified,
-            data->files_modified <= 1 ? "file" : "files");
+        fprintf(stdout, " %llu %s modified\n", data->files_modified,
+                data->files_modified <= 1 ? "file" : "files");
 
-    if (data->new_files)
-        fprintf(stdout, "\t%llu %s added\n", data->new_files,
-            data->new_files <= 1 ? "file" : "files");
+    if (data->new_files - data->ignored)
+        fprintf(stdout, " %llu %s added\n", data->new_files - data->ignored,
+                (data->new_files - data->ignored) <= 1 ? "file" : "files");
 
-    if (data->new_files)
-        fprintf(stdout, "\t%llu %s ignored\n", data->ignored,
-            data->ignored <= 1 ? "file" : "files");
-    fprintf(stdout, "\n");
+    if (data->ignored) {
+        fprintf(stdout,
+                "Staged files exists, please commit or reset the changes\n");
+        fprintf(stdout, " %llu %s ignored, already staged\n", data->ignored,
+                data->ignored <= 1 ? "file" : "files");
+    }
+
+    fprintf(stdout, "    (Use " PEG_NAME " commit to commit the changes)\n");
+    fprintf(stdout,
+                "    (Use " PEG_NAME " stage reset to unstage the changes)\n");
 }
 
-void load_old_cache_file(struct cache_object *co)
-{
-    cache_object_init(co);
-}
+void load_old_cache_file(struct cache_object *co) { cache_object_init(co); }
 
 bool is_marked_as_ignored(const char *name)
 {
@@ -97,8 +101,8 @@ bool is_marked_as_ignored(const char *name)
     for (int i = 0; i < opts.ignore; i++) {
         strbuf_addstr(&temp, "./");
         strbuf_addbuf(&temp, &opts.ignarr[i]);
-        if (!strncmp(name, opts.ignarr[i].buf, opts.ignarr[i].len - 1)
-            || !strncmp(name, temp.buf, temp.len - 1)) {
+        if (!strncmp(name, opts.ignarr[i].buf, opts.ignarr[i].len - 1) ||
+            !strncmp(name, temp.buf, temp.len - 1)) {
             strbuf_release(&temp);
             return true;
         }
@@ -115,7 +119,6 @@ int is_modified(const char *name)
     struct file_list *node;
 
     if (is_marked_as_ignored(name)) {
-        stats.ignored++;
         return 1;
     }
     filespec_init(&fs, name, "r");
@@ -123,8 +126,7 @@ int is_modified(const char *name)
     if (read_file_from_database(name, &b)) {
         stats.new_files++;
         node = MALLOC(struct file_list, 1);
-        if (!node)
-            die("fatal: no memory available.\n");
+        if (!node) die("fatal: no memory available.\n");
         file_list_init(node);
         node->old = false;
         strbuf_init(&node->path, 0);
@@ -140,8 +142,7 @@ int is_modified(const char *name)
     if (strbuf_cmp(&a, &b)) {
         stats.files_modified++;
         node = MALLOC(struct file_list, 1);
-        if (!node)
-            die("fatal: no memory available.\n");
+        if (!node) die("fatal: no memory available.\n");
         node->old = true;
         strbuf_init(&node->path, 0);
         strbuf_addstr(&node->path, name);
@@ -186,17 +187,15 @@ void cache_files()
     cache_object_init(&cache);
     while (node) {
         if (!find_file_from_cache(node->path.buf, &cache)) {
-            if (opts.verbose)
-                print_file_list_node(node);
+            if (opts.verbose) print_file_list_node(node);
             process_node(&cache, node);
-        }
-        else {
+        } else {
             if (opts.verbose) {
                 printf(CYAN);
                 printf(" ignored: %s: already staged\n", node->path.buf);
-                stats.ignored++;
                 printf(RESET);
             }
+            stats.ignored++;
         }
         node = node->next;
     }
@@ -215,15 +214,13 @@ int detect_and_add_files(const char *dir)
     return 0;
 }
 
-void print_stage_usage()
-{
-    fprintf(stdout, "%s", stage_usage);
-}
+void print_stage_usage() { fprintf(stdout, "%s", stage_usage); }
 
 size_t findch(char *a, char delim)
 {
     char *temp = a;
-    while (*a++ != '\0') if (*a == delim) return a - temp;
+    while (*a++ != '\0')
+        if (*a == delim) return a - temp;
     return -1;
 }
 
@@ -253,33 +250,26 @@ void process_argument(int i, char *argv)
 
     if (i == 1 && !strcmp(argv, ".")) {
         opts.all = 1;
-    }
-    else if (!strcmp(argv, "-h") || !strcmp(argv, "--help")) {
+    } else if (!strcmp(argv, "-h") || !strcmp(argv, "--help")) {
         print_stage_usage();
         exit(0);
-    }
-    else if (!strcmp(argv, "-a") || !strcmp(argv, "--all")) {
+    } else if (!strcmp(argv, "-a") || !strcmp(argv, "--all")) {
         opts.all = 1;
-    }
-    else if (!strcmp(argv, "-v") || !strcmp(argv, "--verbose")) {
+    } else if (!strcmp(argv, "-v") || !strcmp(argv, "--verbose")) {
         opts.verbose = 1;
-    }
-    else if (!strncmp(argv, "-i", 2) || !strncmp(argv, "--ignore", 8)) {
+    } else if (!strncmp(argv, "-i", 2) || !strncmp(argv, "--ignore", 8)) {
         parse_ignore_list(argv);
-    }
-    else if (!strcmp(argv, "reset")) {
+    } else if (!strcmp(argv, "reset")) {
         struct cache_object co;
         cache_object_init(&co);
         cache_object_clean(&co);
         exit(0);
-    }
-    else if (!opts.all) {
+    } else if (!opts.all) {
         ret = is_valid_path(argv);
         switch (ret) {
         case _FILE_:
             get_peg_path_buf(&path, argv);
-            if (!is_modified(path.buf))
-                stats.total++;
+            if (!is_modified(path.buf)) stats.total++;
             break;
 
         case _DIRECTORY_:
