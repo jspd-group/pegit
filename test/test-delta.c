@@ -36,7 +36,7 @@ void print_delta_result(struct strbuf_list *list)
 }
 
 int main(int argc, char *argv[]) {
-    if (strcmp(argv[1], "--old")) {
+    if (argc < 2 || strcmp(argv[1], "--old")) {
         delta_main(argc, argv);
         return 0;
     }
