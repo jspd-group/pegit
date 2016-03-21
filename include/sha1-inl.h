@@ -70,4 +70,28 @@ static bool is_valid_hash(char *str, size_t len)
     return true;
 }
 
+static size_t char_to_sha1(char out[HASH_SIZE], char *in)
+{
+    int temp, i, j;
+    size_t len = strlen(in);
+
+    for (i = 0, j = 0; i < len && j < HASH_SIZE; i += 2, j++) {
+        out[j] = in[i] - '0';
+        out[j] <<= 4;
+        out[j] |= (in[i + 1] - '0');
+    }
+    return j;
+}
+
+static bool hash_starts_with(const char *str, const char *prefix, size_t len)
+{
+    int j = 0;
+
+    for (; ; str++, j++)
+        if (j == len)
+            return 1;
+        else if (*str != prefix[j])
+            return 0;
+}
+
 #endif /* SHA1_INL_H_ */
