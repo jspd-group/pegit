@@ -441,3 +441,11 @@ int inplace_compare(const char *a, const char *b, size_t sa, size_t sb)
     return cmp;
   return sa < sb ? -1 : sa != sb;
 }
+
+void strbuf_replace_chars(struct strbuf *sb, char replace, char subs)
+{
+    for (int i = 0; i < sb->len; sb++) {
+        if (sb->buf[i] == replace)
+            sb->buf[i] = subs;
+    }
+}

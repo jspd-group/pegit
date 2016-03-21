@@ -24,20 +24,18 @@ test-strbuf: test-strbuf.o strbuf.o
 
 test-file: test-file.o strbuf.o file.o test-file.o
 
-test-delta: test-delta.o strbuf.o delta.o file.o delta-file.o
+test-delta: test-delta.o strbuf.o delta.o file.o delta-file.o commit.o stage.o mz.o visitor.o timestamp.o index.o cache.o tree.o
+	$(CC) strbuf.o test-delta.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o delta-file.o timestamp.o index.o -lz -o test-delta
 
 test-deltafile: test-deltafile.o delta-file.o file.o strbuf.o
 
 test-init: strbuf.o timestamp.o project-config.o visitor.o project-init.o test-init.o
 
-test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o \
-	delta-file.o timestamp.o index.o
-	$(CC) strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o \
-	delta.o delta-file.o timestamp.o index.o -lz -o test-stage
+test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o 	delta-file.o timestamp.o index.o
+	$(CC) strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o commit.o delta.o delta-file.o timestamp.o index.o -lz -o test-stage
 
 test-commit: strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o
-	$(CC) strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o \
-	delta-file.o timestamp.o commit.o -lz -o test-commit
+	$(CC) strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o -lz -o test-commit
 
 test-tree: strbuf.o tree.o test-tree.o
 
@@ -98,7 +96,7 @@ test-delta.o: $(TEST)test-delta.c
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-delta.c
 
 test-mz.o: $(TEST)test-mz.c
-	$(CC) -I $(INC) -c $(TEST)test-mz.c
+	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-mz.c
 
 test-deltafile.o: $(TEST)test-deltafile.c
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-deltafile.c

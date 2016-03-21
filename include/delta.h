@@ -9,6 +9,8 @@
 /* arrow types used in delta algorithms */
 enum arrow_t { DELTA_UP, DELTA_LEFT, DELTA_TILT, DELTA_DOWN };
 
+#define DELTA_FLAG (0x1 << 1)
+
 /**
  * delta_table used to store the raw result
  */
@@ -93,6 +95,8 @@ extern void delta_stat(struct basic_delta_result *result, struct strbuf *stat);
  */
 extern void delta_summary(struct basic_delta_result *bdr,
                           struct strbuf *summary);
+
+extern void delta_main(int argc, char *argv[]);
 
 #define DELIM '\n'
 #endif

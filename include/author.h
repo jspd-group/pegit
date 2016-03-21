@@ -50,4 +50,10 @@ static inline void author_read(struct author *auth, FILE *f)
     strbuf_fread(&auth->email, len, f);
 }
 
+static inline void author_del(struct author *auth)
+{
+    strbuf_release(&auth->name);
+    strbuf_release(&auth->email);
+}
+
 #endif

@@ -36,6 +36,10 @@ void print_delta_result(struct strbuf_list *list)
 }
 
 int main(int argc, char *argv[]) {
+    if (strcmp(argv[1], "--old")) {
+        delta_main(argc, argv);
+        return 0;
+    }
     /* tests for delta */
     struct delta_input input;
     struct filespec a, b;
@@ -44,11 +48,6 @@ int main(int argc, char *argv[]) {
 
     char *f1 = TEST_DATA"a.txt";
     char *f2 = TEST_DATA"b.txt";
-    if (argc > 1) {
-        printf("Argc\n");
-        f1 = argv[1];
-        f2 = argv[2];
-    }
 
     filespec_init(&a, f1, "r");
     filespec_init(&b, f2, "r");

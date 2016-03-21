@@ -10,7 +10,7 @@
 #include "index.h"
 
 struct commit {
-    short sha1[HASH_SIZE];    /* sha1 hash */
+    char sha1[HASH_SIZE];    /* sha1 hash */
     struct author *auth;    /* author of the commit */
     struct strbuf cmt_msg; /* commit message */
     struct strbuf cmt_desc; /* commit description */
@@ -35,10 +35,61 @@ typedef bool(commit_match_fn)(struct commit *);
 
 /**
  * Generate a new commit.
+ *     `cmt' : represents the commit message, which should not be empty
+ *     `det' : represents the commit description, which can be empty
  */
 extern int generate_new_commit(struct strbuf *cmt, struct strbuf *det);
 
+/**
+ * Kind of main function for generating a new commit.
+ *    `argc' : size of argv array
+ *    `argv' : array representing the options passed to this function
+ *
+ *  various options include:
+ *        -m, --message MESSAGE : this option is followed by message string.
+ *        -d, --desc DESCRIPTION: similar to -m
+ *        log                   : logs all the commits
+ */
 extern int commit(int argc, char *argv[]);
 
-extern void find_file_from_head_commit(const char *name, struct strbuf *buf);
+/**
+ * Finds the file from the head commit (yet not a better way!).
+ * Points to be noted:
+ *    Slow,
+ *    More memory,
+ *    don't call it more and more.
+ */
+extern bool find_file_from_head_commit(const char *name, struct strbuf *buf);
+
+/**
+ * Makes a commit list from the `commit.idx' file in the commit folder.
+ */
+extern size_t make_commit_list(struct commit_list **head);
+
+/**
+ * Deletes the commit_list: the one made by the make_commit_list function
+ */
+extern void commit_list_del(struct commit_list **head);
+
+extern struct commit *find_commit_hash(struct commit_list *cl,
+    char sha1[HASH_SIZE]);
+
+extern void make_index_list_from_commit(struct commit *node,
+    struct index_list **head);
+
+extern struct index *find_file_index_list(struct index_list *head,
+    const char *file);
+
+static inline struct commit *get_head_commit(struct commit_list *cl)
+{
+    struct commit_list *node, *prev;
+    node = cl;
+    prev = node;
+    while (node) {
+        prev = node;
+        node = node->next;
+    }
+    return prev->item;
+}
+
 #endif

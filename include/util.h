@@ -104,5 +104,6 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #define COMMIT_INDEX_FILE ".peg/commit/commit.idx"
 #define PACK_FILE ".peg/db/db.pack"
 #define HEAD_FILE ".peg/HEAD"
+#define HEAD_POINTER_NAME "HEAD"
 
 #endif
