@@ -48,16 +48,16 @@ int create_description_file(struct project_cache *pc)
 {
     FILE *desc_file = fopen(DESCRIPTION_FILE, "w");
     if (!desc_file) {
-        fprintf(stderr, "failed to create the description file.\n");
+        fprintf(stderr, "failed to create the description file. %s\n",
+            strerror(errno));
         return -1;
     }
     struct strbuf buf = STRBUF_INIT;
-    strbuf_addstr(&buf, "Project Description:\n");
     strbuf_addstr(&buf, "ProjectName: ");
     strbuf_addbuf(&buf, &pc->pd.project_name);
     strbuf_addstr(&buf, "\nProjectDescription: ");
     strbuf_addbuf(&buf, &pc->pd.project_desc);
-    strbuf_addstr(&buf, "\nAuthor(s):");
+    strbuf_addstr(&buf, "\nAuthor:");
     strbuf_addbuf(&buf, &pc->pd.authors);
     strbuf_addstr(&buf, "\nTimeStarted: ");
     strbuf_addstr(&buf, asctime(pc->ts._tm));
@@ -74,7 +74,7 @@ void create_cache_files(struct project_cache *pc)
     FILE *idx = fopen(CACHE_INDEX_FILE, "w");
 
     if (!cache || !idx)
-        die("fatal: unable to create cache file\n\t:(\n");
+        die("unable to create cache file, %s\n", strerror(errno));
     fwrite(&size, sizeof(size_t), 1, idx);
     fclose(cache);
     fclose(idx);
@@ -84,14 +84,15 @@ void create_database_files(struct project_cache *pc)
 {
     size_t size = 0;
     FILE *pack = fopen(COMMIT_INDEX_FILE, "w");
-    if (!pack) die("fatal: unable to open %s\n\t:(\n", COMMIT_INDEX_FILE);
+    if (!pack) die("unable to open %s, %s\n", COMMIT_INDEX_FILE,
+        strerror(errno));
     fwrite(&size, sizeof(size_t), 1, pack);
     fclose(pack);
     pack = fopen(FILE_INDEX_FILE, "w");
-    if (!pack) die("fatal: unable to open %s\n\t:(\n", FILE_INDEX_FILE);
+    if (!pack) die("unable to open %s\n", FILE_INDEX_FILE);
     fclose(pack);
     pack = fopen(PACK_FILE, "w");
-    if (!pack) die("fatal: unable to open %s\n\t:(\n", PACK_FILE);
+    if (!pack) die("unable to open %s\n", PACK_FILE);
     fclose(pack);
 }
 
@@ -137,7 +138,7 @@ int parse_single_argument(struct project_cache *pc, int argc, char *argv[])
 int parse_arguments(struct project_cache *pc, int argc, char *argv[])
 {
     if (argc < 2)
-        die("fatal: needed atleast one argument. Use -h for usage.\n");
+        die("needed atleast one argument. Use -h for usage.\n");
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             fprintf(stderr, "%s", init_usage);
@@ -154,7 +155,7 @@ int parse_arguments(struct project_cache *pc, int argc, char *argv[])
         parse_single_argument(pc, i, argv);
 
     if (!cache_valid(pc)) {
-        fprintf(stderr, "error specify a project name.\n");
+        fatal("error specify a project name.\n");
         return -1;
     }
     return 0;
