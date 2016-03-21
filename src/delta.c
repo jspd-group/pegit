@@ -1,5 +1,6 @@
 #include "delta.h"
 #include "commit.h"
+#include "path.h"
 
 int delta_table_init(struct delta_table *table, int col, int row)
 {
@@ -35,9 +36,9 @@ int delta_table_init(struct delta_table *table, int col, int row)
 
 void delta_table_free(struct delta_table *table)
 {
-    //free(table->table);
-    //free(table->prev);
-    //free(table->sol);
+    // free(table->table);
+    // free(table->prev);
+    // free(table->sol);
 }
 
 int delta_input_init(struct delta_input *di, struct filespec *fs1,
@@ -168,8 +169,8 @@ int delta_backtrace_table(struct basic_delta_result *result,
 }
 
 int delta_backtrace_table_minimal(struct basic_delta_result *result,
-                          struct delta_table *table, struct deltafile *af,
-                          struct deltafile *bf)
+                                  struct delta_table *table,
+                                  struct deltafile *af, struct deltafile *bf)
 {
     result->common = table->sol[table->col - 1];
 
@@ -204,7 +205,7 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
 {
     if (bdr->input)
         strbuf_addf(stat, "@@@ delta %s %s @@@\n", bdr->input->fs1->fname.buf,
-                bdr->input->fs2->fname.buf);
+                    bdr->input->fs2->fname.buf);
     if ((bdr->insertions == 0) && (bdr->deletions == 0)) {
         strbuf_addf(stat, "No difference\n");
         return;
@@ -218,6 +219,7 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
         strbuf_addf(stat, "%llu %s ", bdr->deletions,
                     (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
+    strbuf_addch(stat, '\n');
     return;
 }
 
@@ -238,7 +240,7 @@ struct delta_stat {
 };
 
 bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
-    struct strbuf *b, struct strbuf *a)
+                          struct strbuf *b, struct strbuf *a)
 {
     struct deltafile af, bf;
     struct delta_table table;
@@ -254,7 +256,8 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
 }
 
 bool strbuf_delta_enhanced(struct strbuf *out,
-    struct basic_delta_result *result, struct strbuf *b, struct strbuf *a)
+                           struct basic_delta_result *result, struct strbuf *b,
+                           struct strbuf *a)
 {
     struct strbuf_list_node *node;
     struct deltafile af, bf;
@@ -269,7 +272,14 @@ bool strbuf_delta_enhanced(struct strbuf *out,
 
     node = result->diff_lines.head->next;
     while (node) {
+        if (node->sign == '+') {
+            strbuf_addstr(out, GREEN);
+        }
+        else {
+            strbuf_addstr(out, RED);
+        }
         strbuf_addch(out, node->sign);
+        strbuf_addstr(out, RESET);
         strbuf_add(out, node->buf.buf, node->buf.len);
         node = node->next;
     }
@@ -277,8 +287,8 @@ bool strbuf_delta_enhanced(struct strbuf *out,
 }
 
 void index_delta(struct basic_delta_result *result,
-    struct pack_file_cache *cache, struct index *i1, struct index *i2,
-    struct strbuf *out, bool minimal)
+                 struct pack_file_cache *cache, struct index *i1,
+                 struct index *i2, struct strbuf *out, bool minimal)
 {
     struct strbuf a = STRBUF_INIT;
     struct strbuf b = STRBUF_INIT;
@@ -297,8 +307,7 @@ void index_delta(struct basic_delta_result *result,
         }
         result->insertions += local.insertions;
         result->deletions += local.deletions;
-    }
-    else {
+    } else {
         strbuf_delta_enhanced(out, result, &a, &b);
         strbuf_list_append(&result->diff_lines, &local.diff_lines);
         strbuf_list_append(&result->common_lines, &local.common_lines);
@@ -316,7 +325,7 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
      * if i is NULL, this means j was newly added.
      */
     if (i || !j) strbuf_addf(out, "%s", i);
-    if (i && j)  strbuf_addf(out, " <--> ");
+    if (i && j) strbuf_addf(out, " <--> ");
     if (j || !i) strbuf_addf(out, "%s", j);
     if (!i && !j) {
         fprintf(stderr, "%s\n", out->buf);
@@ -328,11 +337,10 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
 void print_lines(struct strbuf *buf, bool i_or_d)
 {
     size_t lines = count_lines(buf);
-    i_or_d ?
-    fprintf(stdout, "%llu %s\n", lines, lines == 1 ? "insertion" :
-        "insertions")
-    : fprintf(stdout, "%llu %s\n", lines, lines == 1 ? "deletion" :
-        "deletions");
+    i_or_d ? fprintf(stdout, "%llu %s\n", lines,
+                     lines == 1 ? "insertion" : "insertions")
+           : fprintf(stdout, "%llu %s\n", lines,
+                     lines == 1 ? "deletion" : "deletions");
 }
 
 void print_insertion_lines(struct strbuf *buf)
@@ -343,8 +351,9 @@ void print_insertion_lines(struct strbuf *buf)
 
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_add_lines(&out, "+", buf->buf + file.arr[i],
-            file.arr[i + 1] - file.arr[i]);
+        strbuf_addch(&out, '+');
+        strbuf_add(&out, buf->buf + file.arr[i],
+                         file.arr[i + 1] - file.arr[i]);
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
@@ -356,8 +365,8 @@ void print_insertion_only(struct pack_file_cache *cache, struct index *idx)
     temp.len = idx->pack_len;
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
-    fprintf(stdout, "%llu %s", temp.alloc, temp.alloc == 1 ? "insertion\n"
-        : "insertions\n");
+    fprintf(stdout, "%llu %s", temp.alloc,
+            temp.alloc == 1 ? "insertion\n" : "insertions\n");
 }
 
 void print_object_insertions(struct pack_file_cache *cache, struct index *idx)
@@ -369,7 +378,7 @@ void print_object_insertions(struct pack_file_cache *cache, struct index *idx)
     deltafile_init_strbuf(&file, &temp, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
         strbuf_add_lines(&out, "+", temp.buf + file.arr[i],
-            file.arr[i + 1] - file.arr[i]);
+                         file.arr[i + 1] - file.arr[i]);
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
@@ -385,7 +394,7 @@ void print_deletion_lines(struct strbuf *buf)
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
         strbuf_add_lines(&out, "-", buf->buf + file.arr[i],
-            file.arr[i + 1] - file.arr[i]);
+                         file.arr[i + 1] - file.arr[i]);
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
@@ -398,8 +407,8 @@ void print_deletion_only(struct pack_file_cache *cache, struct index *idx)
     temp.len = idx->pack_len;
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
-    fprintf(stdout, "%llu %s\n", temp.alloc, temp.alloc == 1 ? "deletion"
-        : "deletions");
+    fprintf(stdout, "%llu %s\n", temp.alloc,
+            temp.alloc == 1 ? "deletion" : "deletions");
 }
 
 void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
@@ -423,8 +432,10 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
     while (nodea) {
         bi = find_file_index_list(b, nodea->idx->filename);
         /* NOTE: bi can be NULL also */
-        if (bi) delta_index_splash(&out, nodea->idx->filename, bi->filename);
-        else delta_index_splash(&out, nodea->idx->filename, NULL);
+        if (bi)
+            delta_index_splash(&out, nodea->idx->filename, bi->filename);
+        else
+            delta_index_splash(&out, nodea->idx->filename, NULL);
         bi->flags = DELTA_FLAG;
         index_delta(&result, &cache, nodea->idx, bi, &out, minimal);
         fwrite(out.buf, sizeof(char), out.len, stdout);
@@ -442,15 +453,13 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
         if (!minimal)
             print_insertion_only(&cache, nodea->idx);
         else {
-
         }
         strbuf_setlen(&out, 0);
     }
     strbuf_release(&cache.cache);
 }
 
-void do_file_delta_minimal(const char *path, struct strbuf *a,
-    struct strbuf *b)
+void do_file_delta_minimal(const char *path, struct strbuf *a, struct strbuf *b)
 {
     struct strbuf out = STRBUF_INIT;
     struct basic_delta_result result;
@@ -460,11 +469,10 @@ void do_file_delta_minimal(const char *path, struct strbuf *a,
     strbuf_delta_minimal(&out, &result, a, b);
     fprintf(stdout, "%s", out.buf);
     strbuf_release(&out);
-
 }
 
 void do_file_delta_enhanced(const char *path, struct strbuf *a,
-    struct strbuf *b)
+                            struct strbuf *b)
 {
     struct strbuf out = STRBUF_INIT;
     struct basic_delta_result result;
@@ -489,29 +497,21 @@ void do_single_file_delta(const char *path, bool minimal)
     if (result && file) {
         /* both file exists */
         strbuf_fread(&filebuf, file_length(file), file);
-        minimal ?
-            do_file_delta_minimal(path, &buf, &filebuf)
-            : do_file_delta_enhanced(path, &buf, &filebuf);
+        minimal ? do_file_delta_minimal(path, &buf, &filebuf)
+                : do_file_delta_enhanced(path, &buf, &filebuf);
 
-    }
-    else if (result && !file) {
+    } else if (result && !file) {
         /* original file is deleted */
         delta_index_splash(&filebuf, path, NULL);
         fprintf(stdout, "%s", filebuf.buf);
-        minimal ?
-            print_lines(&buf, 0)
-            : print_deletion_lines(&buf);
-    }
-    else if (!result && file) {
+        minimal ? print_lines(&buf, 0) : print_deletion_lines(&buf);
+    } else if (!result && file) {
         /* new file is added */
         delta_index_splash(&buf, NULL, path);
         fprintf(stdout, "%s", buf.buf);
         strbuf_fread(&filebuf, file_length(file), file);
-        minimal ?
-            print_lines(&filebuf, 1)
-            : print_insertion_lines(&filebuf);
-    }
-    else {
+        minimal ? print_lines(&filebuf, 1) : print_insertion_lines(&filebuf);
+    } else {
         /* none of the file exists */
         die("fatal: %s: file doesn't exists\n", path);
     }
@@ -525,7 +525,7 @@ void do_single_file_delta(const char *path, bool minimal)
  * commit_delta: compares two given commits
  */
 void commit_delta(char commit1_sha[HASH_SIZE], char commit2_sha[HASH_SIZE],
-    bool minimal)
+                  bool minimal)
 {
     struct commit_list *cl = NULL;
     struct commit *a, *b;
@@ -533,8 +533,7 @@ void commit_delta(char commit1_sha[HASH_SIZE], char commit2_sha[HASH_SIZE],
     /*
      * In case both commits were same.
      */
-    if (!strcmp(commit1_sha, commit2_sha))
-        return;
+    if (!strcmp(commit1_sha, commit2_sha)) return;
     make_commit_list(&cl);
     if ((a = find_commit_hash(cl, commit1_sha)) == NULL) {
         fprintf(stderr, "fatal: commit <");
@@ -579,7 +578,10 @@ struct delta_options {
     char *file_name;
 };
 
-#define DELTA_OPTIONS_DEFAULT { 0, 0, 0, 0, 0, 0, NULL, NULL }
+#define DELTA_OPTIONS_DEFAULT                                                  \
+    {                                                                          \
+        0, 0, 0, 0, 0, 0, NULL, NULL                                           \
+    }
 
 /**
  * following options will be provided by delta for now:
@@ -597,67 +599,67 @@ struct delta_options {
 
 #define is(option) !strcmp(option, argv[count])
 
-void delta_parse_single_option(struct delta_options *opts,
-    int count, char *argv[])
+void delta_parse_single_option(struct delta_options *opts, int count,
+                               char *argv[])
 {
     struct stat st;
+    struct strbuf path = STRBUF_INIT;
 
-    if (is("--help") || is("-h"))         opts->help = true;
-    else if (is("-m") || is("--minimal")) opts->minimal = true;
-    else if (is("--hash"))                opts->commit = true;
-    else if (is("--file") || is("-f"))    opts->file = true;
+    if (is("--help") || is("-h"))
+        opts->help = true;
+    else if (is("-m") || is("--minimal"))
+        opts->minimal = true;
+    else if (is("--hash"))
+        opts->commit = true;
+    else if (is("--file") || is("-f"))
+        opts->file = true;
     else if (opts->file && !opts->commit) {
         opts->file_name = argv[count];
         if (stat(opts->file_name, &st) < 0) {
-            fprintf(stderr, "fatal: %s: ", opts->file_name);
-            if (errno == EPERM)
-                fprintf(stderr, "permission denied\n");
-            else if (errno == ENOENT)
-                fprintf(stderr, "file or directory doesn't exists\n");
-            else
-                fprintf(stderr, "unknown error occurred\n");
+            fprintf(stderr, "fatal: %s: %s\n", opts->file_name,
+                    strerror(errno));
             die("");
         }
-        if (S_ISDIR(st.st_mode))         opts->recursive = true;
-        else if (S_ISREG(st.st_mode))    opts->file = true;
-        else die("fatal: %s: file is of unknown type.\n", argv[count]);
-    }
-    else if (opts->commit && !opts->file) {
+        if (S_ISDIR(st.st_mode))
+            opts->recursive = true;
+        else if (S_ISREG(st.st_mode))
+            opts->file = true;
+        else
+            die("fatal: %s: file is of unknown type.\n", argv[count]);
+    } else if (opts->commit && !opts->file) {
         if (!is_valid_hash(argv[count], strlen(argv[count])))
             die("fatal: %s: not a valid sha1\n", argv[count]);
-        opts->hash_arg1 ?
-            (opts->hash_arg2 = argv[count])
-            : (opts->hash_arg2 = argv[count]);
-    }
-    else if (!opts->commit || !opts->file) {
+        opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
+                        : (opts->hash_arg2 = argv[count]);
+    } else if (!opts->commit || !opts->file) {
         if (stat(argv[count], &st) < 0) {
             // now it can be a sha, check for its validity
             if (!is_valid_hash(argv[count], strlen(argv[count]))) {
                 fprintf(stderr, "fatal: %s: ", opts->file_name);
-                if (errno == EPERM) fprintf(stderr, "permission denied\n");
+                if (errno == EPERM)
+                    fprintf(stderr, "permission denied\n");
                 else if (errno == ENOENT)
                     fprintf(stderr, "file or directory doesn't exists\n");
-                else fprintf(stderr, "unknown error occurred\n");
+                else
+                    fprintf(stderr, "unknown error occurred\n");
                 die("");
             }
             opts->commit = true;
-            opts->hash_arg1 ?
-                (opts->hash_arg2 = argv[count])
-                : (opts->hash_arg2 = argv[count]);
+            opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
+                            : (opts->hash_arg2 = argv[count]);
         }
         if (S_ISDIR(st.st_mode)) {
             opts->recursive = true;
-            opts->file_name = argv[count];
-        }
-        else if (S_ISREG(st.st_mode)) {
+            get_peg_path_buf(&path, argv[count]);
+            opts->file_name = path.buf;
+        } else if (S_ISREG(st.st_mode)) {
             opts->file = true;
-            opts->file_name = argv[count];
-        }
-        else
+            get_peg_path_buf(&path, argv[count]);
+            opts->file_name = path.buf;
+        } else
             die("fatal: %s: file is of unknown type.\n", argv[count]);
         opts->guessed = true;
-    }
-    else {
+    } else {
         die("fatal: invalid option `%s'\n", argv[count])
     }
 }
@@ -684,34 +686,25 @@ void delta_main(int argc, char *argv[])
     if (opts.commit && !opts.file) {
         if (opts.hash_arg1 && opts.hash_arg2) {
             commit_delta(opts.hash_arg1, opts.hash_arg2, opts.minimal);
-        }
-        else if (opts.hash_arg1) {
+        } else if (opts.hash_arg1) {
             do_single_commit_delta(opts.hash_arg1, opts.minimal);
-        }
-        else if (opts.hash_arg2) {
+        } else if (opts.hash_arg2) {
             do_single_commit_delta(opts.hash_arg2, opts.minimal);
-        }
-        else if (opts.guessed) {
+        } else if (opts.guessed) {
             die("fatal: no sha1 or path specified.\n");
-        }
-        else {
+        } else {
             die("fatal: please provide atleast one argument for sha1.");
         }
-    }
-    else if (!opts.commit && opts.file) {
+    } else if (!opts.commit && opts.file) {
         if (opts.recursive) {
             die("fatal: not implemented yet.\n");
-        }
-        else if (!opts.file_name && opts.guessed) {
+        } else if (!opts.file_name && opts.guessed) {
             die("fatal: no sha1 or path specified.\n");
-        }
-        else if (opts.guessed || opts.file_name) {
+        } else if (opts.guessed || opts.file_name) {
             do_single_file_delta(opts.file_name, opts.minimal);
-        }
-        else {
+        } else {
             die("fatal: no path specified.\n");
         }
-    }
-    else
+    } else
         die("fatal: invalid options.\n");
 }
