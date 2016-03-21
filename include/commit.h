@@ -74,6 +74,9 @@ extern void commit_list_del(struct commit_list **head);
 extern struct commit *find_commit_hash(struct commit_list *cl,
     char sha1[HASH_SIZE]);
 
+extern struct commit *find_commit_hash_compat(struct commit_list *cl,
+    char *sha1, size_t len);
+
 extern void make_index_list_from_commit(struct commit *node,
     struct index_list **head);
 
