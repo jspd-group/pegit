@@ -23,8 +23,9 @@ int read_commit_object(struct commit *cm, FILE *f)
 {
     size_t len;
 
-    if (fread(cm->sha1, sizeof(char), HASH_SIZE, f) < HASH_SIZE)
-        die("fatal: error occurred while reading commit file\n\t:(\n");
+    if (fread(cm->sha1, sizeof(char), HASH_SIZE, f) < HASH_SIZE) {
+        die(" error occurred while reading commit file\n");
+    }
     cm->auth = MALLOC(struct author, 1);
     author_init(cm->auth);
     author_read(cm->auth, f);
@@ -94,7 +95,7 @@ size_t make_commit_list(struct commit_list **head)
     FILE *f = fopen(COMMIT_INDEX_FILE, "rb");
 
     if (!f)
-        die("fatal: unable to open %s\n\t:(\n", COMMIT_INDEX_FILE);
+        die("unable to open %s\n\t:(\n", COMMIT_INDEX_FILE);
     fread(&count, sizeof(size_t), 1, f);
     *head = NULL;
     while (count--) {
@@ -162,7 +163,7 @@ void flush_commit_list(struct commit_list *head)
     struct commit_list *node = head;
 
     if (!(commit_file))
-        die("fatal: Unable to open commit file\n\t:(\n");
+        die("Unable to open commit file. %s\n", strerror(errno));
     fwrite(&head->count, sizeof(size_t), 1, commit_file);
     while (node) {
         write_commit_object(node->item, commit_file);
@@ -204,6 +205,28 @@ void make_index_list_from_commit(struct commit *node, struct index_list **head)
         }
     }
     strbuf_release(&cache.cache);
+}
+
+struct commit *find_commit_hash_compat(struct commit_list *cl,
+    char *sha1, size_t len)
+{
+    static struct commit_list *last_match;
+    static struct commit_list *last_head;
+    struct commit_list *node;
+    struct commit_list *result = NULL, *last = NULL;
+
+    if (last_head == cl) {
+        node = last_match ? last_match->next : NULL;
+    }
+    while (node) {
+        if (hash_starts_with(cl->item->sha1, sha1, len)) {
+            last_match = (node);
+            last_head = cl;
+            return node->item;
+        }
+        node = node->next;
+    }
+    return NULL;
 }
 
 struct index *find_file_index_list(struct index_list *head, const char *file)
@@ -401,7 +424,7 @@ int generate_new_commit(struct strbuf *cmt, struct strbuf *det)
     author_init(a);
     cache_object_init(&co);
     if (!co.ci.entries)
-        die("fatal: stage data empty\n\t:(\n");
+        die("stage data empty\n\t:(\n");
 
     commit_init(new);
     time_stamp_init(&new->stamp);
@@ -429,11 +452,13 @@ int commit(int argc, char *argv[])
     struct strbuf msg = STRBUF_INIT, desc = STRBUF_INIT;
 
     if (argc < 2)
-        die("fatal: empty args\n\t:(\n. See --help for usage.\n");
+        die("empty args\n\t:(\n. See --help for usage.\n");
 
     for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h"))
-            die("Usage: "PEG_NAME" commit -m message -d description\n");
+        if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
+            printf("Usage: "PEG_NAME" commit -m message -d description\n");
+            exit(0);
+        }
         if (!strcmp(argv[i], "-m")) {
             strbuf_addstr(&msg, argv[i + 1]);
         }
@@ -446,7 +471,7 @@ int commit(int argc, char *argv[])
 
     }
     if (!msg.len)
-        die("fatal: no message provided\n\t:(\n");
+        die("no message provided\n\t:(\n");
     generate_new_commit(&msg, &desc);
     return 0;
 }
