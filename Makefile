@@ -118,4 +118,3 @@ test-visitor.o: $(TEST)test-visitor.c tree.o visitor.o
 
 clean:
 	-@rm *.o *.exe
-	-@rm -r .peg
