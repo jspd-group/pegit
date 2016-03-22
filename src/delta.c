@@ -566,9 +566,10 @@ void do_single_commit_delta(char *commit1_hash, bool minimal, bool noconv)
     }
 
     if ((a = find_commit_hash_compat(cl, real_sha1, len)) == NULL) {
-        fprintf(stderr, "fatal: commit <");
-        print_hash(commit1_hash, stderr);
-        die("> doesn't exists\n\t:(\n");
+        fatal("commit <");
+        print_hash_size(real_sha1, len, stderr);
+        fprintf(stdout, "> doesn't exists.\n");
+        exit(-1);
     }
     b = get_head_commit(cl);
     do_commit_delta(a, b, minimal);
@@ -638,7 +639,7 @@ void delta_parse_single_option(struct delta_options *opts, int count,
         if (!is_valid_hash(argv[count], strlen(argv[count])))
             die("%s: not a valid sha1\n", argv[count]);
         opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
-                        : (opts->hash_arg2 = argv[count]);
+                        : (opts->hash_arg1 = argv[count]);
     } else if (!opts->commit || !opts->file) {
         if (stat(argv[count], &st) < 0) {
             // now it can be a sha, check for its validity
@@ -654,7 +655,8 @@ void delta_parse_single_option(struct delta_options *opts, int count,
             }
             opts->commit = true;
             opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
-                            : (opts->hash_arg2 = argv[count]);
+                            : (opts->hash_arg1= argv[count]);
+            return;
         }
         if (S_ISDIR(st.st_mode)) {
             opts->recursive = true;
