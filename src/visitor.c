@@ -120,3 +120,18 @@ int visitor_make_folder(struct visitor *v, const char *name)
     }
     return 0;
 }
+
+int visitor_check_or_mkdir(struct visitor *v, const char *path)
+{
+    struct stat st;
+
+    if (stat(path, &st) < 0) {
+        if (errno == ENOENT) {
+            return visitor_make_folder(v, path);
+        } else {
+            fatal("unable to revert error occured, %s\n", strerror(errno));
+        }
+        return -1;
+    }
+    return 0;
+}

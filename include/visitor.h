@@ -71,4 +71,6 @@ static inline void visitor_get_absolute_path(struct visitor *v,
     strbuf_addstr(path, v->current_entry->d_name);
 }
 
+extern int visitor_check_or_mkdir(struct visitor *v, const char *path);
+
 #endif
