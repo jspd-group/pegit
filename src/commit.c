@@ -218,6 +218,9 @@ struct commit *find_commit_hash_compat(struct commit_list *cl,
     if (last_head == cl) {
         node = last_match ? last_match->next : NULL;
     }
+    else {
+        node = cl;
+    }
     while (node) {
         if (hash_starts_with(cl->item->sha1, sha1, len)) {
             last_match = (node);
@@ -365,14 +368,15 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
 
 int log_commit(struct commit *cm)
 {
-    fprintf(stdout, "commit:  ");
-    print_hash(cm->sha1, stdout);
+    fprintf(stdout, "commit  ");
+    print_hash_compat(cm->sha1, stdout);
     fprintf(stdout, "\n");
     fprintf(stdout, "Author:  %s <%s>\n", cm->auth->name.buf,
         cm->auth->email.buf);
     fprintf(stdout, "Message: %s\n", cm->cmt_msg.buf);
     if (cm->cmt_desc.len)
         fprintf(stdout, "\n\t%s\n\n", cm->cmt_desc.buf);
+    cm->stamp._tm = localtime(&cm->stamp._time);
     fprintf(stdout, "Date:    %s\n", asctime(cm->stamp._tm));
     return 0;
 }
