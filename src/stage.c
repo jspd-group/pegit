@@ -73,24 +73,30 @@ void file_list_add(struct file_list *node)
 
 void print_stage_stats(struct stage_stats *data)
 {
-    if (data->files_modified)
+    if (data->files_modified && (data->files_modified - data->ignored)) {
         fprintf(stdout, " %llu %s modified\n", data->files_modified,
                 data->files_modified <= 1 ? "file" : "files");
+    }
 
-    if (data->new_files - data->ignored)
+    if (data->new_files && (data->new_files - data->ignored)) {
         fprintf(stdout, " %llu %s added\n", data->new_files - data->ignored,
                 (data->new_files - data->ignored) <= 1 ? "file" : "files");
+        fprintf(stdout,
+            "    (Use " PEG_NAME " commit to commit the changes)\n");
+        fprintf(stdout,
+            "    (Use " PEG_NAME " stage reset to unstage the changes)\n");
+    }
 
     if (data->ignored) {
         fprintf(stdout,
                 "Staged files exists, please commit or reset the changes\n");
         fprintf(stdout, " %llu %s ignored, already staged\n", data->ignored,
                 data->ignored <= 1 ? "file" : "files");
+        fprintf(stdout,
+            "    (Use " PEG_NAME " commit to commit the changes)\n");
+        fprintf(stdout,
+            "    (Use " PEG_NAME " stage reset to unstage the changes)\n");
     }
-
-    fprintf(stdout, "    (Use " PEG_NAME " commit to commit the changes)\n");
-    fprintf(stdout,
-                "    (Use " PEG_NAME " stage reset to unstage the changes)\n");
 }
 
 void load_old_cache_file(struct cache_object *co) { cache_object_init(co); }
@@ -199,7 +205,9 @@ void cache_files()
         }
         node = node->next;
     }
-    printf("\n");
+    if (stats.total) {
+        printf("\n");
+    }
     cache_object_write(&cache);
 
     /* a little memory management is required here */
