@@ -101,11 +101,10 @@ const char *init_usage = PEG_NAME " init [options] [VALUES]\n"
     "\n"
     "    options: \n"
     "        -n, --name [NAME]             Name of the project\n"
-    "        -d, --desc [DESCRIPTION]      Description of the project.\n"
-    "                                      Can be empty\n"
-    "        -a, --author [AUTHOR_NAME]    Name of the author. Default will\n"
-    "                                      empty name or one specified in\n"
-    "                                      your global config file\n"
+    "        -d, --desc [DESCRIPTION]      Description of the project. Can be empty\n"
+    "        -a, --author [AUTHOR_NAME]    Name of the author. Default will empty"
+    "                                      name or one specified in your global"
+    "                                      config file.\n"
     "        -h, --help                    Display the above information\n";
 
 int parse_single_argument(struct project_cache *pc, int argc, char *argv[])
