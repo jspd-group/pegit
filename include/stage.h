@@ -6,15 +6,6 @@
 #include "commit.h"
 #include "cache.h"
 
-struct stage_options {
-    int all;
-    int ignore;
-    int all_dot;
-    int verbose;
-    struct strbuf *ignarr;
-    struct strbuf *add;
-};
-
 struct file_list {
     struct strbuf path;
     struct strbuf file;

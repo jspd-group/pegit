@@ -15,7 +15,7 @@ release: CFLAGS += -O2
 
 release: all
 
-test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage
+test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage test-checkout
 
 test-mz: strbuf.o file.o mz.o test-mz.o
 	$(CC) strbuf.o mz.o test-mz.o file.o -l$(ZLIB) -o test-mz.exe
@@ -37,6 +37,10 @@ test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o c
 test-commit: strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o path.o
 	$(CC) strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o path.o -lz -o test-commit
 
+test-checkout: strbuf.o checkout.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o path.o
+	$(CC) strbuf.o checkout.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o path.o -lz -o test-checkout
+
+
 test-tree: strbuf.o tree.o test-tree.o
 
 test-visitor: strbuf.o tree.o visitor.o test-visitor.o
@@ -46,6 +50,9 @@ cache.o: $(SRC)cache.c $(INC)cache.h
 
 commit.o: $(SRC)commit.c $(INC)commit.h $(INC)global.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)commit.c
+
+checkout.o: $(SRC)checkout.c $(INC)checkout.h $(INC)global.h
+	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)checkout.c
 
 stage.o: $(SRC)stage.c $(INC)stage.h
 	$(CC) -I $(INC) -Isha1 $(CFLAGS) -c $(SRC)stage.c
@@ -117,4 +124,4 @@ test-visitor.o: $(TEST)test-visitor.c tree.o visitor.o
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-visitor.c
 
 clean:
-	-@rm *.o *.exe
+	-@rm *.o test-*

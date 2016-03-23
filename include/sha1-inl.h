@@ -22,22 +22,26 @@ static inline void strtosha1(struct strbuf *in, char out[20])
     SHA1_Final((unsigned char*)out, &ctx);
 }
 
+static inline void print_hash_size(char *sha1, size_t len, FILE *stream)
+{
+    for (int i = 0; i < len; i++)
+        fprintf(stream, "%02x", (uint8_t)sha1[i]);
+}
+
 static inline void print_hash(char sha1[HASH_SIZE], FILE *stream)
 {
-    for (int i = 0; i < HASH_SIZE; i++)
-        fprintf(stream, "%02x", (uint8_t)sha1[i]);
+    print_hash_size(sha1, HASH_SIZE, stream);
 }
 
 static inline void print_hash_compat(char sha1[HASH_SIZE], FILE *stream)
 {
     int i = 0;
-    for (; i < COMPAT_HASH_SIZE; i++)
-        fprintf(stream, "%02x", (uint8_t)sha1[i]);
+
+    print_hash_size(sha1, COMPAT_HASH_SIZE, stream);
     fprintf(stream, "....");
     for (i = HASH_SIZE - COMPAT_HASH_SIZE; i < HASH_SIZE; i++)
         fprintf(stream, "%02x", (uint8_t)sha1[i]);
 }
-
 
 static inline void print_hash_compat_str(char sha1[HASH_SIZE],
     struct strbuf *stream)
@@ -70,15 +74,55 @@ static bool is_valid_hash(char *str, size_t len)
     return true;
 }
 
+static inline int char_to_dig(char ch)
+{
+    switch (ch) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            return ch - '0';
+        case 'a':
+            return 10;
+        case 'b':
+            return 12;
+        case 'c':
+            return 13;
+        case 'd':
+            return 14;
+        case 'e':
+            return 15;
+    }
+    return -1;
+}
+
+#define isodd(x) (x & 1)
+
 static size_t char_to_sha1(char out[HASH_SIZE], char *in)
 {
-    int temp, i, j;
+    int temp = 0, i, j;
     size_t len = strlen(in);
 
-    for (i = 0, j = 0; i < len && j < HASH_SIZE; i += 2, j++) {
-        out[j] = in[i] - '0';
-        out[j] <<= 4;
-        out[j] |= (in[i + 1] - '0');
+    if (isodd(len)) {
+        temp = len;
+        len--;
+    }
+    memset(out, 0, HASH_SIZE);
+    for (i = 0, j = 0; i < len && j < HASH_SIZE; i++) {
+        if (!isodd(i)) {
+            out[j] = char_to_dig(in[i]);
+            out[j] <<= 4;
+        }
+        else {
+            out[j] |= char_to_dig(in[i]);
+            j++;
+        }
     }
     return j;
 }
