@@ -83,6 +83,8 @@ extern void make_index_list_from_commit(struct commit *node,
 extern struct index *find_file_index_list(struct index_list *head,
     const char *file);
 
+extern struct index_list *get_head_commit_list(struct commit_list *head);
+
 static inline struct commit *get_head_commit(struct commit_list *cl)
 {
     struct commit_list *node, *prev;
