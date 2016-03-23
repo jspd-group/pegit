@@ -4,6 +4,19 @@
 #include "file.h"
 #include "path.h"
 
+struct stage_options {
+    int all;
+    int ignore;
+    int all_dot;
+    int verbose;
+    int more_output;
+    struct strbuf *ignarr;
+    struct strbuf *add;
+    struct index_list *head;
+    struct pack_file_cache cache;
+};
+
+
 char stage_usage[] = PEG_NAME
     " stage : add project files to the stage area\n\n"
     "    Usage:    " PEG_NAME " stage [options] <files...>\n\n"
@@ -28,13 +41,24 @@ struct stage_stats {
     size_t total;
 } stats = {0, 0, 0, 0};
 
-int read_file_from_database(const char *path, struct strbuf *buf)
-{
-    return !find_file_from_head_commit(path, buf);
-}
 
 struct file_list *last, *head;
-struct stage_options opts;
+struct stage_options opts = {
+    .cache = PACK_FILE_CACHE_INIT
+};
+
+int read_file_from_database(const char *path, struct strbuf *buf)
+{
+    struct index *idx;
+
+    if (!opts.head)
+        return 0;
+
+    idx = find_file_index_list(opts.head, path);
+    if (!idx) return false;
+    strbuf_add(buf, opts.cache.cache.buf + idx->pack_start, idx->pack_len);
+    return 1;
+}
 
 void init_stage()
 {
@@ -45,6 +69,12 @@ void init_stage()
     opts.verbose = 0;
     opts.ignarr = NULL;
     opts.add = NULL;
+    opts.more_output = 0;
+
+    struct commit_list *cl;
+    make_commit_list(&cl);
+    opts.head = get_head_commit_list(cl);
+    cache_pack_file(&opts.cache);
 }
 
 void file_list_init(struct file_list *fl)
@@ -73,11 +103,13 @@ void file_list_add(struct file_list *node)
 
 void print_stage_stats(struct stage_stats *data)
 {
-    if (data->files_modified)
+
+    if (data->files_modified
+        && ((ssize_t)(data->files_modified - data->ignored)) > 0)
         fprintf(stdout, " %llu %s modified\n", data->files_modified,
                 data->files_modified <= 1 ? "file" : "files");
 
-    if (data->new_files - data->ignored)
+    if (data->new_files && ((ssize_t)(data->new_files - data->ignored)) > 0)
         fprintf(stdout, " %llu %s added\n", data->new_files - data->ignored,
                 (data->new_files - data->ignored) <= 1 ? "file" : "files");
 
@@ -123,7 +155,10 @@ int is_modified(const char *name)
     }
     filespec_init(&fs, name, "r");
     filespec_read_safe(&fs, &a);
-    if (read_file_from_database(name, &b)) {
+    if (opts.more_output) {
+        fprintf(stdout, GREEN "\t%s\n" RESET, name);
+    }
+    if (!read_file_from_database(name, &b)) {
         stats.new_files++;
         node = MALLOC(struct file_list, 1);
         if (!node) die("no memory available.\n");
@@ -137,6 +172,8 @@ int is_modified(const char *name)
         node->file.alloc = a.alloc;
         node->next = NULL;
         file_list_add(node);
+        filespec_free(&fs);
+        strbuf_release(&a);
         return 0;
     }
     if (strbuf_cmp(&a, &b)) {
@@ -152,8 +189,11 @@ int is_modified(const char *name)
         node->file.alloc = a.alloc;
         node->next = NULL;
         file_list_add(node);
+        filespec_free(&fs);
         return 0;
     }
+    filespec_free(&fs);
+    strbuf_release(&a);
     return 1;
 }
 
@@ -258,6 +298,8 @@ void process_argument(int i, char *argv)
         opts.all = 1;
     } else if (!strcmp(argv, "-v") || !strcmp(argv, "--verbose")) {
         opts.verbose = 1;
+    } else if (!strcmp(argv, "-m") || !strcmp(argv, "--more")) {
+        opts.more_output = 1;
     } else if (!strncmp(argv, "-i", 2) || !strncmp(argv, "--ignore", 8)) {
         parse_ignore_list(argv);
     } else if (!strcmp(argv, "reset")) {
