@@ -244,12 +244,19 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
 {
     struct deltafile af, bf;
     struct delta_table table;
+    struct basic_delta_result res;
 
     deltafile_init_strbuf(&af, a, DELIM);
     deltafile_init_strbuf(&bf, b, DELIM);
     delta_table_init(&table, af.size, bf.size);
     delta_basic_comparison_m(&table, &af, &bf);
-    delta_backtrace_table_minimal(result, &table, &af, &bf);
+    if (result) {
+        delta_backtrace_table_minimal(result, &table, &af, &bf);
+    }
+    else {
+        basic_delta_result_init(&res, NULL);
+        delta_backtrace_table_minimal(result, &table, &af, &bf);
+    }
     if (!(result->insertions || result->deletions)) return false;
     if (out) delta_stat(result, out);
     return true;
@@ -334,13 +341,14 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
     strbuf_addch(out, '\n');
 }
 
-void print_lines(struct strbuf *buf, bool i_or_d)
+size_t print_lines(struct strbuf *buf, bool i_or_d)
 {
     size_t lines = count_lines(buf);
     i_or_d ? fprintf(stdout, "%llu %s\n", lines,
                      lines == 1 ? "insertion" : "insertions")
            : fprintf(stdout, "%llu %s\n", lines,
                      lines == 1 ? "deletion" : "deletions");
+    return lines;
 }
 
 void print_insertion_lines(struct strbuf *buf)
