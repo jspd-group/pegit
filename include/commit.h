@@ -11,6 +11,7 @@
 
 struct commit {
     char sha1[HASH_SIZE];    /* sha1 hash */
+    char tag[TAG_SIZE]; /* user defined tag */
     struct author *auth;    /* author of the commit */
     struct strbuf cmt_msg; /* commit message */
     struct strbuf cmt_desc; /* commit description */
