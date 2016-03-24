@@ -351,8 +351,8 @@ void print_insertion_lines(struct strbuf *buf)
 
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_addch(&out, '+');
-        strbuf_add(&out, buf->buf + file.arr[i],
+        strbuf_addstr(&out, GREEN"+"RESET);
+        strbuf_add(&out, buf->buf + file.arr[i] + 1,
                          file.arr[i + 1] - file.arr[i]);
     }
     fprintf(stdout, "%s\n", out.buf);
@@ -377,11 +377,13 @@ void print_object_insertions(struct pack_file_cache *cache, struct index *idx)
     strbuf_add(&temp, cache->cache.buf + idx->pack_start, idx->pack_len);
     deltafile_init_strbuf(&file, &temp, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_add_lines(&out, "+", temp.buf + file.arr[i],
+        strbuf_addstr(&out, GREEN"+"RESET);
+        strbuf_add(&out, temp.buf + file.arr[i] + 1,
                          file.arr[i + 1] - file.arr[i]);
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
+    strbuf_release(&temp);
     deltafile_free(&file);
 }
 
@@ -393,7 +395,8 @@ void print_deletion_lines(struct strbuf *buf)
 
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_add_lines(&out, "-", buf->buf + file.arr[i],
+        strbuf_addstr(&out, RED"-"RESET);
+        strbuf_add(&out, buf->buf + file.arr[i] + 1,
                          file.arr[i + 1] - file.arr[i]);
     }
     fprintf(stdout, "%s\n", out.buf);
@@ -704,9 +707,9 @@ void delta_main(int argc, char *argv[])
         if (opts.hash_arg1 && opts.hash_arg2) {
             commit_delta(opts.hash_arg1, opts.hash_arg2, opts.minimal);
         } else if (opts.hash_arg1) {
-            do_single_commit_delta(opts.hash_arg1, opts.minimal, 0);
+            do_single_commit_delta(opts.hash_arg1, opts.minimal, 1);
         } else if (opts.hash_arg2) {
-            do_single_commit_delta(opts.hash_arg2, opts.minimal, 0);
+            do_single_commit_delta(opts.hash_arg2, opts.minimal, 1);
         } else if (opts.guessed) {
             die("no sha1 or path specified.\n");
         } else {
