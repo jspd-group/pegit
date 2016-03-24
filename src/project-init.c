@@ -4,6 +4,10 @@
 #include "project-config.h"
 #include "visitor.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 struct project_cache {
     struct project_details pd;
     struct timestamp ts;
@@ -29,6 +33,10 @@ int make_peg_directories()
     visitor_init(&vt);
     visitor_visit(&vt, ".");
     if (visitor_make_folder(&vt, PEG_DIR) < 0) return -1;
+#ifdef _WIN32
+    SetFileAttributes(PEG_DIR, 0x2);
+#endif
+
     visitor_close(&vt);
     visitor_init(&vt);
     visitor_visit(&vt, PEG_DIR);
