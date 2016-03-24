@@ -27,6 +27,8 @@
 /* number of bytes required by the hash
  */
 #define HASH_SIZE 20
+#define TAG_SIZE 50
+#define SHA_STR_SIZE 40
 
 #define DEBUG 0
 

@@ -10,7 +10,10 @@
 #include "index.h"
 
 struct commit {
+    int16_t flags; /* various commit flags */
     char sha1[HASH_SIZE];    /* sha1 hash */
+    char tag[TAG_SIZE]; /* user defined tag */
+    char sha1str[SHA_STR_SIZE + 1];
     struct author *auth;    /* author of the commit */
     struct strbuf cmt_msg; /* commit message */
     struct strbuf cmt_desc; /* commit description */
@@ -38,7 +41,8 @@ typedef bool(commit_match_fn)(struct commit *);
  *     `cmt' : represents the commit message, which should not be empty
  *     `det' : represents the commit description, which can be empty
  */
-extern int generate_new_commit(struct strbuf *cmt, struct strbuf *det);
+extern int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
+    char tag[TAG_SIZE], int16_t flags);
 
 /**
  * Kind of main function for generating a new commit.
