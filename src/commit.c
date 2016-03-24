@@ -45,7 +45,7 @@ int read_commit_object(struct commit *cm, FILE *f)
     fread(&cm->commit_index, sizeof(size_t), 1, f);
     fread(&cm->commit_length, sizeof(size_t), 1, f);
     for (int i = 0; i < HASH_SIZE; i++) {
-        sprintf(cm->sha1str, "%02x", (int8_t)cm->sha1[i]);
+        sprintf(cm->sha1str + 2 * i, "%02x", (uint8_t)cm->sha1[i]);
     }
     cm->sha1str[SHA_STR_SIZE] = '\0';
     return 0;
@@ -226,21 +226,12 @@ void make_index_list_from_commit(struct commit *node, struct index_list **head)
 struct commit *find_commit_hash_compat(struct commit_list *cl,
     char *sha1, size_t len)
 {
-    static struct commit_list *last_match;
-    static struct commit_list *last_head;
     struct commit_list *node;
     struct commit_list *result = NULL, *last = NULL;
 
-    if (last_head == cl) {
-        node = last_match ? last_match->next : NULL;
-    }
-    else {
-        node = cl;
-    }
+    node = cl;
     while (node) {
-        if (hash_starts_with(cl->item->sha1str, sha1, len)) {
-            last_match = (node);
-            last_head = cl;
+        if (hash_starts_with(node->item->sha1str, sha1, len)) {
             return node->item;
         }
         node = node->next;
