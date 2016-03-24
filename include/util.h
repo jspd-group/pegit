@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
@@ -55,13 +56,6 @@
     \
 }
 
-#ifndef isspace
-#define isspace(x) ((x) == ' ')
-#endif
-
-#ifndef tolower
-#define tolower(x) ((x) - 'A' + 'a')
-#endif
 /**
  * This global variable stores the name of the program currently being used.
  */
@@ -141,5 +135,5 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
     } while (0)
 #endif
 
-#define delayms(ms) usleep(ms);
+#define delayms(ms)
 #endif
