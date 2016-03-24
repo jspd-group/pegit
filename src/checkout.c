@@ -188,8 +188,10 @@ void revert_directory(const char *path, size_t n)
         i = find_file_index_list(list, p.buf);
         if (!i) {
             fprintf(stderr, YELLOW" %s, Not checked in!\n"RESET, p.buf);
-        } else {
+        } else if (v.entry_type == _FILE) {
             revert_file(&cache, i);
+        } else if (v.entry_type == _FOLDER) {
+            revert_directory(p.buf, n);
         }
         strbuf_setlen(&p, 0);
     }
