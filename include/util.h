@@ -1,9 +1,7 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-#define MSVC _MSC_VER
-
-#ifndef MSVC
+#ifndef _MSC_VER
 #include <unistd.h>
 #endif
 #include <stdio.h>
@@ -143,4 +141,5 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
     } while (0)
 #endif
 
+#define delayms(ms) usleep(ms);
 #endif
