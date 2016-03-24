@@ -177,7 +177,6 @@ int is_modified(const char *name)
         node->next = NULL;
         file_list_add(node);
         filespec_free(&fs);
-        strbuf_release(&a);
         return 0;
     }
     if (strbuf_cmp(&a, &b)) {
@@ -198,6 +197,7 @@ int is_modified(const char *name)
     }
     filespec_free(&fs);
     strbuf_release(&a);
+    strbuf_release(&b);
     return 1;
 }
 
