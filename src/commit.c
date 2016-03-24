@@ -4,6 +4,50 @@
 
 #define IF_TAG(tag) (tag & 1)
 
+struct commit_options {
+    struct strbuf msg;
+    struct strbuf desc;
+    size_t insertions;
+    size_t deletions;
+    size_t file_modified;
+    size_t new_files;
+} cm_opts;
+
+void commit_options_init()
+{
+    strbuf_init(&cm_opts.msg, 0);
+    strbuf_init(&cm_opts.desc, 0);
+    cm_opts.insertions = 0;
+    cm_opts.deletions = 0;
+    cm_opts.file_modified = 0;
+    cm_opts.new_files = 0;
+}
+
+void print_commit_stats(struct commit_options *opts, struct commit *cm)
+{
+    printf("[ "YELLOW);
+    print_hash_size(cm->sha1, 3, stdout);
+    if (IF_TAG(cm->flags))
+        printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
+    printf(RESET" ]   %s\n", cm->cmt_msg.buf);
+
+    if (cm->cmt_desc.len) {
+        printf("\n%s\n\n", cm->cmt_desc.buf);
+    }
+    printf(" %llu %s changed, ", opts->file_modified + opts->new_files,
+        (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
+
+    if (opts->insertions)
+        printf("%llu %s(+)", opts->insertions, opts->insertions > 1 ?
+            "additions" : "addition");
+    if (opts->insertions && opts->deletions)
+        printf(", ");
+    if (opts->deletions)
+        printf("%llu %s(-)", opts->deletions, opts->deletions > 1 ?
+            "deletions" : "deletion");
+    putchar('\n');
+}
+
 void commit_init(struct commit *cm)
 {
     time_stamp_init(&cm->stamp);
@@ -328,7 +372,11 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     struct cache_index_entry_list *node = co->ci.entries;
     struct index *exist;
     struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
+    struct strbuf temp = STRBUF_INIT;
+    struct strbuf comp = STRBUF_INIT;
+    struct strbuf old = STRBUF_INIT;
     size_t idx;
+    struct basic_delta_result result;
     struct index_list *last = NULL, *new;
     peg_sha_ctx ctx;
 
@@ -339,18 +387,22 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     idx = cache.cache.len;
     while (node) {
         exist = find_file_index_list(*head, node->file_path.buf);
+        basic_delta_result_init(&result, NULL);
         if (!exist) {
             // we're handling new file
             exist = make_new_index(node->file_path.buf,
                      idx, node->len, 0);
             // write to pack file
-            strbuf_add(&cache.cache, co->cc.cache_buf.buf + node->start,
-                node->len);
-            sha1_update(&ctx, co->cc.cache_buf.buf + node->start, node->len);
+            strbuf_add(&temp, co->cc.cache_buf.buf + node->start, node->len);
+            cm_opts.insertions += count_lines(&temp);
+            strbuf_addbuf(&cache.cache, &temp);
+            sha1_update(&ctx, temp.buf, temp.len);
+            strbuf_release(&temp);
             idx = cache.cache.len;
             new = MALLOC(struct index_list, 1);
             new->idx = exist;
             new->next = NULL;
+            cm_opts.new_files++;
             if (last) insert_index_list(&last, new);
             else {
                 *head = new;
@@ -359,11 +411,19 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
             node = node->next;
             continue;
         }
+        strbuf_add(&old, cache.cache.buf + exist->pack_start, exist->pack_len);
         exist->pack_start = idx;
         exist->pack_len = node->len;
-        strbuf_add(&cache.cache, co->cc.cache_buf.buf + node->start,
-                node->len);
-        sha1_update(&ctx, co->cc.cache_buf.buf + node->start, node->len);
+        exist->flags |= 0x80;
+        strbuf_add(&temp, co->cc.cache_buf.buf + node->start, node->len);
+        strbuf_delta_minimal(NULL, &result, &old, &temp);
+        cm_opts.insertions += result.insertions;
+        cm_opts.deletions += result.deletions;
+        cm_opts.file_modified++;
+        strbuf_addbuf(&cache.cache, &temp);
+        sha1_update(&ctx, temp.buf, temp.len);
+        strbuf_release(&temp);
+        strbuf_release(&old);
         idx = cache.cache.len;
         node = node->next;
     }
@@ -418,7 +478,7 @@ void finalize_commit(struct commit_list *head, struct commit *new)
         commit_list_add(&last, newnode);
         head->count += 1;
     }
-    log_commit(newnode->item);
+    print_commit_stats(&cm_opts, new);
     flush_commit_list(head);
 }
 
@@ -471,6 +531,7 @@ int commit(int argc, char *argv[])
     char tag[TAG_SIZE];
     int16_t flags = 0;
 
+    commit_options_init();
     if (argc < 2)
         die("empty args\n\t:(\n. See --help for usage.\n");
 
