@@ -2,9 +2,13 @@
 #include "global.h"
 #include "sha1-inl.h"
 
+#define IF_TAG(tag) (tag & 1)
+
 void commit_init(struct commit *cm)
 {
     time_stamp_init(&cm->stamp);
+    cm->flags = 0;
+    cm->tag[0] = '\0';
     cm->auth = NULL;
     strbuf_init(&cm->cmt_msg, 0);
     strbuf_init(&cm->cmt_desc, 0);
@@ -23,8 +27,12 @@ int read_commit_object(struct commit *cm, FILE *f)
 {
     size_t len;
 
+    fread(&cm->flags, sizeof(cm->flags), 1, f);
     if (fread(cm->sha1, sizeof(char), HASH_SIZE, f) < HASH_SIZE) {
         die(" error occurred while reading commit file\n");
+    }
+    if (IF_TAG(cm->flags)) {
+        fread(cm->tag, sizeof(char), TAG_SIZE, f);
     }
     cm->auth = MALLOC(struct author, 1);
     author_init(cm->auth);
@@ -36,12 +44,20 @@ int read_commit_object(struct commit *cm, FILE *f)
     time_stamp_read(&cm->stamp, f);
     fread(&cm->commit_index, sizeof(size_t), 1, f);
     fread(&cm->commit_length, sizeof(size_t), 1, f);
+    for (int i = 0; i < HASH_SIZE; i++) {
+        sprintf(cm->sha1str, "%02x", (int8_t)cm->sha1[i]);
+    }
+    cm->sha1str[SHA_STR_SIZE] = '\0';
     return 0;
 }
 
 int write_commit_object(struct commit *cm, FILE *f)
 {
+    fwrite(&cm->flags, sizeof(cm->flags), 1, f);
     fwrite(cm->sha1, sizeof(char), HASH_SIZE, f);
+    if (IF_TAG(cm->flags)) {
+        fwrite(cm->tag, sizeof(char), TAG_SIZE, f);
+    }
     author_write(cm->auth, f);
     fwrite(&cm->cmt_msg.len, sizeof(size_t), 1, f);
     fwrite(cm->cmt_msg.buf, sizeof(char), cm->cmt_msg.len, f);
@@ -94,8 +110,7 @@ size_t make_commit_list(struct commit_list **head)
     struct commit *cm = NULL;
     FILE *f = fopen(COMMIT_INDEX_FILE, "rb");
 
-    if (!f)
-        die("unable to open %s\n\t:(\n", COMMIT_INDEX_FILE);
+    if (!f) die("unable to open %s\n, %s", COMMIT_INDEX_FILE, strerror(errno));
     fread(&count, sizeof(size_t), 1, f);
     *head = NULL;
     while (count--) {
@@ -120,12 +135,13 @@ size_t make_commit_list(struct commit_list **head)
     return 0;
 }
 
-struct commit *find_commit_hash(struct commit_list *cl, char sha1[HASH_SIZE])
+struct commit *find_commit_hash(struct commit_list *cl,
+    char sha1[SHA_STR_SIZE])
 {
     struct commit_list *node = cl;
 
     while (node) {
-        if (!strcmp((const char*)node->item->sha1, (const char*)sha1))
+        if (!strcmp((const char*)node->item->sha1str, (const char*)sha1))
             return node->item;
         node = node->next;
     }
@@ -222,7 +238,7 @@ struct commit *find_commit_hash_compat(struct commit_list *cl,
         node = cl;
     }
     while (node) {
-        if (hash_starts_with(cl->item->sha1, sha1, len)) {
+        if (hash_starts_with(cl->item->sha1str, sha1, len)) {
             last_match = (node);
             last_head = cl;
             return node->item;
@@ -331,7 +347,6 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     last = get_last_node(*head);
     idx = cache.cache.len;
     while (node) {
-        /* TODO : modify this for supporting the folder */
         exist = find_file_index_list(*head, node->file_path.buf);
         if (!exist) {
             // we're handling new file
@@ -368,9 +383,12 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
 
 int log_commit(struct commit *cm)
 {
+    fprintf(stdout, "FLAG %d\n", cm->flags);
     fprintf(stdout, "commit  ");
     print_hash_compat(cm->sha1, stdout);
     fprintf(stdout, "\n");
+    if (IF_TAG(cm->flags))
+        fprintf(stdout, "Tag: %s\n", cm->tag);
     fprintf(stdout, "Author:  %s <%s>\n", cm->auth->name.buf,
         cm->auth->email.buf);
     fprintf(stdout, "Message: %s\n", cm->cmt_msg.buf);
@@ -413,7 +431,8 @@ void finalize_commit(struct commit_list *head, struct commit *new)
     flush_commit_list(head);
 }
 
-int generate_new_commit(struct strbuf *cmt, struct strbuf *det)
+int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
+    char tag[TAG_SIZE], int16_t flags)
 {
     struct commit_list *head = NULL;
     struct cache_object co;
@@ -435,6 +454,10 @@ int generate_new_commit(struct strbuf *cmt, struct strbuf *det)
     cache_index_file(&cache);
     get_global_author(a);
     new->auth = a;
+    new->flags = flags;
+    if (IF_TAG(flags)) {
+        strcpy(new->tag, tag);
+    }
     transfer_staged_data(&co, &copy, new->sha1);
     strbuf_addbuf(&new->cmt_msg, cmt);
     strbuf_addbuf(&new->cmt_desc, det);
@@ -454,6 +477,8 @@ int generate_new_commit(struct strbuf *cmt, struct strbuf *det)
 int commit(int argc, char *argv[])
 {
     struct strbuf msg = STRBUF_INIT, desc = STRBUF_INIT;
+    char tag[TAG_SIZE];
+    int16_t flags = 0;
 
     if (argc < 2)
         die("empty args\n\t:(\n. See --help for usage.\n");
@@ -465,17 +490,27 @@ int commit(int argc, char *argv[])
         }
         if (!strcmp(argv[i], "-m")) {
             strbuf_addstr(&msg, argv[i + 1]);
+            i++;
         }
-        if (!strcmp(argv[i], "-d"))
+        if (!strcmp(argv[i], "-d")) {
             strbuf_addstr(&desc, argv[i + 1]);
+            i++;
+        }
         if (!strcmp(argv[i], "log")) {
             print_commits();
             exit(0);
+        }
+        if (!strcmp(argv[i], "-t")) {
+            if (strlen(argv[i + 1]) > TAG_SIZE)
+                die("length of tag should be less than %d\n", TAG_SIZE);
+            strcpy(tag, argv[i + 1]);
+            flags |= 1;
+            i++;
         }
 
     }
     if (!msg.len)
         die("no message provided\n\t:(\n");
-    generate_new_commit(&msg, &desc);
+    generate_new_commit(&msg, &desc, tag, flags);
     return 0;
 }
