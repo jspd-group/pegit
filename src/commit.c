@@ -478,19 +478,19 @@ int commit(int argc, char *argv[])
         if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
             printf("Usage: "PEG_NAME" commit -m message -d description\n");
             exit(0);
-        }
+        } else
         if (!strcmp(argv[i], "-m")) {
             strbuf_addstr(&msg, argv[i + 1]);
             i++;
-        }
+        } else
         if (!strcmp(argv[i], "-d")) {
             strbuf_addstr(&desc, argv[i + 1]);
             i++;
-        }
+        } else
         if (!strcmp(argv[i], "log")) {
             print_commits();
             exit(0);
-        }
+        } else
         if (!strcmp(argv[i], "-t")) {
             if (strlen(argv[i + 1]) > TAG_SIZE)
                 die("length of tag should be less than %d\n", TAG_SIZE);
