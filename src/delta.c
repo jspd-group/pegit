@@ -435,14 +435,16 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
     while (nodea) {
         bi = find_file_index_list(b, nodea->idx->filename);
         /* NOTE: bi can be NULL also */
-        if (bi)
+        if (bi) {
             delta_index_splash(&out, nodea->idx->filename, bi->filename);
-        else
+            bi->flags = DELTA_FLAG;
+            index_delta(&result, &cache, nodea->idx, bi, &out, minimal);
+            fwrite(out.buf, sizeof(char), out.len, stdout);
+            strbuf_setlen(&out, 0);
+        }
+        else {
             delta_index_splash(&out, nodea->idx->filename, NULL);
-        bi->flags = DELTA_FLAG;
-        index_delta(&result, &cache, nodea->idx, bi, &out, minimal);
-        fwrite(out.buf, sizeof(char), out.len, stdout);
-        strbuf_setlen(&out, 0);
+        }
         nodea = nodea->next;
     }
     nodea = b;
@@ -538,16 +540,16 @@ void commit_delta(char commit1_sha[HASH_SIZE], char commit2_sha[HASH_SIZE],
      */
     if (!strcmp(commit1_sha, commit2_sha)) return;
     make_commit_list(&cl);
-    if ((a = find_commit_hash(cl, commit1_sha)) == NULL) {
-        fatal("commit <");
-        print_hash(commit1_sha, stderr);
+    if ((a = find_commit_hash_compat(cl, commit1_sha, strlen(commit1_sha)))
+            == NULL) {
+        fatal("commit <%s", commit1_sha);
         printf("> doesn't exists\n");
         exit(-1);
     }
-    if ((b = find_commit_hash(cl, commit2_sha)) == NULL) {
-        fatal("commit <");
-        print_hash(commit2_sha, stderr);
-        printf("> doesn't exists\n");
+    if ((b = find_commit_hash_compat(cl, commit2_sha, strlen(commit2_sha)))
+            == NULL) {
+        fatal("commit <%s>", commit2_sha);
+        printf(" doesn't exists\n");
         exit(-1);
     }
     do_commit_delta(a, b, minimal);
@@ -560,12 +562,15 @@ void do_single_commit_delta(char *commit1_hash, bool minimal, bool noconv)
 {
     struct commit_list *cl;
     struct commit *a, *b;
-    char real_sha1[HASH_SIZE];
-    size_t len = HASH_SIZE;
+    char real_sha1[SHA_STR_SIZE];
+    size_t len = SHA_STR_SIZE;
 
     make_commit_list(&cl);
     if (!noconv) {
         len = char_to_sha1(real_sha1, commit1_hash);
+    } else {
+        strcpy(real_sha1, commit1_hash);
+        len = strlen(commit1_hash);
     }
 
     if ((a = find_commit_hash_compat(cl, real_sha1, len)) == NULL) {
@@ -684,7 +689,7 @@ void delta_parse_options(struct delta_options *opts, int argc, char *argv[])
         make_commit_list(&cl);
         struct commit *cm = get_head_commit(cl);
 
-        do_single_commit_delta(cm->sha1, opts->minimal, true);
+        do_single_commit_delta(cm->sha1str, opts->minimal, true);
     }
     for (int i = 1; i < argc; i++) {
         delta_parse_single_option(opts, i, argv);
@@ -730,6 +735,6 @@ void delta_main(int argc, char *argv[])
         make_commit_list(&cl);
         struct commit *cm = get_head_commit(cl);
 
-        do_single_commit_delta(cm->sha1, opts.minimal, true);
+        do_single_commit_delta(cm->sha1str, opts.minimal, true);
     }
 }
