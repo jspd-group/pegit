@@ -517,13 +517,14 @@ void do_single_file_delta(const char *path, bool minimal)
         /* original file is deleted */
         delta_index_splash(&filebuf, path, NULL);
         fprintf(stdout, "%s", filebuf.buf);
-        minimal ? print_lines(&buf, 0) : print_deletion_lines(&buf);
+        minimal ? (void)print_lines(&buf, 0) : print_deletion_lines(&buf);
     } else if (!result && file) {
         /* new file is added */
         delta_index_splash(&buf, NULL, path);
         fprintf(stdout, "%s", buf.buf);
         strbuf_fread(&filebuf, file_length(file), file);
-        minimal ? print_lines(&filebuf, 1) : print_insertion_lines(&filebuf);
+        minimal ? (void)print_lines(&filebuf, 1)
+                : print_insertion_lines(&filebuf);
     } else {
         /* none of the file exists */
         die("%s: file doesn't exists\n", path);
