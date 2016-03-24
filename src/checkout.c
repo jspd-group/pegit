@@ -1,6 +1,7 @@
 #include "commit.h"
 #include "visitor.h"
 #include "stage.h"
+#include "path.h"
 
 struct revert_opts {
     int dflt;
@@ -9,7 +10,13 @@ struct revert_opts {
     int force;
     int files;
     char assume;
+    int normal;
+    int fast;
+    int dir;
 } rev_opts;
+
+#define MARK_CHECKOUT(flag) (flag |= 0x30)
+#define IS_MARKED(flag) (flag & 0x30)
 
 void create_file(struct strbuf *buf, const char *path)
 {
@@ -48,9 +55,17 @@ void revert_file(struct pack_file_cache *cache, struct index *i)
 
 void delete_file(struct index *i)
 {
-    fprintf(stdout, RED" deleting %s\n", i->filename);
+    fprintf(stdout, RED" deleting %s\n"RESET, i->filename);
     if (remove(i->filename) < 0) {
         die("%s: %s", i->filename, strerror(errno));
+    }
+}
+
+void delete_file_str(const char *i)
+{
+    fprintf(stdout, RED" deleting %s\n"RESET, i);
+    if (remove(i) < 0) {
+        die("%s: %s", i, strerror(errno));
     }
 }
 
@@ -140,17 +155,51 @@ int revert_files_commit(struct strbuf_list *list, ssize_t n)
     while (node) {
         i = find_file_index_list(il, node->buf.buf);
         if (!i) {
-            delete_file(i);
+            fprintf(stderr, YELLOW" %s, Not checked in!\n"RESET,
+                node->buf.buf);
         } else {
             revert_file(&cache, i);
+            MARK_CHECKOUT(i->flags);
         }
         node = node->next;
     }
+
     return 0;
+}
+
+void revert_directory(const char *path, size_t n)
+{
+    struct visitor v;
+    struct strbuf p = STRBUF_INIT;
+    struct index *i;
+    struct index_list *list;
+    struct commit_list *cl;
+    struct commit *cm;
+    struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
+
+    make_commit_list(&cl);
+    cm = get_nth_commit(cl, n);
+    cache_pack_file(&cache);
+    visitor_init(&v);
+    visitor_visit(&v, path);
+    make_index_list_from_commit(cm, &list);
+    while (visitor_visit_next_entry(&v) == 0) {
+        visitor_get_absolute_path(&v, &p);
+        i = find_file_index_list(list, p.buf);
+        if (!i) {
+            fprintf(stderr, YELLOW" %s, Not checked in!\n"RESET, p.buf);
+        } else {
+            revert_file(&cache, i);
+        }
+        strbuf_setlen(&p, 0);
+    }
 }
 
 int revert_parse_options(int argc, char *argv[])
 {
+    struct strbuf peg_path = STRBUF_INIT;
+    struct stat st;
+
     strbuf_list_init(&rev_opts.list);
     if (argc < 2) {
         fprintf(stdout, "Checking out head\n");
@@ -162,8 +211,19 @@ int revert_parse_options(int argc, char *argv[])
         if (!strncmp(argv[i], "~", 1)) {
             rev_opts.revert_count = atoi(argv[i] + 1);
         } else {
-            strbuf_list_add(&rev_opts.list, argv[i], strlen(argv[i]), 0, 0);
-            rev_opts.files = 1;
+            get_peg_path_buf(&peg_path, argv[i]);
+            if (stat(peg_path.buf, &st) < 0) {
+                if (errno != ENOENT)
+                    die("%s: %s\n", argv[i], strerror(errno));
+            }
+            if (S_ISDIR(st.st_mode)) {
+                revert_directory(peg_path.buf, rev_opts.revert_count);
+            } else if (S_ISREG(st.st_mode)) {
+                strbuf_list_add(&rev_opts.list, peg_path.buf,
+                    peg_path.len, 0, 0);
+                rev_opts.files = 1;
+            }
+            rev_opts.normal = 0;
         }
     }
     return 0;
@@ -178,8 +238,10 @@ int main(int argc, char *argv[]) {
     }
     if (rev_opts.files) {
         revert_files_commit(&rev_opts.list, rev_opts.revert_count);
-    } else {
+    } else if (rev_opts.normal) {
         revert_to_nth_commit(cl, rev_opts.revert_count);
+    } else if (rev_opts.dir) {
+        return 0;
     }
     return 0;
 }
