@@ -5,7 +5,7 @@ SRC=src/
 TEST=test/
 ZLIB=z
 
-all: test
+all: test peg
 
 debug: CFLAGS += -g
 
@@ -15,7 +15,10 @@ release: CFLAGS += -O2
 
 release: all
 
-test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage test-checkout
+peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o
+	$(CC) strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o -lz tree.o -o peg
+
+test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage
 
 test-mz: strbuf.o file.o mz.o test-mz.o
 	$(CC) strbuf.o mz.o test-mz.o file.o -l$(ZLIB) -o test-mz.exe
@@ -61,7 +64,11 @@ strbuf.o: $(SRC)strbuf.c $(INC)strbuf.h $(INC)util.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)strbuf.c
 
 mz.o: $(SRC)mz.c $(INC)mz.h
-	$(CC) -I $(INC) $(CFLAGS) -lz -c $(SRC)mz.c
+	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)mz.c
+
+main.o: $(SRC)main.c
+	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)main.c
+
 
 file.o: $(SRC)file.c $(INC)file.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)file.c
