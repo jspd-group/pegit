@@ -564,7 +564,7 @@ int commit(int argc, char *argv[])
 
     }
     if (!msg.len)
-        die("no message provided\n\t:(\n");
+        die("no message provided\n");
     generate_new_commit(&msg, &desc, tag, flags);
     return 0;
 }
