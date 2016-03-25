@@ -331,6 +331,7 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
     /*
      * if i is NULL, this means j was newly added.
      */
+    strbuf_addstr(out, BLACK);
     if (i || !j) strbuf_addf(out, "%s", i);
     if (i && j) strbuf_addf(out, " <--> ");
     if (j || !i) strbuf_addf(out, "%s", j);
@@ -338,6 +339,7 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
         fprintf(stderr, "%s\n", out->buf);
         die("BUG: i & j both were NULL");
     }
+    strbuf_addstr(out, RESET);
     strbuf_addch(out, '\n');
 }
 
