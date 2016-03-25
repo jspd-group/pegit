@@ -139,7 +139,7 @@ int parse_single_argument(struct project_cache *pc, int argc, char *argv[])
     exit(0);
 }
 
-int parse_arguments(struct project_cache *pc, int argc, char *argv[])
+static int parse_arguments(struct project_cache *pc, int argc, char *argv[])
 {
     if (argc < 2) die("needed atleast one argument. Use -h for usage.\n");
     for (int i = 1; i < argc; i++) {
@@ -172,7 +172,7 @@ int initialize_empty_project(int argc, char *argv[])
     if (parse_arguments(&pc, argc, argv) < 0) return -1;
     if (make_peg_directories() < 0) return -1;
     if (!create_description_file(&pc))
-        fprintf(stderr, "Initialised an empty project\n");
+        fprintf(stderr, BOLD_GREEN"Initialised an empty project\n"RESET);
     create_cache_files(&pc);
     create_database_files(&pc);
     delayms(200000);
