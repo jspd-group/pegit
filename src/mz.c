@@ -12,13 +12,35 @@ void z_stream_init(z_stream *stream)
     stream->opaque = Z_NULL;
 }
 
+/* report a zlib or i/o error */
+void zerr(int ret)
+{
+    fputs("zpipe: ", stderr);
+    switch (ret) {
+    case Z_STREAM_ERROR:
+        die("invalid compression level\n");
+        break;
+    case Z_DATA_ERROR:
+        die("invalid or incomplete deflate data\n");
+        break;
+    case Z_MEM_ERROR:
+        die("out of memory\n");
+        break;
+    case Z_VERSION_ERROR:
+        die("zlib version mismatch!\n");
+    }
+}
+
+
 int __compress__(struct strbuf *src, struct strbuf *dest, int level)
 {
     z_stream stream;
     z_stream_init(&stream);
     int ret, flush;
     unsigned have;
-    deflateInit(&stream, Z_DEFAULT_COMPRESSION);
+    ret = deflateInit(&stream, Z_DEFAULT_COMPRESSION);
+    if (ret != Z_OK)
+        zerr(ret);
     char buffer[CHUNK_LENGTH];
     stream.avail_in = src->len;
     stream.next_in = (Bytef *)src->buf;
@@ -42,7 +64,7 @@ int __compress__(struct strbuf *src, struct strbuf *dest, int level)
 
 int compress_default(struct strbuf *src, struct strbuf *dest)
 {
-    return __compress__(src, dest, Z_DEFAULT_COMPRESSION);
+    return __compress__(src, dest, 9);
 }
 
 void uncompress_setup(z_stream *stream, struct strbuf *src, struct strbuf *dest)
@@ -67,13 +89,19 @@ int uncompress_chunk(z_stream *stream, struct strbuf *dest)
 int decompress(struct strbuf *src, struct strbuf *dest)
 {
     z_stream stream;
-    int ret;
+    int ret, count = 0;
     struct strbuf temp;
     strbuf_init(&temp, 0);
     uncompress_setup(&stream, src, dest);
-    inflateInit(&stream);
+    ret = inflateInit(&stream);
+    if (ret != Z_OK)
+        zerr(ret);
     do {
         ret = uncompress_chunk(&stream, dest);
+        if (ret == Z_BUF_ERROR) {
+            (void)inflateEnd(&stream);
+            return ret;
+        }
     } while (ret != Z_STREAM_END);
     (void)inflateEnd(&stream);
     return ret;
