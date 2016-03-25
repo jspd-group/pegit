@@ -16,21 +16,23 @@ struct stage_options {
     struct pack_file_cache cache;
 };
 
-
 char stage_usage[] = PEG_NAME
-    " stage : add project files to the stage area\n\n"
-    "    Usage:    " PEG_NAME " stage [options] <files...>\n\n"
+    " "BLACK"insert"RESET" : add project files to the stage area\n\n"
+    "    Usage:    "YELLOW PEG_NAME " insert [options] <files...>" RESET "\n\n"
     "        options include:\n"
-    "        -a, --all\n"
+    "        "BLACK"-a"RESET", "BLACK"--all\n"RESET
     "                add all the files that have been modified,\n"
-    "        -i, --ignore=path1;path2...   \n"
+    "        "BLACK"-i"RESET", "BLACK"--ignore=path1;path2..."RESET"   \n"
     "                ignore the given files and add all other,\n"
-    "        -v, --verbose\n"
+    "        "BLACK"-v"RESET", "BLACK"--verbose"RESET"\n"
     "                print the name of the added files, similar to -a.\n"
+    "        "BLACK"-m"RESET", "BLACK"--more"RESET"\n"
+    "                display more output.\n"
     "\n\n"
-    "    Example usage: \n\t" PEG_NAME " stage -a (or " PEG_NAME " stage .)\n"
-    "        will add all the files in the current directory\n"
-    "\t" PEG_NAME " stage -i=docs/file.txt docs\n"
+    "Example usage: \n\t'"YELLOW PEG_NAME " insert -a " RESET
+    "'(or '"YELLOW PEG_NAME " insert ." RESET "')\n"
+    "        will add all the files in the current directory\n\n"
+    "\t'"YELLOW PEG_NAME " insert -i=docs/file.txt docs" RESET "'\n"
     "        will add all the files in the docs directory except file.txt."
     "\n";
 
@@ -135,7 +137,8 @@ bool is_marked_as_ignored(const char *name)
 {
     struct strbuf temp = STRBUF_INIT;
     for (int i = 0; i < opts.ignore; i++) {
-        strbuf_addstr(&temp, "./");
+        if (name[0] != '.')
+            strbuf_addstr(&temp, "./");
         strbuf_addbuf(&temp, &opts.ignarr[i]);
         if (!strncmp(name, opts.ignarr[i].buf, opts.ignarr[i].len - 1) ||
             !strncmp(name, temp.buf, temp.len - 1)) {
@@ -308,11 +311,6 @@ void process_argument(int i, char *argv)
         opts.more_output = 1;
     } else if (!strncmp(argv, "-i", 2) || !strncmp(argv, "--ignore", 8)) {
         parse_ignore_list(argv);
-    } else if (!strcmp(argv, "reset")) {
-        struct cache_object co;
-        cache_object_init(&co);
-        cache_object_clean(&co);
-        exit(0);
     } else if (!opts.all) {
         ret = is_valid_path(argv);
         switch (ret) {
