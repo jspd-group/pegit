@@ -15,7 +15,7 @@ release: CFLAGS += -O2
 
 release: all
 
-test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage
+test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage 
 
 test-mz: strbuf.o file.o mz.o test-mz.o
 	$(CC) strbuf.o mz.o test-mz.o file.o -l$(ZLIB) -o test-mz.exe
@@ -36,6 +36,9 @@ test-stage: strbuf.o test-stage.o visitor.o tree.o stage.o cache.o file.o mz.o c
 
 test-commit: strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o
 	$(CC) strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o -lz -o test-commit
+
+test-status: strbuf.o test-status.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o
+	$(CC) strbuf.o test-status.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o -lz -o test-status
 
 test-tree: strbuf.o tree.o test-tree.o
 
@@ -113,6 +116,8 @@ test-tree.o: $(TEST)test-tree.c tree.o
 test-visitor.o: $(TEST)test-visitor.c tree.o visitor.o
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-visitor.c
 
+status.o: $(SRC)status.c
+	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)status.c	
+
 clean:
-	-@rm *.o *.exe
-	-@rm -r .peg
+	-@rm *.o *.exe test-*
