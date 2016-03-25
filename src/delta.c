@@ -286,8 +286,8 @@ bool strbuf_delta_enhanced(struct strbuf *out,
             strbuf_addstr(out, RED);
         }
         strbuf_addch(out, node->sign);
-        strbuf_addstr(out, RESET);
         strbuf_add(out, node->buf.buf, node->buf.len);
+        strbuf_addstr(out, RESET);
         node = node->next;
     }
     return true;
@@ -345,7 +345,7 @@ size_t print_lines(struct strbuf *buf, bool i_or_d)
 {
     size_t lines = count_lines(buf);
     i_or_d ? fprintf(stdout, "%llu %s\n", lines,
-                     lines == 1 ? "insertion" : "insertions")
+                     lines == 1 ? "addition" : "additions")
            : fprintf(stdout, "%llu %s\n", lines,
                      lines == 1 ? "deletion" : "deletions");
     return lines;
@@ -359,9 +359,10 @@ void print_insertion_lines(struct strbuf *buf)
 
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_addstr(&out, GREEN"+"RESET);
+        strbuf_addstr(&out, GREEN"+");
         strbuf_add(&out, buf->buf + file.arr[i] + 1,
                          file.arr[i + 1] - file.arr[i]);
+        strbuf_addstr(&out, RESET);
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
@@ -374,7 +375,7 @@ void print_insertion_only(struct pack_file_cache *cache, struct index *idx)
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
     fprintf(stdout, "%llu %s", temp.alloc,
-            temp.alloc == 1 ? "insertion\n" : "insertions\n");
+            temp.alloc == 1 ? "addition\n" : "additions\n");
 }
 
 void print_object_insertions(struct pack_file_cache *cache, struct index *idx)
@@ -385,9 +386,10 @@ void print_object_insertions(struct pack_file_cache *cache, struct index *idx)
     strbuf_add(&temp, cache->cache.buf + idx->pack_start, idx->pack_len);
     deltafile_init_strbuf(&file, &temp, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_addstr(&out, GREEN"+"RESET);
+        strbuf_addstr(&out, GREEN"+");
         strbuf_add(&out, temp.buf + file.arr[i] + 1,
                          file.arr[i + 1] - file.arr[i]);
+        strbuf_addstr(&out, RESET);
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
@@ -403,9 +405,10 @@ void print_deletion_lines(struct strbuf *buf)
 
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_addstr(&out, RED"-"RESET);
+        strbuf_addstr(&out, RED"-");
         strbuf_add(&out, buf->buf + file.arr[i] + 1,
                          file.arr[i + 1] - file.arr[i]);
+        strbuf_addstr(&out, RESET);
     }
     fprintf(stdout, "%s\n", out.buf);
     strbuf_release(&out);
@@ -705,7 +708,7 @@ void delta_parse_options(struct delta_options *opts, int argc, char *argv[])
     }
 }
 
-void delta_main(int argc, char *argv[])
+int delta_main(int argc, char *argv[])
 {
     struct delta_options opts = DELTA_OPTIONS_DEFAULT;
 
@@ -746,4 +749,5 @@ void delta_main(int argc, char *argv[])
 
         do_single_commit_delta(cm->sha1str, opts.minimal, true);
     }
+    return 0;
 }
