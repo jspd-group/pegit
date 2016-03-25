@@ -106,12 +106,25 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #define CYAN "\x1b[36m"
 #define WHITE "\x1b[37m"
 #define RESET "\x1b[0;0m"
-
+#define BROWN "\x1b[31;32m"
+#define GREY "\u001b[90m"
+#define BOLD        "\033[1m"
+#define BOLD_RED    "\033[1;31m"
+#define BOLD_GREEN    "\033[1;32m"
+#define BOLD_YELLOW    "\033[1;33m"
+#define BOLD_BLUE    "\033[1;34m"
+#define BOLD_MAGENTA    "\033[1;35m"
+#define BOLD_CYAN    "\033[1;36m"
+#define BG_RED    "\033[41m"
+#define BG_GREEN    "\033[42m"
+#define BG_YELLOW    "\033[43m"
+#define BG_BLUE    "\033[44m"
+#define BG_MAGENTA    "\033[45m"
+#define COLOR_BG_CYAN    "\033[46m"
 /**
  * text attributes
  */
-#define BOLD "\x1b[1m"
-
+#define DIM "\x1b[2m"
 #ifndef fatal
 #define fatal(...)                                                             \
     do {                                                                       \
