@@ -46,7 +46,6 @@ static inline int cache_pack_file(struct pack_file_cache *cache)
     size_t size = file_length(f);
     strbuf_fread(&temp, size, f);
     if (size != 0) {
-        printf("decompression started\n");
         decompress(&temp, &cache->cache);
     }
     fclose(f);
