@@ -5,11 +5,14 @@
 #include "path.h"
 #include "project-init.h"
 
+#include <math.h>
+
 enum cmd_type {
     CREATE,
     INSERT,
     COMMIT,
     REVERT,
+    RST,
     COMPARE,
     SEE,
     SET,
@@ -28,6 +31,7 @@ static struct command_type cmds[] = {
     { CREATE, "create" },
     { INSERT, "insert" },
     { COMMIT, "commit" },
+    { RST, "reset" },
     { REVERT, "revert" },
     { COMPARE, "compare" },
     { HELP, "help" },
@@ -43,6 +47,7 @@ static char **argv;
 struct command {
     struct strbuf name;
     enum cmd_type type;
+    int match;
     int argc;
     char **argv;
 };
@@ -91,6 +96,22 @@ void init_command(struct command *cmd)
     cmd->argc = 0;
     cmd->argv = NULL;
 }
+
+// int similar(char *str1, char *str2)
+// {
+//     int match = 0;
+//     size_t len1 = strlen(str1);
+//     size_t len2 = strlen(str2);
+//     size_t min = len1 < len2 ? len1 : len2;
+
+//     for (int i = 0; i < )
+//     return 0;
+// }
+
+// void suggest_commands(const char *name)
+// {
+
+// }
 
 enum cmd_type find_command(struct core_commands *cmds, struct strbuf *cmd)
 {
@@ -192,6 +213,13 @@ bool exec_commands_args(enum cmd_type cmd, int out, char **in)
         case SET:
             return parse_set_cmd(out, in);
 
+        case RST:
+            {
+                struct cache_object co;
+                cache_object_init(&co);
+                cache_object_clean(&co);
+                exit(0);
+            }
         case USER:
         case INVALID:
         case UNKNOWN:
@@ -279,6 +307,11 @@ int main(int argc, char *argv[])
     join_args(&args, argc, argv);
     gen_core_commands(&head);
     t = find_command(head, &args);
+    if (t == UNKNOWN) {
+        fprintf(stderr, "peg: '"RED"%s"RESET"' unknown command.\n", argv[1]);
+        //suggest_commands(argv[1]);
+        exit(0);
+    }
     exec_cmd(t, &args);
     return 0;
 }
