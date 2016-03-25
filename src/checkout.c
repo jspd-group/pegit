@@ -231,7 +231,7 @@ int revert_parse_options(int argc, char *argv[])
     return 0;
 }
 
-int main(int argc, char *argv[]) {
+int checkout(int argc, char *argv[]) {
     struct commit_list *cl;
     revert_parse_options(argc, argv);
     make_commit_list(&cl);
