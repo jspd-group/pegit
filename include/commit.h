@@ -101,4 +101,6 @@ static inline struct commit *get_head_commit(struct commit_list *cl)
     return prev->item;
 }
 
+extern int checkout(int argc, char *argv[]);
+
 #endif
