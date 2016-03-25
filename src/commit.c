@@ -29,6 +29,8 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
     print_hash_size(cm->sha1, 3, stdout);
     if (IF_TAG(cm->flags))
         printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
+    else
+        printf(RESET " ("DIM"empty"RESET")");
     printf(RESET" ]   %s\n", cm->cmt_msg.buf);
 
     if (cm->cmt_desc.len) {
@@ -533,14 +535,14 @@ int commit(int argc, char *argv[])
 
     commit_options_init();
     if (argc < 2)
-        die("empty args\n\t:(\n. See --help for usage.\n");
+        die("empty args. See --help for usage.\n");
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
             printf("Usage: "PEG_NAME" commit -m message -d description\n");
             exit(0);
         } else
-        if (!strcmp(argv[i], "-m")) {
+        if (!strcmp(argv[i], "-m") || !strcmp(argv[i], "--message")) {
             strbuf_addstr(&msg, argv[i + 1]);
             i++;
         } else
@@ -548,11 +550,11 @@ int commit(int argc, char *argv[])
             strbuf_addstr(&desc, argv[i + 1]);
             i++;
         } else
-        if (!strcmp(argv[i], "log")) {
+        if (!strcmp(argv[i], "--log")) {
             print_commits();
             exit(0);
         } else
-        if (!strcmp(argv[i], "-t")) {
+        if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--tag")) {
             if (strlen(argv[i + 1]) > TAG_SIZE)
                 die("length of tag should be less than %d\n", TAG_SIZE);
             strcpy(tag, argv[i + 1]);
