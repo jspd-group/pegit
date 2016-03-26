@@ -1,6 +1,5 @@
 #include "commit.h"
 #include "stage.h"
-#include "checkout.h"
 #include "delta.h"
 #include "path.h"
 #include "project-init.h"
@@ -164,7 +163,7 @@ void gen_core_commands(struct core_commands **head)
 
 int skip_command_prefix(struct strbuf *args)
 {
-    int i;
+    int i = 0;
     while (i < args->len && args->buf[i++] != ' ')
         ;
     return i;
