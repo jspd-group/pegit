@@ -54,7 +54,7 @@ cache.o: $(SRC)cache.c $(INC)cache.h
 commit.o: $(SRC)commit.c $(INC)commit.h $(INC)global.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)commit.c
 
-checkout.o: $(SRC)checkout.c $(INC)checkout.h $(INC)global.h
+checkout.o: $(SRC)checkout.c $(INC)global.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)checkout.c
 
 stage.o: $(SRC)stage.c $(INC)stage.h
