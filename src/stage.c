@@ -114,9 +114,9 @@ void print_stage_stats(struct stage_stats *data)
         fprintf(stdout, " %llu %s added\n", data->new_files - data->ignored,
                 (data->new_files - data->ignored) <= 1 ? "file" : "files");
         fprintf(stdout,
-            "    (Use " PEG_NAME " commit to commit the changes)\n");
+            "    (Use '" PEG_NAME " commit' to commit the changes)\n");
         fprintf(stdout,
-            "    (Use " PEG_NAME " stage reset to unstage the changes)\n");
+            "    (Use '" PEG_NAME " reset' to unstage the changes)\n");
     }
 
     if (data->ignored) {
@@ -125,9 +125,9 @@ void print_stage_stats(struct stage_stats *data)
         fprintf(stdout, " %llu %s ignored, already staged\n", data->ignored,
                 data->ignored <= 1 ? "file" : "files");
         fprintf(stdout,
-            "    (Use " PEG_NAME " commit to commit the changes)\n");
+            "    (Use '" PEG_NAME " commit' to commit the changes)\n");
         fprintf(stdout,
-            "    (Use " PEG_NAME " stage reset to unstage the changes)\n");
+            "    (Use '" PEG_NAME " reset' to unstage the changes)\n");
     }
 }
 
