@@ -36,17 +36,18 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
     if (cm->cmt_desc.len) {
         printf("\n%s\n\n", cm->cmt_desc.buf);
     }
-    printf(YELLOW" %zu"RESET" %s changed, ", opts->file_modified + opts->new_files,
+    printf(YELLOW" %llu"RESET" %s changed, ", opts->file_modified
+        + opts->new_files,
         (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
 
     if (opts->insertions)
-        printf(BOLD_GREEN"%zu"RESET" %s(+)", opts->insertions, opts->insertions > 1 ?
-            "additions" : "addition");
+        printf(BOLD_GREEN"%llu"RESET" %s(+)", opts->insertions, opts->insertions
+            > 1 ? "additions" : "addition");
     if (opts->insertions && opts->deletions)
         printf(", ");
     if (opts->deletions)
-        printf(BOLD_RED"%zu"RESET" %s(-)", opts->deletions, opts->deletions > 1 ?
-            "deletions" : "deletion");
+        printf(BOLD_RED"%llu"RESET" %s(-)", opts->deletions, opts->deletions > 1
+            ? "deletions" : "deletion");
     putchar('\n');
 }
 
@@ -434,20 +435,58 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     strbuf_release(&cache.cache);
 }
 
+void set_tag(const char *sha1, size_t len, const char *tag)
+{
+    struct commit_list *cl, *node;
+    struct commit *cm;
+
+    make_commit_list(&cl);
+
+    if (!cl)
+        die("There is no "BLACK"commit"RESET" to tag '"YELLOW"%s"RESET"'.\n",
+            tag);
+
+    if (!sha1) {
+        /* if no sha1 is provided then we'll continue with HEAD commit*/
+        struct commit_list *prev = cl;
+
+        node = cl;
+        while (node) {
+            prev = node;
+            node = node->next;
+        }
+        cm = prev->item;
+    } else {
+        cm = find_commit_hash_compat(cl, (char*)sha1, len);
+        if (!cm)
+            die("we found no such commit '"YELLOW"%s"RESET"'.\n", sha1);
+    }
+    if (len >= TAG_SIZE)
+        die("good tags don't have such huge name like '"YELLOW"%s"RESET"'.\n"
+            "        (Try keeping small and simple tags.)\n",
+            tag);
+    strcpy(cm->tag, tag);
+    cm->flags = TAG_FLAG;
+    /* print some information */
+    printf("[ "YELLOW);
+    print_hash_size(cm->sha1, 3, stdout);
+    printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
+    printf(RESET" ]   %s\n", cm->cmt_msg.buf);
+    flush_commit_list(cl);
+}
+
 int log_commit(struct commit *cm)
 {
-    fprintf(stdout, "FLAG %d\n", cm->flags);
-    fprintf(stdout, "commit  ");
-    print_hash_compat(cm->sha1, stdout);
-    fprintf(stdout, "\n");
-    if (IF_TAG(cm->flags))
-        fprintf(stdout, "Tag: %s\n", cm->tag);
-    fprintf(stdout, "Author:  %s <%s>\n", cm->auth->name.buf,
-        cm->auth->email.buf);
-    fprintf(stdout, "Message: %s\n", cm->cmt_msg.buf);
+    printf("[ "YELLOW);
+    print_hash_size(cm->sha1, 3, stdout);
+    printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
+    printf(RESET" ]");
+    fprintf(stdout, "  %s\n\n", cm->cmt_msg.buf);
     if (cm->cmt_desc.len)
         fprintf(stdout, "\n\t%s\n\n", cm->cmt_desc.buf);
     cm->stamp._tm = localtime(&cm->stamp._time);
+    fprintf(stdout, "Author:  %s <%s>\n", cm->auth->name.buf,
+        cm->auth->email.buf);
     fprintf(stdout, "Date:    %s\n", asctime(cm->stamp._tm));
     return 0;
 }
@@ -500,7 +539,7 @@ int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
     author_init(a);
     cache_object_init(&co);
     if (!co.ci.entries)
-        die("stage data empty\n\t:(\n");
+        die("stage data empty\n");
 
     commit_init(new);
     time_stamp_init(&new->stamp);
