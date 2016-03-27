@@ -22,6 +22,8 @@ struct commit {
     size_t commit_length; /* length of the commits */
 };
 
+#define TAG_FLAG 0x1
+
 struct commit_list {
     size_t count;
     struct commit *item;
@@ -102,5 +104,13 @@ static inline struct commit *get_head_commit(struct commit_list *cl)
 }
 
 extern int checkout(int argc, char *argv[]);
+
+/**
+ * Give a tag to a particular commit if supplied with 'sha1' as NULL
+ * the tag will be given to the latest commit.
+ */
+extern void set_tag(const char *sha1, size_t len, const char *tag);
+
+extern void print_commits();
 
 #endif

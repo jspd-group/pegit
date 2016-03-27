@@ -212,11 +212,11 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
     }
 
     if (bdr->insertions || bdr->deletions == 0) {
-        strbuf_addf(stat, "%llu %s ", bdr->insertions,
+        strbuf_addf(stat, BOLD_GREEN"%zu"RESET" %s ", bdr->insertions,
                     (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
     }
     if (bdr->deletions || bdr->insertions == 0) {
-        strbuf_addf(stat, "%llu %s ", bdr->deletions,
+        strbuf_addf(stat, BOLD_RED"%zu"RESET" %s ", bdr->deletions,
                     (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
     strbuf_addch(stat, '\n');
@@ -332,9 +332,9 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
      * if i is NULL, this means j was newly added.
      */
     strbuf_addstr(out, BLACK);
-    if (i || !j) strbuf_addf(out, "%s", i);
-    if (i && j) strbuf_addf(out, " <--> ");
-    if (j || !i) strbuf_addf(out, "%s", j);
+    if (i || !j) strbuf_addstr(out, i);
+    if (i && j) strbuf_addstr(out, " <--> ");
+    if (j || !i) strbuf_addstr(out, j);
     if (!i && !j) {
         fprintf(stderr, "%s\n", out->buf);
         die("BUG: i & j both were NULL");
@@ -346,9 +346,9 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
 size_t print_lines(struct strbuf *buf, bool i_or_d)
 {
     size_t lines = count_lines(buf);
-    i_or_d ? fprintf(stdout, "%llu %s\n", lines,
+    i_or_d ? fprintf(stdout, BOLD_GREEN "%zu"RESET" %s\n", lines,
                      lines == 1 ? "addition" : "additions")
-           : fprintf(stdout, "%llu %s\n", lines,
+           : fprintf(stdout, BOLD_RED"%zu"RESET" %s\n", lines,
                      lines == 1 ? "deletion" : "deletions");
     return lines;
 }
@@ -376,7 +376,7 @@ void print_insertion_only(struct pack_file_cache *cache, struct index *idx)
     temp.len = idx->pack_len;
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
-    fprintf(stdout, "%llu %s", temp.alloc,
+    fprintf(stdout, BOLD_GREEN"%zu"RESET" %s", temp.alloc,
             temp.alloc == 1 ? "addition\n" : "additions\n");
 }
 
@@ -423,7 +423,7 @@ void print_deletion_only(struct pack_file_cache *cache, struct index *idx)
     temp.len = idx->pack_len;
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
-    fprintf(stdout, "%llu %s\n", temp.alloc,
+    fprintf(stdout, BOLD_RED"%zu"RESET" %s\n", temp.alloc,
             temp.alloc == 1 ? "deletion" : "deletions");
 }
 
@@ -457,6 +457,7 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
         }
         else {
             delta_index_splash(&out, nodea->idx->filename, NULL);
+	    print_object_insertions(&cache, nodea->idx);
         }
         nodea = nodea->next;
     }
@@ -471,10 +472,13 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
         if (!minimal)
             print_insertion_only(&cache, nodea->idx);
         else {
+	        print_object_insertions(&cache, nodea->idx);
         }
+	    nodea = nodea->next;
         strbuf_setlen(&out, 0);
     }
     strbuf_release(&cache.cache);
+    strbuf_release(&out);
 }
 
 void do_file_delta_minimal(const char *path, struct strbuf *a, struct strbuf *b)

@@ -12,8 +12,10 @@ enum cmd_type {
     COMMIT,
     REVERT,
     RST,
+    HIST,
     COMPARE,
     SEE,
+    TAG,
     SET,
     HELP,
     INVALID,
@@ -31,14 +33,16 @@ static struct command_type cmds[] = {
     { INSERT, "insert" },
     { COMMIT, "commit" },
     { RST, "reset" },
+    { HIST, "hist" },
     { REVERT, "revert" },
     { COMPARE, "compare" },
+    { TAG, "tag" },
     { HELP, "help" },
     { SEE, "seeChanges" },
     { SET, "setAlias" }
 };
 
-#define COMMAND_COUNT 6
+#define COMMAND_COUNT 10
 
 static int argc;
 static char **argv;
@@ -191,6 +195,14 @@ bool parse_set_cmd(int argc, char **argv)
     return true;
 }
 
+bool create_tag(int argc, char *argv[])
+{
+    if (argc < 3)
+        die("arguments should be 'peg tag <commit> <tag>'\n");
+    set_tag(argv[1], strlen(argv[1]), argv[2]);
+    return true;
+}
+
 bool exec_commands_args(enum cmd_type cmd, int out, char **in)
 {
     size_t peek;
@@ -219,6 +231,15 @@ bool exec_commands_args(enum cmd_type cmd, int out, char **in)
                 cache_object_clean(&co);
                 exit(0);
             }
+
+        case TAG:
+            return create_tag(out, in);
+        case HIST:
+        {
+            print_commits();
+            break;
+        }
+
         case USER:
         case INVALID:
         case UNKNOWN:

@@ -32,7 +32,7 @@ static int strbuf_list_init(struct strbuf_list *sbl)
 static int strbuf_list_add(struct strbuf_list *sbl, const void *buf,
                            size_t size, char sign, size_t index)
 {
-    struct strbuf_list_node *node = MALLOC(struct strbuf_list_node, 1);
+    struct strbuf_list_node *node = malloc(sizeof(struct strbuf_list_node));
 
     if (!node) die("Out of memory\n");
 

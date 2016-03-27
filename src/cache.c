@@ -267,5 +267,3 @@ void cache_object_add_compressed_file(struct cache_object *co, FILE *f)
     strbuf_release(&buf);
     strbuf_release(&dest);
 }
-
-
