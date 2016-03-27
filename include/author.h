@@ -40,7 +40,7 @@ static inline void author_write(struct author *auth, FILE *f)
 
 static inline void author_read(struct author *auth, FILE *f)
 {
-    size_t len;
+    size_t len = 0;
 
     fread(&len, sizeof(size_t), 1, f);
     if (len > auth->name.alloc) die("fatal: `len' outside `alloc'\n");
