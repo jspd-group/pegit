@@ -10,7 +10,10 @@
 #include "index.h"
 
 struct commit {
+    int16_t flags; /* various commit flags */
     char sha1[HASH_SIZE];    /* sha1 hash */
+    char tag[TAG_SIZE]; /* user defined tag */
+    char sha1str[SHA_STR_SIZE + 1];
     struct author *auth;    /* author of the commit */
     struct strbuf cmt_msg; /* commit message */
     struct strbuf cmt_desc; /* commit description */
@@ -38,7 +41,8 @@ typedef bool(commit_match_fn)(struct commit *);
  *     `cmt' : represents the commit message, which should not be empty
  *     `det' : represents the commit description, which can be empty
  */
-extern int generate_new_commit(struct strbuf *cmt, struct strbuf *det);
+extern int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
+    char tag[TAG_SIZE], int16_t flags);
 
 /**
  * Kind of main function for generating a new commit.
@@ -74,11 +78,16 @@ extern void commit_list_del(struct commit_list **head);
 extern struct commit *find_commit_hash(struct commit_list *cl,
     char sha1[HASH_SIZE]);
 
+extern struct commit *find_commit_hash_compat(struct commit_list *cl,
+    char *sha1, size_t len);
+
 extern void make_index_list_from_commit(struct commit *node,
     struct index_list **head);
 
 extern struct index *find_file_index_list(struct index_list *head,
     const char *file);
+
+extern struct index_list *get_head_commit_list(struct commit_list *head);
 
 static inline struct commit *get_head_commit(struct commit_list *cl)
 {
@@ -91,5 +100,7 @@ static inline struct commit *get_head_commit(struct commit_list *cl)
     }
     return prev->item;
 }
+
+extern int checkout(int argc, char *argv[]);
 
 #endif

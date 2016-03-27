@@ -224,26 +224,26 @@ ssize_t strbuf_read_once(struct strbuf *sb, int fd, size_t hint)
 
 #define STRBUF_MAXLINK (2*PATH_MAX)
 
-// int strbuf_getcwd(struct strbuf *sb)
-// {
-// 	size_t oldalloc = sb->alloc;
-// 	size_t guessed_len = 128;
+int strbuf_getcwd(struct strbuf *sb)
+{
+	size_t oldalloc = sb->alloc;
+	size_t guessed_len = 128;
 
-// 	for (;; guessed_len *= 2) {
-// 		strbuf_grow(sb, guessed_len);
-// 		if (getcwd(sb->buf, sb->alloc)) {
-// 			strbuf_setlen(sb, strlen(sb->buf));
-// 			return 0;
-// 		}
-// 		if (errno != ERANGE)
-// 			break;
-// 	}
-// 	if (oldalloc == 0)
-// 		strbuf_release(sb);
-// 	else
-// 		strbuf_reset(sb);
-// 	return -1;
-// }
+	for (;; guessed_len *= 2) {
+		strbuf_grow(sb, guessed_len);
+		if (getcwd(sb->buf, sb->alloc)) {
+			strbuf_setlen(sb, strlen(sb->buf));
+			return 0;
+		}
+		if (errno != ERANGE)
+			break;
+	}
+	if (oldalloc == 0)
+		strbuf_release(sb);
+	else
+		strbuf_reset(sb);
+	return -1;
+}
 
 #ifdef HAS_GETDELIM
 
@@ -267,17 +267,6 @@ int strbuf_getwholeline(struct strbuf *sb, FILE *fp, int term)
 	}
 	assert(r == -1);
 
-	/*
-	 * Normally we would have called xrealloc, which will try to free
-	 * memory and recover. But we have no way to tell getdelim() to do so.
-	 * Worse, we cannot try to recover ENOMEM ourselves, because we have
-	 * no idea how many bytes were read by getdelim.
-	 *
-	 * Dying here is reasonable. It mirrors what xrealloc would do on
-	 * catastrophic memory failure. We skip the opportunity to free pack
-	 * memory and retry, but that's unlikely to help for a malloc small
-	 * enough to hold a single line of input, anyway.
-	 */
 	if (errno == ENOMEM)
 		die("Out of memory, getdelim failed");
 

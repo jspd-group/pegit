@@ -14,7 +14,7 @@ struct cache_index_entry_list* create_node(size_t start, size_t len)
                     MALLOC(struct cache_index_entry_list, 1);
     cache_index_entry_list_init(ne);
     if (!ne)
-        die("fatal: memory not available\n:(\n");
+        die("memory not available\n");
     ne->start = start;
     ne->len = len;
     return ne;
@@ -54,7 +54,7 @@ void open_index_file(struct cache_index *idx)
 {
     idx->idxfile = fopen(CACHE_INDEX_FILE, "rwb");
     if (!idx->idxfile)
-        die("fatal: can't read %s\n\t:(\n", CACHE_INDEX_FILE);
+        die("can't read %s, %s\n", CACHE_INDEX_FILE, strerror(errno));
 }
 
 int read_index_node(struct cache_index *idx,
@@ -86,7 +86,7 @@ int read_index_file(struct cache_index *idx)
     for (i = 0; i < idx->num; i++) {
         n = create_node(0, 0);
         if (read_index_node(idx, n))
-            die("fatal: error while reading cache\n\t:(\n");
+            die("error while reading cache\n");
         cache_index_entry_list_insert(&idx->entries, &idx->last, n);
     }
     fclose(idx->idxfile);
@@ -97,7 +97,7 @@ void write_index_node(struct cache_index *idx,
                       struct cache_index_entry_list *n)
 {
     if (!n)
-        die("BUG: cache_index_entry_list node was NULL\n\t:(\n");
+        die("BUG: cache_index_entry_list node was NULL\n");
     fwrite(&n->start, sizeof(size_t), 1, idx->idxfile);
     fwrite(&n->len, sizeof(size_t), 1, idx->idxfile);
     fwrite(&n->file_path.len, sizeof(size_t), 1, idx->idxfile);
@@ -111,6 +111,9 @@ int write_index_file(struct cache_index *idx)
     struct cache_index_entry_list *n;
 
     idx->idxfile = fopen(CACHE_INDEX_FILE, "wb");
+    if (!idx->idxfile) {
+        die("%s, error occurred, %s\n", CACHE_INDEX_FILE, strerror(errno));
+    }
     ret = fwrite(&idx->num, sizeof(size_t), 1, idx->idxfile);
     if (ret < 1)
         return -1;
@@ -167,7 +170,7 @@ void open_cache_file(struct cache *c)
 {
     c->cachefile = fopen(CACHE_PACK_FILE, "rwb");
     if (!c->cachefile)
-        die("fatal: can't open %s\n\t:(\n", CACHE_PACK_FILE);
+        die("can't open %s\n", CACHE_PACK_FILE);
 }
 
 void read_cache_file(struct cache *c)
@@ -192,7 +195,7 @@ void write_cache_file(struct cache *c)
     ret = fwrite(c->cache_buf.buf, sizeof(char),
                 c->cache_buf.len, c->cachefile);
     if (ret < c->cache_buf.len)
-        die("fatal: unable to write %s\n\t:(\n", CACHE_PACK_FILE);
+        die("unable to write %s\n", CACHE_PACK_FILE);
     c->flushed = true;
     fclose(c->cachefile);
     c->cachefile = NULL;
@@ -245,7 +248,7 @@ void cache_object_add_file(struct cache_object *co, FILE *f)
     size_t len = file_length(f);
     struct strbuf buf = STRBUF_INIT;
     if (strbuf_fread(&buf, len, f) < len)
-        die("fatal: unable to read file\n\t:(\n");
+        die("unable to read file\n");
     cache_object_add(co, &buf);
 
     strbuf_release(&buf);
@@ -258,7 +261,7 @@ void cache_object_add_compressed_file(struct cache_object *co, FILE *f)
     struct strbuf dest = STRBUF_INIT;
 
     if (strbuf_fread(&buf, len, f) < len)
-        die("fatal: unable to read file\n\t:(\n");
+        die("unable to read file\n");
     __compress__(&buf, &dest, 9);
     cache_object_add(co, &dest);
     strbuf_release(&buf);

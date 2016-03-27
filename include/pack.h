@@ -40,22 +40,31 @@ struct pack_file_cache {
 static inline int cache_pack_file(struct pack_file_cache *cache)
 {
     FILE *f = fopen(PACK_FILE, "rb");
-    if (!f) die("fatal: unable to open pack file\n\t:(\n");
+    struct strbuf temp = STRBUF_INIT;
+
+    if (!f) die("unable to open pack file, %s\n", strerror(errno));
     size_t size = file_length(f);
-    strbuf_fread(&cache->cache, size, f);
+    strbuf_fread(&temp, size, f);
+    if (size != 0) {
+        decompress(&temp, &cache->cache);
+    }
     fclose(f);
+    strbuf_release(&temp);
     return 0;
 }
 
 static inline int flush_pack_cache(struct pack_file_cache *cache)
 {
     int ret = 0;
+    struct strbuf temp = STRBUF_INIT;
     FILE *cache_file = fopen(cache->pack_file_path, "wb");
 
+    compress_default(&cache->cache, &temp);
     if (!cache_file)
-        die("fatal: unable to pack file\n\t:(\n");
-    ret = fwrite(cache->cache.buf, sizeof(char), cache->cache.len, cache_file);
+        die("unable to pack file, %s\n", strerror(errno));
+    ret = fwrite(temp.buf, sizeof(char), temp.len, cache_file);
     fclose(cache_file);
+    strbuf_release(&temp);
     return (ret == cache->cache.len);
 }
 
