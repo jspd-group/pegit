@@ -105,11 +105,18 @@ void file_list_add(struct file_list *node)
 
 void print_stage_stats(struct stage_stats *data)
 {
+#ifdef _WIN32
     if (data->files_modified && (data->files_modified - data->ignored)) {
         fprintf(stdout, " %llu %s modified\n", data->files_modified,
                 data->files_modified <= 1 ? "file" : "files");
     }
-
+#else
+    if (data->files_modified && (data->files_modified - data->ignored)) {
+        fprintf(stdout, " %zu %s modified\n", data->files_modified,
+                data->files_modified <= 1 ? "file" : "files");
+    }
+#endif
+#ifdef _WIN32
     if (data->new_files && (data->new_files - data->ignored)) {
         fprintf(stdout, " %llu %s added\n", data->new_files - data->ignored,
                 (data->new_files - data->ignored) <= 1 ? "file" : "files");
@@ -129,6 +136,27 @@ void print_stage_stats(struct stage_stats *data)
         fprintf(stdout,
             "    (Use '" PEG_NAME " reset' to unstage the changes)\n");
     }
+#else
+    if (data->new_files && (data->new_files - data->ignored)) {
+        fprintf(stdout, " %zu %s added\n", data->new_files - data->ignored,
+                (data->new_files - data->ignored) <= 1 ? "file" : "files");
+        fprintf(stdout,
+            "    (Use '" PEG_NAME " commit' to commit the changes)\n");
+        fprintf(stdout,
+            "    (Use '" PEG_NAME " reset' to unstage the changes)\n");
+    }
+
+    if (data->ignored) {
+        fprintf(stdout,
+                "Staged files exists, please commit or reset the changes\n");
+        fprintf(stdout, " %zu %s ignored, already staged\n", data->ignored,
+                data->ignored <= 1 ? "file" : "files");
+        fprintf(stdout,
+            "    (Use '" PEG_NAME " commit' to commit the changes)\n");
+        fprintf(stdout,
+            "    (Use '" PEG_NAME " reset' to unstage the changes)\n");
+    }
+#endif 
 }
 
 void load_old_cache_file(struct cache_object *co) { cache_object_init(co); }
