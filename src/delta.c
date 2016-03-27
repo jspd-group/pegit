@@ -332,9 +332,9 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
      * if i is NULL, this means j was newly added.
      */
     strbuf_addstr(out, BLACK);
-    if (i || !j) strbuf_addf(out, "%s", i);
-    if (i && j) strbuf_addf(out, " <--> ");
-    if (j || !i) strbuf_addf(out, "%s", j);
+    if (i || !j) strbuf_addstr(out, i);
+    if (i && j) strbuf_addstr(out, " <--> ");
+    if (j || !i) strbuf_addstr(out, j);
     if (!i && !j) {
         fprintf(stderr, "%s\n", out->buf);
         die("BUG: i & j both were NULL");
@@ -472,12 +472,13 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
         if (!minimal)
             print_insertion_only(&cache, nodea->idx);
         else {
-	  print_object_insertions(&cache, nodea->idx);
+	        print_object_insertions(&cache, nodea->idx);
         }
-	nodea = nodea->next;
+	    nodea = nodea->next;
         strbuf_setlen(&out, 0);
     }
     strbuf_release(&cache.cache);
+    strbuf_release(&out);
 }
 
 void do_file_delta_minimal(const char *path, struct strbuf *a, struct strbuf *b)
