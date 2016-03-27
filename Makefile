@@ -47,7 +47,7 @@ test-checkout: strbuf.o checkout.o cache.o file.o mz.o index.o visitor.o delta.o
 
 
 test-status: strbuf.o status.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o
-	$(CC) strbuf.o status.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o -lz -o test-status
+	$(CC) strbuf.o status.o cache.o file.o mz.o index.o visitor.o delta.o	path.o delta-file.o timestamp.o commit.o -lz -o test-status
 
 test-tree: strbuf.o tree.o test-tree.o
 
@@ -139,6 +139,5 @@ status.o: $(SRC)status.c
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)status.c	
 
 clean:
-
 	-@rm *.o test-*
->>>>>>> f9c35e7a3630d2ef72018a8e64ff64847058483d
+
