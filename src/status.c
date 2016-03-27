@@ -35,7 +35,8 @@ struct d_node{
  * To implement stack by linked list of struct d_node s pionters to 
  * current node , head of linked list and previous node are needed
  */
-struct d_node *d_root = NULL , *d_sptr = NULL , *d_ptr = NULL;  
+struct d_node *d_root = NULL , *d_sptr = NULL , *d_ptr = NULL; 
+int count_new = 0 , count_modified = 0 , count_cached = 0; 
 
 
 int status()
@@ -63,7 +64,6 @@ int status()
    name = file_path(parent_dir , name);
    if (stat(name,&status) < 0)
       die("can't stat %s, %s", name, strerror(errno));
-   printf("%s: %s\n", name, S_ISDIR(status.st_mode) ? " directory" : "file");
  
    /* if the object returned by readdir is a regular file then 
     * we will create a FILE stream to the file and read the contents of the file
@@ -111,6 +111,7 @@ int status()
        }
        else 
        {
+         count_modified ++;
          ptr = createnode();
          intialise_node(&ptr , d , 1 , NULL);
          insert_node(&root , &ptr , &sptr);            
@@ -118,9 +119,11 @@ int status()
      }
      else
      {
+
+        count_new ++ ;
         ptr = createnode();
-      intialise_node(& ptr , d , 2 , NULL);
-      insert_node(&root , &ptr , &sptr);
+       intialise_node(& ptr , d , 2 , NULL);
+       insert_node(&root , &ptr , &sptr);
      }
     }
     /*
@@ -238,34 +241,47 @@ void print_status(struct node * root)
 {
   struct node *tptr = NULL;
   tptr = root;
-  
+  if (count_modified)
+  {
   while(tptr->next != NULL)
   { 
      if (tptr->status == 1)
      {
-       printf("modified : %s\n",(tptr->file_info)->d_name);
+      printf(RED);
+       printf("\tmodified : %s\n",(tptr->file_info)->d_name);
      }
        tptr = tptr->next ;
     }
+ }
+    tptr = root;
+    if(count_new)
+    {
+     printf("Untracked files exist in project directory\n      please use '" YELLOW "peg insert <files>..." RESET "'\n");
+   
+     while(tptr->next != NULL)
+     { 
+      if (tptr->status == 2)
+       {
+         printf(DIM);
+         printf("\tnew :  %s\n",(tptr->file_info)->d_name);
+      }
+         tptr = tptr->next ;
+      }
+   } 
+    tptr = root;
 
-    tptr = root;
-  
-  while(tptr->next != NULL)
-  { 
-     if (tptr->status == 2)
-     {
-       printf("new :  %s\n",(tptr->file_info)->d_name);
-     }
-       tptr = tptr->next ;
-    }
-    tptr = root;
-  
+
+ // printf("Changes cached but not commited \n please use '"YELLOW"peg commmit -m <...>"RESET"'");
   while(tptr->next != NULL)
   { 
      if (tptr->status == 4)
      {
-       printf("old :  %s\n",(tptr->file_info)->d_name);
+      printf(BOLD_GREEN);
+       printf("\nold :  %s\n",(tptr->file_info)->d_name);
      }
+
        tptr = tptr->next ;
     }
+  printf(RESET);
 }
+
