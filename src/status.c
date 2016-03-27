@@ -7,7 +7,6 @@
 #include<malloc.h>
 
 
-int file_cmp(struct dirent* , struct strbuf ,struct strbuf);
 struct node * createnode();
 void intialise_node(struct node ** , struct dirent * , int ,struct node * );
 void insert_node(struct node **,struct node **, struct node **);
@@ -15,6 +14,7 @@ struct d_node *pop();
 void push(struct dirent* , char*);
 char * path(struct d_node *);
 void print_status(struct node*);
+char * file_path (char * , char *);
 
 
 struct node
@@ -40,11 +40,11 @@ struct d_node *d_root = NULL , *d_sptr = NULL , *d_ptr = NULL;
 
 int status()
 {
-  DIR *directory;//  create  a stream to the directory
-  char *name ;
+  DIR *directory;//  create  a stream to the directory , opendir() returns object of DIR type
+  char *name ;   // to store name of the file
   struct dirent * d ;  // dirent stands for directory entry
   struct stat status ;
-  FILE *file;
+  FILE *file;         // to create a stream to the file in directory
   struct strbuf buffer1,buffer2;
   char c;
   struct node *root = NULL ,*ptr = NULL , *sptr = NULL;
@@ -54,12 +54,15 @@ int status()
   back :
   directory = opendir(parent_dir); // open the current working directory
   if(directory == NULL)
-    die("Could not open the directory ");
-  while((d = readdir(directory))) 
-  {  //redir() is analogus to fget()
-    
+    die("Could not open the directory %s\n", parent_dir);
+  
+  while((d = readdir(directory)))  // start reading the content of directory which can be a file or a directory 
+  {  
+
    name = d->d_name;
-   stat(name,&status);
+   name = file_path(parent_dir , name);
+   if (stat(name,&status) < 0)
+      die("can't stat %s, %s", name, strerror(errno));
    printf("%s: %s\n", name, S_ISDIR(status.st_mode) ? " directory" : "file");
  
    /* if the object returned by readdir is a regular file then 
@@ -72,8 +75,10 @@ int status()
     * if there is no file by that name then it will mean that the file is newly created
     * if the file by that name exists but contents are different then it will mean modification*/
  
+    
     if(S_ISREG(status.st_mode))
     {
+    
       file = fopen(name,"r"); 
 
       if(file == NULL)  // unable to create stream to this file
@@ -82,8 +87,7 @@ int status()
       }
       strbuf_init(&buffer1,0); // initialisng two string buffers with length 0
       strbuf_init(&buffer2,0);
-      while((c=fgetc(file))!=EOF)  // storing the content of file in string buffer1
-        strbuf_addch(&buffer1,c);
+      strbuf_fread(&buffer1, status.st_size, file);
       
       file_exists_db = find_file_from_head_commit(name,&buffer2); // reading file named name(means same as the name of current file) from database and storing it in string buffer2
       if(file_exists_db)
@@ -127,22 +131,41 @@ int status()
     {
       if(S_ISDIR(status.st_mode))
       {
+        if (!strcmp(d->d_name , ".")||!strcmp(d->d_name,".."))
+          continue;
         push(d, parent_dir);
       }
     }
   }
   close(directory); 
+
   if(d_sptr != d_root)
+  {
   d_tptr = pop();
   parent_dir = path(d_tptr);
   goto back;
+  }
+  else
   print_status(root);
 }
  
+
 void main(){
- int a;
- a = status() ; 
+ 
+ status() ; 
+
 }
+
+char * file_path ( char * parent_dir , char * name)
+{
+  struct strbuf buffer;
+  strbuf_init(& buffer ,0);
+  strbuf_addstr(&buffer , parent_dir);
+  strbuf_addch(&buffer , '/');
+  strbuf_addstr(&buffer , name);
+  return (buffer.buf);
+}
+
 
 struct node * createnode()
 {
@@ -150,7 +173,7 @@ struct node * createnode()
 }
 
 void intialise_node(struct node ** node , struct dirent * d , int status ,struct node * next)
-{
+{     
   (*node)->file_info = d;
   (*node)->status = status;
   (*node)->next = NULL;
@@ -183,7 +206,7 @@ void push(struct dirent * d, char *parent_dir)
       d_root = d_ptr;
       d_sptr = d_ptr;
       d_ptr -> previous = NULL;     
-    }
+    } 
     else
     {
       d_sptr -> next = d_ptr;
@@ -220,7 +243,7 @@ void print_status(struct node * root)
   { 
      if (tptr->status == 1)
      {
-       printf("modified :\t %s",(tptr->file_info)->d_name);
+       printf("modified : %s\n",(tptr->file_info)->d_name);
      }
        tptr = tptr->next ;
     }
@@ -231,7 +254,7 @@ void print_status(struct node * root)
   { 
      if (tptr->status == 2)
      {
-       printf("new :\t %s",(tptr->file_info)->d_name);
+       printf("new :  %s\n",(tptr->file_info)->d_name);
      }
        tptr = tptr->next ;
     }
@@ -241,7 +264,7 @@ void print_status(struct node * root)
   { 
      if (tptr->status == 4)
      {
-       printf("old :\t %s",(tptr->file_info)->d_name);
+       printf("old :  %s\n",(tptr->file_info)->d_name);
      }
        tptr = tptr->next ;
     }
