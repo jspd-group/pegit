@@ -113,4 +113,5 @@ extern void set_tag(const char *sha1, size_t len, const char *tag);
 
 extern void print_commits();
 
+extern void list_tags();
 #endif
