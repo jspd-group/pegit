@@ -491,6 +491,23 @@ int log_commit(struct commit *cm)
     return 0;
 }
 
+void list_tags()
+{
+    struct commit_list *cl;
+    struct commit_list *node;
+
+    make_commit_list(&cl);
+    if (!cl) return;
+
+    node = cl;
+    while (node) {
+        if (IF_TAG(node->item->flags))
+            fprintf(stdout, YELLOW"%s\n"RESET, node->item->tag);
+        node = node->next;
+    }
+    commit_list_del(&cl);
+}
+
 void print_commits()
 {
     struct commit_list *cm;
