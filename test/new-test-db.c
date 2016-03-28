@@ -7,10 +7,10 @@ int main()
 	printf("Done check 0\n");
 	initialize_database(&db,"jatinder","dhawan");
 	printf("Done check 1\n");
-	//create_schema(&db);
+	create_schema(&db);
 	printf("Done check 2\n");
-	//int id=create_new_project(&db,"git_pro");
-	//printf("id = %d SUCCESS\n",id);
+	int id=create_new_project(&db,"git_pro");
+	printf("id = %d SUCCESS\n",id);
 	add_single_file(&db,1,"C:\\Users\\Jatinder Dhawan\\Desktop\\git\\abc.png",3);
 	printf("=======================\n");	
 	find_in_database(&db,"C:\\Users\\Jatinder Dhawan\\Desktop\\git\\abc.png","C:\\Users\\Jatinder Dhawan\\Desktop\\git\\abc.png");
