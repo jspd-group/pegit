@@ -36,6 +36,7 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
     if (cm->cmt_desc.len) {
         printf("\n%s\n\n", cm->cmt_desc.buf);
     }
+#ifdef _WIN32
     printf(YELLOW" %llu"RESET" %s changed, ", opts->file_modified
         + opts->new_files,
         (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
@@ -49,6 +50,21 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
         printf(BOLD_RED"%llu"RESET" %s(-)", opts->deletions, opts->deletions > 1
             ? "deletions" : "deletion");
     putchar('\n');
+#else
+    printf(YELLOW" %zu"RESET" %s changed, ", opts->file_modified
+        + opts->new_files,
+        (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
+
+    if (opts->insertions)
+        printf(BOLD_GREEN"%zu"RESET" %s(+)", opts->insertions, opts->insertions
+            > 1 ? "additions" : "addition");
+    if (opts->insertions && opts->deletions)
+        printf(", ");
+    if (opts->deletions)
+        printf(BOLD_RED"%zu"RESET" %s(-)", opts->deletions, opts->deletions > 1
+            ? "deletions" : "deletion");
+    putchar('\n');
+#endif
 }
 
 void commit_init(struct commit *cm)
