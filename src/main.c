@@ -197,9 +197,14 @@ bool parse_set_cmd(int argc, char **argv)
 
 bool create_tag(int argc, char *argv[])
 {
-    if (argc < 3)
-        die("arguments should be 'peg tag <commit> <tag>'\n");
-    set_tag(argv[1], strlen(argv[1]), argv[2]);
+    if (argc == 1) {
+        list_tags();
+        return true;
+    }
+
+    if (argc == 2)
+        set_tag(NULL, 0, argv[1]);
+    else set_tag(argv[1], strlen(argv[1]), argv[2]);
     return true;
 }
 
@@ -250,7 +255,7 @@ bool exec_commands_args(enum cmd_type cmd, int out, char **in)
 
 void gen_argv_array(struct strbuf *args, char ***argv, int *argc)
 {
-    int count = 1, j = 1;
+    int count = 0, j = 0;
     for (int i = 0; i < args->len;) {
         if (args->buf[i] == '"') {
             while (++i < args->len && args->buf[i] != '"')
@@ -266,7 +271,8 @@ void gen_argv_array(struct strbuf *args, char ***argv, int *argc)
         }
         i++;
     }
-    *argv = malloc(sizeof(char**) * (count + 1));
+    count++;
+    *argv = malloc(sizeof(char**) * (count));
     for (int i = 0; i < args->len; i++) {
         if (i == 0) {
             (*argv)[j] = args->buf;
@@ -277,7 +283,7 @@ void gen_argv_array(struct strbuf *args, char ***argv, int *argc)
             j++;
         }
     }
-    *argc = count + 1;
+    *argc = count;
 }
 
 void exec_cmd(enum cmd_type cmd, struct strbuf *args)
@@ -297,7 +303,7 @@ void join_args(struct strbuf *args, int argc, char *argv[])
     struct strbuf temp = STRBUF_INIT;
     int i = 0, len = 0, find;
 
-    for (i = 1; i < argc; i++) {
+    for (i = 0; i < argc; i++) {
         strbuf_addstr(&temp, argv[i]);
         len = strbuf_findch(&temp, ' ');
         if (len >= 0) {
