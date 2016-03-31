@@ -15,12 +15,6 @@ char *path(struct d_node *);
 void print_status(struct node *);
 char *file_path(char *, char *);
 
-struct status_options {
-    bool minimal_output;
-    bool
-};
-
-struct status_options s_opts;
 
 struct node {
     char *name;
