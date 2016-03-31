@@ -2,7 +2,9 @@
 ===============================================================================
 
 ## Introduction
-[Version control](https://en.wikipedia.org/wiki/Version_control) is a *system* that 
+This project is inspired by [git](https://github.com/git/git).
+
+[Version control](https://en.wikipedia.org/wiki/Version_control) is a *system* that
 records changes to a file or set of files over time so that you can recall
 specific versions later.
 
@@ -49,29 +51,4 @@ version. He can reproduce and understand a bug report on a past version of the
 project's source code. He can also undo specific edits without losing all the
 work that was done in the meanwhile. For any part of a file, he can determine
 when and why it was ever edited.
-
-
-## 1st Stage
-All the information mentioned above will constitute the first stage of our
-project.
-
-
-## 2nd Stage
-In the second stage of this project we will introduce networking concepts into
-our project. Multiple users can work on same project. And it will enable
-multiple people to simultaneously work on a single project. Each person edits
-his or her own copy of the files and chooses when to share those changes with
-the rest of the team. Thus, temporary or partial edits by one person do not
-interfere with another person's work. It will also enable one person to use
-multiple computers to work on a project. It will be able to integrate work done
-simultaneously by different team members. In most cases, edits to different
-files or even the same file will be combined without losing any work. In rare
-cases, when two people make conflicting edits to the same line of a file, then
-it will request human assistance in deciding what to do.
-
-
-## 3rd Stage
-In the third stage, we will introduce graphical user interface into our project.
-
-_In this semester, we will work on first stage._
 
