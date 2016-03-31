@@ -13,6 +13,7 @@ enum cmd_type {
     REVERT,
     RST,
     HIST,
+    STATUS,
     COMPARE,
     SEE,
     TAG,
@@ -34,6 +35,7 @@ static struct command_type cmds[] = {
     { COMMIT, "commit" },
     { RST, "reset" },
     { HIST, "hist" },
+    { STATUS, "status" },
     { REVERT, "revert" },
     { COMPARE, "compare" },
     { TAG, "tag" },
@@ -237,6 +239,8 @@ bool exec_commands_args(enum cmd_type cmd, int out, char **in)
                 exit(0);
             }
 
+        case STATUS:
+            return status_main(out, in);
         case TAG:
             return create_tag(out, in);
         case HIST:
