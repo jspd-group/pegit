@@ -151,7 +151,7 @@ back:
     return 0;
 }
 
-int main(int argc, char* argv[])  // arguments in main send to give options to the user
+int status_main(int argc, char* argv[])  // arguments in main send to give options to the user
 {
     status();
     return 0;
