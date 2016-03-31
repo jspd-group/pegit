@@ -255,7 +255,7 @@ bool exec_commands_args(enum cmd_type cmd, int out, char **in)
 
 void gen_argv_array(struct strbuf *args, char ***argv, int *argc)
 {
-    int count = 0, j = 0;
+    int count = 0, j = 1;
     for (int i = 0; i < args->len;) {
         if (args->buf[i] == '"') {
             while (++i < args->len && args->buf[i] != '"')
@@ -271,7 +271,7 @@ void gen_argv_array(struct strbuf *args, char ***argv, int *argc)
         }
         i++;
     }
-    count++;
+    count += 2;
     *argv = malloc(sizeof(char**) * (count));
     for (int i = 0; i < args->len; i++) {
         if (i == 0) {
@@ -303,7 +303,7 @@ void join_args(struct strbuf *args, int argc, char *argv[])
     struct strbuf temp = STRBUF_INIT;
     int i = 0, len = 0, find;
 
-    for (i = 0; i < argc; i++) {
+    for (i = 1; i < argc; i++) {
         strbuf_addstr(&temp, argv[i]);
         len = strbuf_findch(&temp, ' ');
         if (len >= 0) {
