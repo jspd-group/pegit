@@ -16,10 +16,10 @@ release: CFLAGS += -O2
 release: all
 
 
-test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage test-status
+test:  test-commit test-mz test-strbuf test-file test-delta test-deltafile test-tree test-visitor test-init test-stage
 
-peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o
-	$(CC) strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o -lz tree.o -o peg
+peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o
+	$(CC) strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o status.o -lz tree.o -o peg
 
 
 test-mz: strbuf.o file.o mz.o test-mz.o
@@ -44,10 +44,6 @@ test-commit: strbuf.o test-commit.o cache.o file.o mz.o index.o visitor.o delta.
 
 test-checkout: strbuf.o checkout.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o path.o
 	$(CC) strbuf.o checkout.o cache.o file.o mz.o index.o visitor.o delta.o	delta-file.o timestamp.o commit.o path.o -lz -o test-checkout
-
-
-test-status: strbuf.o status.o cache.o file.o mz.o index.o visitor.o delta.o  delta-file.o timestamp.o commit.o
-	$(CC) strbuf.o status.o cache.o file.o mz.o index.o visitor.o delta.o	path.o delta-file.o timestamp.o commit.o -lz -o test-status
 
 test-tree: strbuf.o tree.o test-tree.o
 
@@ -136,7 +132,7 @@ test-visitor.o: $(TEST)test-visitor.c tree.o visitor.o
 	$(CC) -I $(INC) $(CFLAGS) -c $(TEST)test-visitor.c
 
 status.o: $(SRC)status.c
-	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)status.c	
+	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)status.c
 
 clean:
 	-@rm *.o test-*
