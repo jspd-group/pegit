@@ -323,6 +323,12 @@ void join_args(struct strbuf *args, int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+    if (strcmp(argv[1], "create")) {
+        struct stat st;
+        if (stat(".peg", &st)) {
+            die("Not a peg repository.\n");
+        }
+    }
     if (argc < 2) {
         die("No arguments provided.\n");
     }
