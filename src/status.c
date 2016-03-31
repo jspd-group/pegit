@@ -7,7 +7,7 @@
 #include <malloc.h>
 
 struct node *createnode();
-void intialise_node(struct node **, struct dirent *, int, struct node *);
+void intialise_node(struct node **, char *, int, struct node *);
 void insert_node(struct node **, struct node **, struct node **);
 struct d_node *pop();
 void push(struct dirent *, char *);
@@ -15,14 +15,21 @@ char *path(struct d_node *);
 void print_status(struct node *);
 char *file_path(char *, char *);
 
+struct status_options {
+    bool minimal_output;
+    bool
+};
+
+struct status_options s_opts;
+
 struct node {
-    struct dirent *file_info;
+    char *name;
     int status; // status of the file
     struct node *next;
 };
 
 struct d_node {
-    struct dirent *directory;
+    struct strbuf name;
     char *parent_dir;
     struct d_node *next;
     struct d_node *previous;
@@ -109,19 +116,19 @@ back:
             if (file_exists_db) {
                 if (response == 0) {
                     ptr = createnode();
-                    intialise_node(&ptr, d, 4, NULL);
+                    intialise_node(&ptr, name, 4, NULL);
                     insert_node(&root, &ptr, &sptr);
                 } else {
                     count_modified++;
                     ptr = createnode();
-                    intialise_node(&ptr, d, 1, NULL);
+                    intialise_node(&ptr, name, 1, NULL);
                     insert_node(&root, &ptr, &sptr);
                 }
             } else {
 
                 count_new++;
                 ptr = createnode();
-                intialise_node(&ptr, d, 2, NULL);
+                intialise_node(&ptr, name, 2, NULL);
                 insert_node(&root, &ptr, &sptr);
             }
         }
@@ -150,7 +157,7 @@ back:
     return 0;
 }
 
-int main()
+int main(int argc, char* argv[])  // arguments in main send to give options to the user
 {
     status();
     return 0;
@@ -171,10 +178,10 @@ struct node *createnode()
     return ((struct node *)malloc(sizeof(struct node)));
 }
 
-void intialise_node(struct node **node, struct dirent *d, int status,
+void intialise_node(struct node **node, char * name , int status,
                     struct node *next)
 {
-    (*node)->file_info = d;
+    (*node)->name = name;
     (*node)->status = status;
     (*node)->next = NULL;
 }
@@ -194,7 +201,8 @@ void insert_node(struct node **root, struct node **current_node,
 void push(struct dirent *d, char *parent_dir)
 {
     d_ptr = ((struct d_node *)malloc(sizeof(struct d_node)));
-    d_ptr->directory = d;
+    strbuf_init(&d_ptr->name,0);
+    strbuf_addstr(&d_ptr->name, d->d_name);
     d_ptr->parent_dir = parent_dir;
     d_ptr->next = NULL;
 
@@ -224,7 +232,7 @@ char *path(struct d_node *tptr)
     strbuf_init(&parent_dir, 0);
     strbuf_addstr(&parent_dir, tptr->parent_dir);
     strbuf_addch(&parent_dir, '/');
-    strbuf_addstr(&parent_dir, (tptr->directory)->d_name);
+    strbuf_addstr(&parent_dir, tptr->name.buf);
     return (parent_dir.buf);
 }
 
@@ -236,7 +244,7 @@ void print_status(struct node *root)
         while (tptr->next != NULL) {
             if (tptr->status == 1) {
                 printf(RED);
-                printf("\tmodified : %s\n", (tptr->file_info)->d_name);
+                printf("\tmodified : %s\n", tptr->name);
             }
             tptr = tptr->next;
         }
@@ -249,7 +257,7 @@ void print_status(struct node *root)
         while (tptr->next != NULL) {
             if (tptr->status == 2) {
                 printf(DIM);
-                printf("\tnew :  %s\n", (tptr->file_info)->d_name);
+                printf("\tnew :  %s\n", tptr->name);
             }
             tptr = tptr->next;
         }
@@ -261,7 +269,7 @@ void print_status(struct node *root)
     while (tptr->next != NULL) {
         if (tptr->status == 4) {
             printf(BOLD_GREEN);
-            printf("\nold :  %s\n", (tptr->file_info)->d_name);
+            printf("\nold :  %s\n", tptr->name);
         }
 
         tptr = tptr->next;
