@@ -16,4 +16,5 @@ struct file_list {
 
 extern int stage_main(int argc, char *argv[]);
 
+extern int status_main(int argc, char* argv[]);
 #endif
