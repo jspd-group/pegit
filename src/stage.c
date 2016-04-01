@@ -279,7 +279,7 @@ void cache_files()
         }
         node = node->next;
     }
-    if (stats.total) {
+    if (stats.total && opts.verbose) {
         printf("\n");
     }
     cache_object_write(&cache);
