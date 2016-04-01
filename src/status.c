@@ -6,28 +6,7 @@
 #include "commit.h"
 #include <malloc.h>
 
-struct node *createnode();
-void intialise_node(struct node **, char *, int, struct node *);
-void insert_node(struct node **, struct node **, struct node **);
-struct d_node *pop();
-void push(struct dirent *, char *);
-char *path(struct d_node *);
-void print_status(struct node *);
-char *file_path(char *, char *);
 
-
-struct node {
-    char *name;
-    int status; // status of the file
-    struct node *next;
-};
-
-struct d_node {
-    struct strbuf name;
-    char *parent_dir;
-    struct d_node *next;
-    struct d_node *previous;
-};
 /*
  * To implement stack by linked list of struct d_node s pionters to
  * current node , head of linked list and previous node are needed
