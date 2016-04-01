@@ -49,6 +49,14 @@ int status()
     int response, file_exists_db;
     struct d_node *d_tptr = NULL;
     char *parent_dir = ".";
+    struct commit_list *cl;
+    struct index_list *il;
+    struct index *idx;
+    struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
+
+    make_commit_list(&cl);
+    il = get_head_commit_list(cl);
+    cache_pack_file(&cache);
 back:
     directory = opendir(parent_dir); // open the current working directory
     if (directory == NULL) die("Could not open the directory %s\n", parent_dir);
@@ -90,10 +98,17 @@ back:
             strbuf_init(&buffer2, 0);
             strbuf_fread(&buffer1, status.st_size, file);
 
-            file_exists_db = find_file_from_head_commit(
-                name, &buffer2); // reading file named name(means same as the
-                                 // name of current file) from database and
-                                 // storing it in string buffer2
+            idx = find_file_index_list(il, name);
+            if (idx) {
+                file_exists_db = 1;
+                strbuf_add(&buffer2, cache.cache.buf + idx->pack_start, idx->pack_len);
+            } else {
+                file_exists_db = 0;
+            }
+            // file_exists_db = find_file_from_head_commit(
+            //     name, &buffer2); // reading file named name(means same as the
+            //                      // name of current file) from database and
+            //                      // storing it in string buffer2
             if (file_exists_db)
                 response = strcmp(buffer1.buf,
                                   buffer2.buf); // xyz.buf has string data type
@@ -112,11 +127,15 @@ back:
                     ptr = createnode();
                     intialise_node(&ptr, name, 4, NULL);
                     insert_node(&root, &ptr, &sptr);
+                    strbuf_release(&buffer1);
+                    strbuf_release(&buffer2);
                 } else {
                     count_modified++;
                     ptr = createnode();
                     intialise_node(&ptr, name, 1, NULL);
                     insert_node(&root, &ptr, &sptr);
+                    strbuf_release(&buffer1);
+                    strbuf_release(&buffer2);
                 }
             } else {
 
@@ -124,7 +143,9 @@ back:
                 ptr = createnode();
                 intialise_node(&ptr, name, 2, NULL);
                 insert_node(&root, &ptr, &sptr);
+                strbuf_release(&buffer1);
             }
+            fclose(file);
         }
         /*
         * if the current object being pointed to by dirent is a directory then
@@ -242,6 +263,7 @@ void print_status(struct node *root)
             }
             tptr = tptr->next;
         }
+        printf(RESET);
     }
     tptr = root;
     if (count_new) {
@@ -263,7 +285,7 @@ void print_status(struct node *root)
     while (tptr->next != NULL) {
         if (tptr->status == 4) {
             printf(BOLD_GREEN);
-            printf("\nold :  %s\n", tptr->name);
+            printf("\told :  %s\n", tptr->name);
         }
 
         tptr = tptr->next;
