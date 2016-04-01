@@ -325,8 +325,22 @@ void join_args(struct strbuf *args, int argc, char *argv[])
     }
 }
 
+void print_help()
+{
+    printf("no help!\n");
+}
+
 int main(int argc, char *argv[])
 {
+
+    struct strbuf args = STRBUF_INIT;
+    struct core_commands *head;
+    enum cmd_type t;
+
+    if (argc == 1 && !strcmp(argv[1], "help")) {
+        print_help();
+        exit(0);
+    }
     if (strcmp(argv[1], "create")) {
         struct stat st;
         if (stat(".peg", &st)) {
@@ -336,9 +350,6 @@ int main(int argc, char *argv[])
     if (argc < 2) {
         die("No arguments provided.\n");
     }
-    struct strbuf args = STRBUF_INIT;
-    struct core_commands *head;
-    enum cmd_type t;
 
     join_args(&args, argc, argv);
     gen_core_commands(&head);
