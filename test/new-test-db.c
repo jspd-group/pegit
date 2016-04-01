@@ -4,15 +4,28 @@ int main()
 {
 
 	struct _database_ db;
+    char command[20], username[20], password[20], name[20];
+
 	printf("Done check 0\n");
-	initialize_database(&db,"jatinder","dhawan");
+    scanf("%s",&command);
+    if(!strcmp(command,"create"))
+    {
+       printf("Enter Username and Password\n");
+       printf("Username: ");
+       scanf("%s", &username);
+       printf("Password: ");
+       scanf("%s", &password);
+    }
+	initialize_database(&db,username,password);
 	printf("Done check 1\n");
 	create_schema(&db);
 	printf("Done check 2\n");
-	int id=create_new_project(&db,"git_pro");
+    printf("Enter Project Name: ")
+	scanf("%s", name);
+    int id=create_new_project(&db,name);
 	printf("id = %d SUCCESS\n",id);
 	add_single_file(&db,1,"C:\\Users\\Jatinder Dhawan\\Desktop\\git\\abc.png",3);
-	printf("=======================\n");	
+	printf("=======================\n");
 	find_in_database(&db,"C:\\Users\\Jatinder Dhawan\\Desktop\\git\\abc.png","C:\\Users\\Jatinder Dhawan\\Desktop\\git\\abc.png");
 	printf("=======================\n");
 	get_project_id(&db,"git_pro");
@@ -33,5 +46,5 @@ int main()
 	add_multiple_file(&db,make,1,3);
 
 	update_project_version(&db,"git_pro");
-	return 0 ;	
+	return 0 ;
 }
