@@ -210,7 +210,16 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
         strbuf_addf(stat, "No difference\n");
         return;
     }
-
+#ifdef _WIN32
+    if (bdr->insertions || bdr->deletions == 0) {
+        strbuf_addf(stat, BOLD_GREEN"%llu"RESET" %s ", bdr->insertions,
+                    (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
+    }
+    if (bdr->deletions || bdr->insertions == 0) {
+        strbuf_addf(stat, BOLD_RED"%llu"RESET" %s ", bdr->deletions,
+                    (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
+    }
+#else
     if (bdr->insertions || bdr->deletions == 0) {
         strbuf_addf(stat, BOLD_GREEN"%zu"RESET" %s ", bdr->insertions,
                     (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
@@ -219,6 +228,7 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
         strbuf_addf(stat, BOLD_RED"%zu"RESET" %s ", bdr->deletions,
                     (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
+#endif
     strbuf_addch(stat, '\n');
     return;
 }
@@ -346,10 +356,18 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
 size_t print_lines(struct strbuf *buf, bool i_or_d)
 {
     size_t lines = count_lines(buf);
+
+#ifdef _WIN32
+    i_or_d ? fprintf(stdout, BOLD_GREEN "%llu"RESET" %s\n", lines,
+                     lines == 1 ? "addition" : "additions")
+           : fprintf(stdout, BOLD_RED"%llu"RESET" %s\n", lines,
+                     lines == 1 ? "deletion" : "deletions");
+#else
     i_or_d ? fprintf(stdout, BOLD_GREEN "%zu"RESET" %s\n", lines,
                      lines == 1 ? "addition" : "additions")
            : fprintf(stdout, BOLD_RED"%zu"RESET" %s\n", lines,
                      lines == 1 ? "deletion" : "deletions");
+#endif
     return lines;
 }
 
@@ -376,8 +394,13 @@ void print_insertion_only(struct pack_file_cache *cache, struct index *idx)
     temp.len = idx->pack_len;
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
+#ifdef _WIN32
+    fprintf(stdout, BOLD_GREEN"%llu"RESET" %s", temp.alloc,
+            temp.alloc == 1 ? "addition\n" : "additions\n");
+#else
     fprintf(stdout, BOLD_GREEN"%zu"RESET" %s", temp.alloc,
             temp.alloc == 1 ? "addition\n" : "additions\n");
+#endif
 }
 
 void print_object_insertions(struct pack_file_cache *cache, struct index *idx)
@@ -423,8 +446,13 @@ void print_deletion_only(struct pack_file_cache *cache, struct index *idx)
     temp.len = idx->pack_len;
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
+#ifdef _WIN32
+    fprintf(stdout, BOLD_RED"%llu"RESET" %s\n", temp.alloc,
+            temp.alloc == 1 ? "deletion" : "deletions");
+#else
     fprintf(stdout, BOLD_RED"%zu"RESET" %s\n", temp.alloc,
             temp.alloc == 1 ? "deletion" : "deletions");
+#endif
 }
 
 void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
@@ -501,8 +529,8 @@ void do_file_delta_enhanced(const char *path, struct strbuf *a,
 
     basic_delta_result_init(&result, NULL);
     delta_index_splash(&out, path, path);
-    strbuf_delta_enhanced(&out, &result, a, b);
-    fprintf(stdout, "%s", out.buf);
+    if (strbuf_delta_enhanced(&out, &result, a, b))
+        fprintf(stdout, "%s", out.buf);
     strbuf_release(&out);
 }
 
@@ -601,6 +629,16 @@ void do_single_commit_delta(char *commit1_hash, bool minimal, bool noconv)
     do_commit_delta(a, b, minimal);
 }
 
+int check_entry(const char *path)
+{
+    return 0;
+}
+
+void do_directory_delta(const char *dir)
+{
+
+}
+
 struct delta_options {
     bool minimal;
     bool recursive;
@@ -670,13 +708,7 @@ void delta_parse_single_option(struct delta_options *opts, int count,
         if (stat(argv[count], &st) < 0) {
             // now it can be a sha, check for its validity
             if (!is_valid_hash(argv[count], strlen(argv[count]))) {
-                fatal("fatal: %s: ", opts->file_name);
-                if (errno == EPERM)
-                    fprintf(stderr, "permission denied\n");
-                else if (errno == ENOENT)
-                    fprintf(stderr, "file or directory doesn't exists\n");
-                else
-                    fprintf(stderr, "unknown error occurred\n");
+                fatal("%s: %s\n", argv[count], strerror(errno));
                 exit(-1);
             }
             opts->commit = true;
