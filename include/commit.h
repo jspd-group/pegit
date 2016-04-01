@@ -129,7 +129,7 @@ struct d_node {
     struct d_node *previous;
 };
 // Function declarations of status.c
-extern int status():
+extern int status();
 extern struct node *createnode();
 extern void intialise_node(struct node **, char *, int, struct node *);
 extern void insert_node(struct node **, struct node **, struct node **);
