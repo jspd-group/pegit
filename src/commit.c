@@ -11,6 +11,7 @@ struct commit_options {
     size_t deletions;
     size_t file_modified;
     size_t new_files;
+    bool progress;
 } cm_opts;
 
 void commit_options_init()
@@ -427,6 +428,10 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
                 *head = new;
                 last = new;
             }
+            if (cm_opts.progress) {
+                printf("\rInsertions: %llu, Deletions: %llu", cm_opts.insertions,
+                    cm_opts.deletions);
+            }
             node = node->next;
             continue;
         }
@@ -444,8 +449,14 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
         strbuf_release(&temp);
         strbuf_release(&old);
         idx = cache.cache.len;
+        if (cm_opts.progress) {
+            printf("\rInsertions: %llu, Deletions: %llu", cm_opts.insertions,
+                cm_opts.deletions);
+        }
         node = node->next;
     }
+    if (cm_opts.progress)
+        printf("\n");
     sha1_final((unsigned char*)sha1, &ctx);
     flush_pack_cache(&cache);
     strbuf_release(&cache.cache);
@@ -632,6 +643,8 @@ int commit(int argc, char *argv[])
             strcpy(tag, argv[i + 1]);
             flags |= 1;
             i++;
+        } else if (!strcmp(argv[i], "-p")) {
+            cm_opts.progress = 1;
         }
 
     }
