@@ -138,4 +138,5 @@ extern void push(struct dirent *, char *);
 extern char *path(struct d_node *);
 extern void print_status(struct node *);
 extern char *file_path(char *, char *);
+extern int list_index(int argc, char *argv[]);
 #endif

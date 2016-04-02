@@ -18,6 +18,7 @@ enum cmd_type {
     SEE,
     TAG,
     SET,
+    LIST,
     HELP,
     INVALID,
     USER,
@@ -38,13 +39,14 @@ static struct command_type cmds[] = {
     { STATUS, "status" },
     { REVERT, "revert" },
     { COMPARE, "compare" },
+    { LIST, "list" },
     { TAG, "tag" },
     { HELP, "help" },
     { SEE, "seeChanges" },
     { SET, "setAlias" }
 };
 
-#define COMMAND_COUNT 10
+#define COMMAND_COUNT 13
 
 static int argc;
 static char **argv;
@@ -118,18 +120,12 @@ void init_command(struct command *cmd)
 
 // }
 
-enum cmd_type find_command(struct core_commands *cmds, struct strbuf *cmd)
+enum cmd_type find_command(struct core_commands *cmds, const char *cmd)
 {
-    struct strbuf prefix = STRBUF_INIT;
-    size_t i = 0;
     struct core_commands *node = cmds;
 
-    while (i < cmd->len && cmd->buf[i] != ' ')
-        strbuf_addch(&prefix, cmd->buf[i++]);
-    /* match the command */
-
     while (node) {
-        if (!strcmp(node->cmd.name.buf, prefix.buf))
+        if (!strcmp(node->cmd.name.buf, cmd))
             return node->cmd.type;
         node = node->next;
     }
@@ -210,26 +206,26 @@ bool create_tag(int argc, char *argv[])
     return true;
 }
 
-bool exec_commands_args(enum cmd_type cmd, int out, char **in)
+bool exec_commands_args(enum cmd_type cmd, int count, char **in)
 {
     size_t peek;
     switch (cmd) {
         case CREATE:
-            return initialize_empty_project(out, in);
+            return initialize_empty_project(count, in);
         case INSERT:
-            return stage_main(out, in);
+            return stage_main(count, in);
         case REVERT:
-            return checkout(out, in);
+            return checkout(count, in);
         case COMMIT:
-            return commit(out, in);
+            return commit(count, in);
         case HELP:
-            return help(out, in);
+            return help(count, in);
         case COMPARE:
-            return delta_main(out, in);
+            return delta_main(count, in);
         case SEE:
-            return delta_main(out, in);
+            return delta_main(count, in);
         case SET:
-            return parse_set_cmd(out, in);
+            return parse_set_cmd(count, in);
 
         case RST:
             {
@@ -240,14 +236,16 @@ bool exec_commands_args(enum cmd_type cmd, int out, char **in)
             }
 
         case STATUS:
-            return status_main(out, in);
+            return status_main(count, in);
         case TAG:
-            return create_tag(out, in);
+            return create_tag(count, in);
         case HIST:
         {
             print_commits();
             break;
         }
+        case LIST:
+            return list_index(count, in);
 
         case USER:
         case INVALID:
@@ -257,48 +255,8 @@ bool exec_commands_args(enum cmd_type cmd, int out, char **in)
     return true;
 }
 
-void gen_argv_array(struct strbuf *args, char ***argv, int *argc)
+void exec_cmd(enum cmd_type cmd, int argc, char **argv)
 {
-    int count = 0, j = 1;
-    for (int i = 0; i < args->len;) {
-        if (args->buf[i] == '"') {
-            while (++i < args->len && args->buf[i] != '"')
-                ;
-            if (args->len != i) {
-                i++;
-                continue;
-            }
-        }
-        if (args->buf[i] == ' ') {
-            args->buf[i] = '\0';
-            count++;
-        }
-        i++;
-    }
-    count += 2;
-    *argv = malloc(sizeof(char**) * (count));
-    for (int i = 0; i < args->len; i++) {
-        if (i == 0) {
-            (*argv)[j] = args->buf;
-            j++;
-        } else
-        if (args->buf[i] == '\0') {
-            (*argv)[j] = args->buf + i + 1;
-            j++;
-        }
-    }
-    *argc = count;
-}
-
-void exec_cmd(enum cmd_type cmd, struct strbuf *args)
-{
-    int prefix = skip_command_prefix(args);
-    struct strbuf real_args = STRBUF_INIT;
-    int argc;
-    char **argv;
-
-    strbuf_remove(args, 0, prefix);
-    gen_argv_array(args, &argv, &argc);
     exec_commands_args(cmd, argc, argv);
 }
 
@@ -337,7 +295,7 @@ int main(int argc, char *argv[])
     struct core_commands *head;
     enum cmd_type t;
 
-    if (argc == 1 && !strcmp(argv[1], "help")) {
+    if (argc == 1 || !strcmp(argv[1], "help")) {
         print_help();
         exit(0);
     }
@@ -353,12 +311,12 @@ int main(int argc, char *argv[])
 
     join_args(&args, argc, argv);
     gen_core_commands(&head);
-    t = find_command(head, &args);
+    t = find_command(head, argv[1]);
     if (t == UNKNOWN) {
         fprintf(stderr, "peg: '"RED"%s"RESET"' unknown command.\n", argv[1]);
         //suggest_commands(argv[1]);
         exit(0);
     }
-    exec_cmd(t, &args);
+    exec_cmd(t, --argc, (argv + 1));
     return 0;
 }

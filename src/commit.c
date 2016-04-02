@@ -30,8 +30,6 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
     print_hash_size(cm->sha1, 3, stdout);
     if (IF_TAG(cm->flags))
         printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
-    else
-        printf(RESET " ("DIM"empty"RESET")");
     printf(RESET" ]   %s\n", cm->cmt_msg.buf);
 
     if (cm->cmt_desc.len) {
@@ -291,13 +289,24 @@ struct commit *find_commit_hash_compat(struct commit_list *cl,
     char *sha1, size_t len)
 {
     struct commit_list *node;
-    struct commit_list *result = NULL, *last = NULL;
 
     node = cl;
     while (node) {
         if (hash_starts_with(node->item->sha1str, sha1, len)) {
             return node->item;
         }
+        node = node->next;
+    }
+    return NULL;
+}
+
+struct commit *find_commit_tag(struct commit_list *cl, const char *tag)
+{
+    struct commit_list *node;
+
+    while (node) {
+        if (IF_TAG(node->item->flags) && !strcmp(node->item->tag, tag))
+            return node->item;
         node = node->next;
     }
     return NULL;
@@ -502,11 +511,111 @@ void set_tag(const char *sha1, size_t len, const char *tag)
     flush_commit_list(cl);
 }
 
+void print_humanised_bytes(off_t bytes)
+{
+    if (bytes > 1 << 30) {
+        printf("%u.%2.2u GiB",
+                (int)(bytes >> 30),
+                (int)(bytes & ((1 << 30) - 1)) / 10737419);
+    } else if (bytes > 1 << 20) {
+        int x = bytes + 5243;  /* for rounding */
+        printf("%u.%2.2u MiB",
+                x >> 20, ((x & ((1 << 20) - 1)) * 100) >> 20);
+    } else if (bytes > 1 << 10) {
+        int x = bytes + 5;  /* for rounding */
+        printf("%u.%2.2u KiB",
+                x >> 10, ((x & ((1 << 10) - 1)) * 100) >> 10);
+    } else {
+        printf("%u bytes", (int)bytes);
+    }
+}
+
+#define F_SIZE 0x1
+#define F_PACK 0x2
+#define F_BOTH 0x4
+#define F_SUMMARIZE 0x8
+
+void print_index_list(struct index_list *il, int flags, const char *color)
+{
+    struct index_list *node = il;
+    struct strbuf buf;
+
+    while (node) {
+        printf("%s%s  " RESET, color, node->idx->filename);
+        if (flags == 0) {
+            putchar('\n');
+            node = node->next;
+            continue;
+        }
+        if (flags & F_BOTH) {
+            printf("%llu ", node->idx->pack_start);
+            print_humanised_bytes(node->idx->pack_len);
+            printf(" ");
+        }
+        if (flags & F_PACK) {
+            printf("%llu-%llu ", node->idx->pack_start, node->idx->pack_start
+                + node->idx->pack_len);
+        }
+        if (flags & F_SIZE) {
+            print_humanised_bytes(node->idx->pack_len);
+            printf(" ");
+        }
+        printf("\n");
+        node = node->next;
+    }
+}
+
+int list_commit_index(struct commit *cm, int flags, const char *color)
+{
+    struct index_list *il;
+
+    make_index_list_from_commit(cm, &il);
+
+    if (!il) return 0;
+    print_index_list(il, flags, color);
+    return 0;
+}
+
+int list_index(int argc, char *argv[])
+{
+    struct commit_list *cl;
+    struct commit *cm = NULL;
+    int flag = 0, sha1_index = -1, tag_index = -1;
+    char *color = WHITE;
+
+    make_commit_list(&cl);
+    if (!cl) return -1;
+
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-f=size") || !strcmp(argv[i], "--format=size"))
+            flag |= F_SIZE;
+        else if (!strcmp(argv[i], "-f=pack") || !strcmp(argv[i], "--format=pack"))
+            flag |= F_PACK;
+        else if (!strcmp(argv[i], "-f=both") || !strcmp(argv[i], "--format=both"))
+            flag |= F_BOTH;
+        else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--color")) {
+            color = BLUE;
+        } else {
+            cm = find_commit_hash_compat(cl, argv[i], strlen(argv[i]));
+            if (!cm) {
+                cm = find_commit_tag(cl, argv[i]);
+                if (!cm) die("no such commit found.\n");
+            }
+        }
+    }
+    if (!cm) {
+        cm = get_head_commit(cl);
+    }
+    list_commit_index(cm, flag, color);
+    return 0;
+}
+
 int log_commit(struct commit *cm)
 {
     printf("[ "YELLOW);
     print_hash_size(cm->sha1, 3, stdout);
-    printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
+    if (IF_TAG(cm->flags))
+        printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
     printf(RESET" ]");
     fprintf(stdout, "  %s\n\n", cm->cmt_msg.buf);
     if (cm->cmt_desc.len)
