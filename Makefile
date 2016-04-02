@@ -86,7 +86,7 @@ index.o:$(SRC)index.c $(INC)index.h
 path.o:$(SRC)path.c $(INC)path.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)path.c
 
-project-config.o: $(SRC)project-config.c $(INC)project-config.h
+project-config.o: $(SRC)project-config.c $(INC)global.h
 	$(CC) -I $(INC) $(CFLAGS) -c $(SRC)project-config.c
 
 project-init.o: $(SRC)project-init.c $(INC)project-init.h
