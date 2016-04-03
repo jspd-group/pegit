@@ -714,12 +714,14 @@ void delta_parse_single_option(struct delta_options *opts, int count,
             opts->commit = true;
             opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
                             : (opts->hash_arg1= argv[count]);
+            die("%s: %s\n", argv[count], strerror(errno));
             return;
         }
         if (S_ISDIR(st.st_mode)) {
             opts->recursive = true;
             get_peg_path_buf(&path, argv[count]);
             opts->file_name = path.buf;
+            die("%s: is a directory.\n", argv[count]);
         } else if (S_ISREG(st.st_mode)) {
             opts->file = true;
             get_peg_path_buf(&path, argv[count]);
@@ -752,10 +754,10 @@ int delta_main(int argc, char *argv[])
 
     delta_parse_options(&opts, argc, argv);
     if (opts.help) {
-        printf("Usage: delta (options) (commits) | (commit) | (path)\n");
+        printf("Usage: peg compare (path)\n");
         printf("\n");
         printf("options: \n");
-        printf(" (-r | --recursive) | (-h | --help) | (--hash) | (--file)\n");
+        printf("\t(-h | --help) | (--file)\n");
         exit(-1);
     }
     if (opts.commit && !opts.file) {
