@@ -28,19 +28,7 @@ struct peg_env {
     char *owner_email;
 };
 
-static struct peg_env environment = {
-    .peg_state = S_STARTUP,
-#ifdef _WIN32
-    .peg_config_filepath = "C:\\Users\\Prince\\.pegconfigure",
-#else
-    .peg_config_filepath = "~/.pegconfigure",
-#endif
-    .owner = NULL,
-    .cache = STRBUF_INIT,
-    .owner_email = NULL,
-    .list = NULL
-};
-
+extern struct peg_env environment;
 
 /**
  * this struct represents the project's details
@@ -83,8 +71,8 @@ extern void read_config_file(struct peg_env *env);
 
 static inline void get_global_author(struct author *a)
 {
-    strbuf_addstr(&a->name, "Pushpinder Singh");
-    strbuf_addstr(&a->email, "dhaliwalprince@hotmail.com");
+    strbuf_addstr(&a->name, environment.owner);
+    strbuf_addstr(&a->email, environment.owner_email);
 }
 
 #endif
