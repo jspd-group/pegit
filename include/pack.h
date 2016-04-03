@@ -5,34 +5,10 @@
 #include "util.h"
 #include "file.h"
 
-/* code for making packfile and index file and maintaining them. */
-/**
- * pack file aka peg.pack will contain the files in compressed form and whose
- * The layout of the packfile is shown below...
- *    __________________
- *    |    header      |
- *    |________________|
- *    |     file1      |
- *    |                |
- *    |                |
- *    |________________|
- *    |     file2      |
- *    |                |
- *    |                |
- *    |________________|
- *    |                |
- *    |                |
- *    ------------------
- *
- * Only the contents of the file are stored in the pack file. Other details
- * are stored in different file called index file. Header contains:
- *    8 bytes: number of files
- *    120 bytes: reserved
- */
-
 struct pack_file_cache {
-    char *pack_file_path;
-    struct strbuf cache;
+    char *pack_file_path; /* path to the pack file */
+    struct strbuf cache; /* pack file is cached for now,
+                            which can consume more memory */
 };
 
 #define PACK_FILE_CACHE_INIT { PACK_FILE, STRBUF_INIT }
