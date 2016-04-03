@@ -16,18 +16,18 @@ struct stage_options {
     struct pack_file_cache cache;
 };
 
-char stage_usage[] = PEG_NAME
-    " "BLACK"insert"RESET" : add project files to the stage area\n\n"
+char stage_usage[] = YELLOW PEG_NAME
+    " insert"RESET" : add project files to the stage area\n\n"
     "    Usage:    "YELLOW PEG_NAME " insert [options] <files...>" RESET "\n\n"
     "        options include:\n"
-    "        "BLACK"-a"RESET", "BLACK"--all\n"RESET
+    "        "YELLOW"-a"RESET", "YELLOW"--all\n"RESET
     "                add all the files that have been modified,\n"
-    "        "BLACK"-i"RESET", "BLACK"--ignore=path1;path2..."RESET"   \n"
+    "        "YELLOW"-i"RESET", "YELLOW"--ignore=path1;path2..."RESET"   \n"
     "                ignore the given files and add all other,\n"
-    "        "BLACK"-v"RESET", "BLACK"--verbose"RESET"\n"
+    "        "YELLOW"-v"RESET", "YELLOW"--verbose"RESET"\n"
     "                print the name of the added files, similar to -a.\n"
-    "        "BLACK"-m"RESET", "BLACK"--more"RESET"\n"
-    "                display more output.\n"
+    "        "YELLOW"-m"RESET", "YELLOW"--more"RESET"\n"
+    "                display more outpu t.\n"
     "\n\n"
     "Example usage: \n\t'"YELLOW PEG_NAME " insert -a " RESET
     "'(or '"YELLOW PEG_NAME " insert ." RESET "')\n"
