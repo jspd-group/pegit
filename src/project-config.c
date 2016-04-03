@@ -1,5 +1,5 @@
-#include "project-config.h"
 #include "strbuf.h"
+#include "global.h"
 
 void project_details_init(struct project_details *pd)
 {
@@ -80,4 +80,190 @@ void set_project_start_date(struct project_details *pd, struct strbuf *date)
 {
     strbuf_reset(&pd->start_date);
     strbuf_addbuf(&pd->start_date, date);
+}
+
+struct config_list *new_config_list_node()
+{
+    struct config_list *new = malloc(sizeof(struct config_list));
+    strbuf_init(&new->key, 0);
+    strbuf_init(&new->value, 0);
+    new->next = NULL;
+    return new;
+}
+
+void config_list_insert(struct config_list **head, struct config_list *new)
+{
+    new->next = *head;
+    *head = new;
+}
+
+void read_config_file(struct peg_env *env)
+{
+    int config_file = open(env->peg_config_filepath, O_RDONLY);
+
+    if (config_file == -1) {
+        printf("no config file found\n");
+        die("%s\n", strerror(errno));
+    }
+    strbuf_read(&env->cache, config_file, 1024);
+}
+
+enum token_type {
+    INVALID,
+    STRING,
+    ASSIGN,
+    NUMBER,
+    COMMENT
+};
+
+struct lex {
+    const char *str;
+    size_t pos;
+    size_t len;
+    enum token_type curr;
+};
+
+struct parser_state {
+    bool key;
+    bool value;
+};
+
+int advance(struct lex *lex, int go)
+{
+    if (!go) return 0;
+    while (lex->pos < lex->len && (lex->str[lex->pos] == ' ' || lex->str[lex->pos] == '\n'
+        || lex->str[lex->pos] == '\t' || lex->str[lex->pos] == '\n'))
+        lex->pos++;
+
+    if (lex->pos >= lex->len) {
+        return -1;
+    }
+    if (isdigit(lex->str[lex->pos])) {
+        lex->curr = NUMBER;
+        return NUMBER;
+    } else if (isalpha(lex->str[lex->pos])) {
+        lex->curr = STRING;
+        return STRING;
+    } else if (lex->str[lex->pos] == '=') {
+        lex->curr = ASSIGN;
+        return ASSIGN;
+    } else if (lex->str[lex->pos] == '#') {
+        lex->curr = COMMENT;
+        return COMMENT;
+    }
+    return 0;
+}
+
+void consume(struct lex *lex, size_t n)
+{
+    lex->pos += n;
+}
+
+void consume_comment(struct lex *lex)
+{
+    while (lex->str[lex->pos] != '\n') {
+        lex->pos++;
+    }
+}
+
+int read_number(struct config_list *node, struct lex *lex)
+{
+    size_t len = lex->pos;
+
+    while (len < lex->len && isdigit(lex->str[len]))
+        len++;
+    strbuf_add(&node->value, lex->str + lex->pos, len - lex->pos);
+    node->number = strtol(node->value.buf, NULL, 10);
+    consume(lex, len - lex->pos);
+    return 0;
+}
+
+int parse_string(struct config_list *node, struct lex *lex, int key)
+{
+    size_t len = lex->pos;
+
+    if (key)
+        while (len < lex->len && (isalnum(lex->str[len])
+            || lex->str[len] == '-')) {
+            len++;
+        }
+    else {
+        while (len < lex->len && (lex->str[len] != '\n')) {
+            len++;
+        }
+    }
+    key ? strbuf_add(&node->key, lex->str + lex->pos, len - lex->pos)
+        : strbuf_add(&node->value, lex->str + lex->pos, len - lex->pos);
+    consume(lex, len - lex->pos);
+    return 0;
+}
+
+int parse_config_file(struct peg_env *env)
+{
+    struct config_list *node = NULL;
+    struct lex lex = { NULL, 0, 0, INVALID };
+    struct parser_state state = { 0, 0 };
+    int should_go = 1;
+
+    lex.str = env->cache.buf;
+    lex.len = env->cache.len;
+    lex.pos = 0;
+    while (advance(&lex, should_go) >= 0) {
+        if (!state.key) node = new_config_list_node();
+        if (state.key && state.value) {
+            config_list_insert(&env->list, node);
+            state.key = 0;
+            state.value = 0;
+            should_go = 1;
+            continue;
+        }
+        switch (lex.curr) {
+        case INVALID:
+            die("stray found in config file.\n");
+
+        case NUMBER:
+            if (!state.key) {
+                die("error while reading config file.\n");
+            }
+            if (!read_number(node, &lex))
+                die("invalid value for `%s'\n", node->key.buf);
+            state.value = 1;
+            should_go = 0;
+            continue;
+
+        case STRING:
+            if (state.key) {
+                parse_string(node, &lex, 0);
+                state.value = 1;
+                should_go = 0;
+            }
+            else {
+                parse_string(node, &lex, 1);
+                state.key = 1;
+            }
+            continue;
+
+        case ASSIGN:
+            consume(&lex, 1);
+            continue;
+
+        case COMMENT:
+            consume_comment(&lex);
+            continue;
+        }
+    }
+
+    return 0;
+}
+
+struct config_list *get_environment_value(struct peg_env *env, const char *key)
+{
+    struct config_list *node = env->list;
+
+    while (node) {
+        if (!strcmp(key, node->key.buf))
+            return node;
+        node = node->next;
+    }
+    return NULL;
 }
