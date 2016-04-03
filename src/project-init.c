@@ -1,7 +1,7 @@
 #include "util.h"
 #include "project-init.h"
 #include "timestamp.h"
-#include "project-config.h"
+#include "global.h"
 #include "visitor.h"
 
 #ifdef _WIN32
@@ -11,6 +11,19 @@
 struct project_cache {
     struct project_details pd;
     struct timestamp ts;
+};
+
+struct peg_env environment = {
+    .peg_state = S_STARTUP,
+#ifdef _WIN32
+    .peg_config_filepath = "C:\\Users\\Prince\\.pegconfigure",
+#else
+    .peg_config_filepath = "~/.pegconfigure",
+#endif
+    .owner = NULL,
+    .cache = STRBUF_INIT,
+    .owner_email = NULL,
+    .list = NULL
 };
 
 int name_set, desc_set;

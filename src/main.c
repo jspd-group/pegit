@@ -3,6 +3,7 @@
 #include "delta.h"
 #include "path.h"
 #include "project-init.h"
+#include "global.h"
 
 #include <math.h>
 
@@ -104,21 +105,30 @@ void init_command(struct command *cmd)
     cmd->argv = NULL;
 }
 
-// int similar(char *str1, char *str2)
-// {
-//     int match = 0;
-//     size_t len1 = strlen(str1);
-//     size_t len2 = strlen(str2);
-//     size_t min = len1 < len2 ? len1 : len2;
+void warn_no_user_config()
+{
+    fprintf(stderr, YELLOW"warning"RESET": no user name provided.\n");
+}
 
-//     for (int i = 0; i < )
-//     return 0;
-// }
+void create_peg_environment()
+{
+    struct config_list *node;
+    read_config_file(&environment);
+    parse_config_file(&environment);
+    node = get_environment_value(&environment, "username");
 
-// void suggest_commands(const char *name)
-// {
+    if (!node) {
+        warn_no_user_config();
+        exit(-1);
+    }
+    environment.owner = node->value.buf;
+    node = get_environment_value(&environment, "useremail");
 
-// }
+    if (!node) {
+        die("no email provided in %s\n", environment.peg_config_filepath);
+    }
+    environment.owner_email = node->value.buf;
+}
 
 enum cmd_type find_command(struct core_commands *cmds, const char *cmd)
 {
@@ -260,29 +270,6 @@ void exec_cmd(enum cmd_type cmd, int argc, char **argv)
     exec_commands_args(cmd, argc, argv);
 }
 
-void join_args(struct strbuf *args, int argc, char *argv[])
-{
-    struct strbuf temp = STRBUF_INIT;
-    int i = 0, len = 0, find;
-
-    for (i = 1; i < argc; i++) {
-        strbuf_addstr(&temp, argv[i]);
-        len = strbuf_findch(&temp, ' ');
-        if (len >= 0) {
-            if (i != 1)
-                strbuf_addch(args, ' ');
-            strbuf_addstr(args, "\"");
-            strbuf_addbuf(args, &temp);
-            strbuf_addch(args, '"');
-        } else {
-            if (i != 1)
-                strbuf_addch(args, ' ');
-            strbuf_addbuf(args, &temp);
-        }
-        strbuf_setlen(&temp, 0);
-    }
-}
-
 void print_help()
 {
     printf("no help!\n");
@@ -290,8 +277,6 @@ void print_help()
 
 int main(int argc, char *argv[])
 {
-
-    struct strbuf args = STRBUF_INIT;
     struct core_commands *head;
     enum cmd_type t;
 
@@ -309,7 +294,7 @@ int main(int argc, char *argv[])
         die("No arguments provided.\n");
     }
 
-    join_args(&args, argc, argv);
+    create_peg_environment();
     gen_core_commands(&head);
     t = find_command(head, argv[1]);
     if (t == UNKNOWN) {
