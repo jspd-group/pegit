@@ -380,4 +380,6 @@ static inline size_t strbuf_findch(struct strbuf *buf, char ch)
 
 extern void strbuf_replace_chars(struct strbuf *sb, char replace, char subs);
 
+extern void strbuf_humanise_bytes(struct strbuf *buf, off_t bytes);
+
 #endif /* STRBUF_H */
