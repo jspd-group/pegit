@@ -1,6 +1,7 @@
 #include "delta.h"
 #include "commit.h"
 #include "path.h"
+#include "pack.h"
 
 int delta_table_init(struct delta_table *table, int col, int row)
 {
@@ -36,9 +37,12 @@ int delta_table_init(struct delta_table *table, int col, int row)
 
 void delta_table_free(struct delta_table *table)
 {
-    // free(table->table);
-    // free(table->prev);
-    // free(table->sol);
+    for (int i = 0; i <= table->row; i++) {
+        free(table->table[i]);
+    }
+    free(table->table);
+    free(table->prev);
+    free(table->sol);
 }
 
 int delta_input_init(struct delta_input *di, struct filespec *fs1,
@@ -122,6 +126,12 @@ void basic_delta_result_init(struct basic_delta_result *bdr,
     bdr->common = 0;
     strbuf_list_init(&bdr->common_lines);
     strbuf_list_init(&bdr->diff_lines);
+}
+
+void basic_delta_result_release(struct basic_delta_result *bdr)
+{
+    strbuf_list_free(&bdr->common_lines);
+    strbuf_list_free(&bdr->diff_lines);
 }
 
 int delta_backtrace_table(struct basic_delta_result *result,
@@ -267,8 +277,15 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
         basic_delta_result_init(&res, NULL);
         delta_backtrace_table_minimal(result, &table, &af, &bf);
     }
-    if (!(result->insertions || result->deletions)) return false;
+    if (!(result->insertions || result->deletions)) {
+        deltafile_free(&af);
+        deltafile_free(&bf);
+        return false;
+    }
     if (out) delta_stat(result, out);
+    deltafile_free(&af);
+    deltafile_free(&bf);
+    delta_table_free(&table);
     return true;
 }
 
@@ -300,6 +317,10 @@ bool strbuf_delta_enhanced(struct strbuf *out,
         strbuf_addstr(out, RESET);
         node = node->next;
     }
+
+    delta_table_free(&table);
+    deltafile_free(&af);
+    deltafile_free(&bf);
     return true;
 }
 
@@ -316,8 +337,6 @@ void index_delta(struct basic_delta_result *result,
     strbuf_add(&b, cache->cache.buf + i2->pack_start, i2->pack_len);
     if (minimal) {
         if (!strbuf_delta_minimal(out, &local, &a, &b)) {
-            strbuf_list_free(&local.common_lines);
-            strbuf_list_free(&local.diff_lines);
             strbuf_release(&a);
             strbuf_release(&b);
             return;
@@ -341,7 +360,7 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
     /*
      * if i is NULL, this means j was newly added.
      */
-    strbuf_addstr(out, BLACK);
+    strbuf_addstr(out, YELLOW);
     if (i || !j) strbuf_addstr(out, i);
     if (i && j) strbuf_addstr(out, " <--> ");
     if (j || !i) strbuf_addstr(out, j);
@@ -629,14 +648,66 @@ void do_single_commit_delta(char *commit1_hash, bool minimal, bool noconv)
     do_commit_delta(a, b, minimal);
 }
 
+static struct {
+    struct delta_stat ds;
+    struct index_list *il;
+    bool minimal;
+    struct pack_file_cache cache;
+} directory_delta_var;
+
 int check_entry(const char *path)
 {
+    struct strbuf a = STRBUF_INIT, b = STRBUF_INIT;
+    struct index *idx;
+    struct basic_delta_result result;
+    int fd;
+    struct strbuf out = STRBUF_INIT;
+
+    idx = find_file_index_list(directory_delta_var.il, path);
+    if (!idx) {
+        return 0;
+    }
+
+    get_file_content(&directory_delta_var.cache, &a, idx);
+    fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        if (errno == ENOENT) {
+            print_deletion_lines(&a);
+        } else {
+            die("%s: %s\n", path, strerror(errno));
+        }
+    }
+    strbuf_read(&b, fd, idx->pack_len);
+    basic_delta_result_init(&result, NULL);
+    strbuf_delta_enhanced(&out, &result, &a, &b);
+    if (result.insertions || result.deletions > 1) {
+        fprintf(stdout, "%s / %s\n", path, path);
+        fprintf(stdout, "%s\n", out.buf);
+    }
+    basic_delta_result_release(&result);
+    strbuf_release(&a);
+    strbuf_release(&b);
     return 0;
 }
 
-void do_directory_delta(const char *dir)
+void do_directory_delta(const char *dir, bool minimal)
 {
+    struct commit_list *cl;
 
+    make_commit_list(&cl);
+
+    if (!cl) die("Nothing checked in.\n");
+
+    directory_delta_var.ds.insertions = 0;
+    directory_delta_var.ds.deletions = 0;
+    directory_delta_var.minimal = minimal;
+    directory_delta_var.il = get_head_commit_list(cl);
+    directory_delta_var.cache.pack_file_path = PACK_FILE;
+    strbuf_init(&directory_delta_var.cache.cache, 0);
+    cache_pack_file(&directory_delta_var.cache);
+    if (for_each_file_in_directory_recurse(dir, check_entry) == -1) {
+        die("error occurred while reading directory %s", dir);
+    }
 }
 
 struct delta_options {
@@ -719,9 +790,9 @@ void delta_parse_single_option(struct delta_options *opts, int count,
         }
         if (S_ISDIR(st.st_mode)) {
             opts->recursive = true;
+            opts->file = true;
             get_peg_path_buf(&path, argv[count]);
             opts->file_name = path.buf;
-            die("%s: is a directory.\n", argv[count]);
         } else if (S_ISREG(st.st_mode)) {
             opts->file = true;
             get_peg_path_buf(&path, argv[count]);
@@ -741,7 +812,8 @@ void delta_parse_options(struct delta_options *opts, int argc, char *argv[])
         make_commit_list(&cl);
         struct commit *cm = get_head_commit(cl);
 
-        do_single_commit_delta(cm->sha1str, opts->minimal, true);
+        do_directory_delta(".", 0);
+        exit(0);
     }
     for (int i = 1; i < argc; i++) {
         delta_parse_single_option(opts, i, argv);
@@ -774,7 +846,7 @@ int delta_main(int argc, char *argv[])
         }
     } else if (!opts.commit && opts.file) {
         if (opts.recursive) {
-            die("not implemented yet.\n");
+            do_directory_delta(opts.file_name, opts.minimal);
         } else if (!opts.file_name && opts.guessed) {
             die("no sha1 or path specified.\n");
         } else if (opts.guessed || opts.file_name) {
