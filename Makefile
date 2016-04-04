@@ -1,11 +1,43 @@
-CC=gcc
-CFLAGS=-std=gnu11
-INC=include/
-SRC=src/
-TEST=test/
-ZLIB=z
+# C compiler we're using
+CC= gcc
 
+# C flags REQUIRED
+CFLAGS= -std=gnu11
+INC= include/
+SRC= src/
+TEST= test/
+ZLIB= -lz
+UNAME := $(shell uname)
+EXECUTABLE_NAME=peg
+INSTALL_DIR=''
+
+# for zlib
+ifdef NO_ZLIB
+	CFLAGS+= -DNO_ZLIB
+	ZLIB=
+endif
+
+# install utils
+ifeq ($(OS), Windows_NT)
+    UNAME= Win32
+    INSTALL_PREFIX= C:/Program\ Files/Pegit/
+    EXECUTABLE_NAME= peg.exe
+    INSTALL_DIR= C:/Program\ Files/Pegit
+endif
+
+ifeq ($(UNAME), Linux)
+    INSTALL_PREFIX= "/usr/local/bin"
+endif
+
+INSTALL_CMD= install
+MKDIR_CMD= mkdir
+
+# targets
 all: peg
+
+install: peg
+	@-$(MKDIR_CMD) $(INSTALL_DIR)
+	$(INSTALL_CMD) $(EXECUTABLE_NAME) $(INSTALL_PREFIX)
 
 debug: CFLAGS += -g
 
@@ -15,9 +47,9 @@ release: CFLAGS += -O2
 
 release: all
 
-
 peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o
-	@$(CC) *.o -lz -o $@
+	@$(CC) *.o $(ZLIB) -o $(EXECUTABLE_NAME)
+	@echo "Building for $(UNAME)"
 	@echo $@
 
 cache.o: $(SRC)cache.c $(INC)cache.h
@@ -91,6 +123,17 @@ visitor.o:$(SRC)visitor.c $(INC)visitor.h
 status.o: $(SRC)status.c
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)status.c
 	@echo $@
+
+help:
+	@echo "Following targets are available."
+	@echo " debug:      compiles \`peg' with debugging information so that you can use gdb"
+	@echo " release:    compiles the program to small executable"
+	@echo " all:        compiles the program without any debugging information"
+	@echo " help:       displays this information"
+	@echo " clean:      remove the executables and object files"
+	@echo " install:    installs \`peg' to this computer"
+	@echo ""
+	@echo " Before compiling the program, please refer to the ReadMe.md"
 
 clean:
 	-@rm *.o peg
