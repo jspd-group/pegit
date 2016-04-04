@@ -4,6 +4,7 @@
 #include "strbuf.h"
 #include "util.h"
 #include "file.h"
+#include "index.h"
 
 struct pack_file_cache {
     char *pack_file_path; /* path to the pack file */
@@ -45,12 +46,12 @@ static inline int flush_pack_cache(struct pack_file_cache *cache)
 }
 
 static inline int get_file_content(struct pack_file_cache *cache,
-    struct strbuf *buf, size_t start, size_t len)
+    struct strbuf *buf, struct index *idx)
 {
-    strbuf_init(buf, len);
-    if (start + len > cache->cache.len)
+    strbuf_init(buf, idx->pack_len);
+    if (idx->pack_start + idx->pack_len > cache->cache.len)
         return -1;
-    strbuf_add(buf, cache->cache.buf + start, len);
+    strbuf_add(buf, cache->cache.buf + idx->pack_start, idx->pack_len);
     return 0;
 }
 

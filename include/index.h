@@ -3,7 +3,6 @@
 
 /* Header file for maintaining index file */
 
-#include "pack.h"
 #include "tree.h"
 #include "strbuf.h"
 
