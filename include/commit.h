@@ -7,6 +7,7 @@
 #include "sha1-inl.h"
 #include "timestamp.h"
 #include "delta.h"
+#include "pack.h"
 #include "index.h"
 
 struct commit {
