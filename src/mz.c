@@ -1,7 +1,12 @@
 #include "mz.h"
 #include "util.h"
 #include "file.h"
+
+#ifdef NO_ZLIB
+#include "../miniz/miniz.h"
+#else
 #include <zlib.h>
+#endif
 
 #define CHUNK_LENGTH 16384
 
