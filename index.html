@@ -1,31 +1,45 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html>
   <head>
-    <meta charset="UTF-8">
-    <title>Pegit by jspd-group</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Pegit by jspd-group</title>
   </head>
-  <body>
-    <section class="page-header">
-      <h1 class="project-name">Pegit</h1>
-      <h2 class="project-tagline">A Beep Version Control System</h2>
-      <a href="https://github.com/jspd-group/pegit" class="btn">View on GitHub</a>
-      <a href="https://github.com/jspd-group/pegit/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/jspd-group/pegit/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
 
-    <section class="main-content">
-      <h1>
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Pegit</h1>
+          <h2>A Beep Version Control System</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/jspd-group/pegit/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/jspd-group/pegit/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/jspd-group/pegit" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
 <a id="-pegit---version-control-system" class="anchor" href="#-pegit---version-control-system" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a> Pegit - Version Control System</h1>
 
 <h2>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h2>
 
-<p><a href="https://en.wikipedia.org/wiki/Version_control">Version control</a> is a <em>system</em> that 
+<p>This project is inspired by <a href="https://github.com/git/git">git</a>.</p>
+
+<p><a href="https://en.wikipedia.org/wiki/Version_control">Version control</a> is a <em>system</em> that
 records changes to a file or set of files over time so that you can recall
 specific versions later.</p>
 
@@ -33,13 +47,13 @@ specific versions later.</p>
 
 <ul>
 <li>
-<em>revert</em> files back to a previous state,</li>
+<strong>revert</strong> files back to a previous state,</li>
 <li>
-<em>revert</em> the entire project back to a previous state,</li>
+<strong>revert</strong> the entire project back to a previous state,</li>
 <li>
-<em>review</em> changes made over time,</li>
+<strong>review</strong> changes made over time,</li>
 <li>
-<em>check</em> who last modified source code that might be causing a problem.</li>
+<strong>check</strong> who last modified source code that might be causing a problem.</li>
 </ul>
 
 <p>Using a VCS also means that if someone lose files, they can generally be
@@ -59,7 +73,7 @@ times, say, one encounters a bug (a software bug is an error, flaw, failure or
 fault in a computer program or system that causes it to produce an incorrect or
 unexpected result, or to behave in unintended ways), it is very difficult to
 trace the bug, meaning, it is very difficult to trace the part of the code which
-is responsible for the unexpected behaviour.</p>
+is responsible for the unexpected behavior.</p>
 
 <h2>
 <a id="manual-solution" class="anchor" href="#manual-solution" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Manual Solution</h2>
@@ -85,39 +99,60 @@ work that was done in the meanwhile. For any part of a file, he can determine
 when and why it was ever edited.</p>
 
 <h2>
-<a id="1st-stage" class="anchor" href="#1st-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1st Stage</h2>
+<a id="prerequisites" class="anchor" href="#prerequisites" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Prerequisites</h2>
 
-<p>All the information mentioned above will constitute the first stage of our
-project.</p>
+<p>If you are using <code>gcc</code> on Ubuntu, then you need to install zlib. You can find
+source code for zlib from <a href="http://github.com/madler/zlib">here</a>. Download the
+source code, compile it and install it. If you don't want to use zlib then you
+can use <code>miniz</code> which is provided along with the source code of <code>pegit</code>.</p>
 
-<h2>
-<a id="2nd-stage" class="anchor" href="#2nd-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2nd Stage</h2>
-
-<p>In the second stage of this project we will introduce networking concepts into
-our project. Multiple users can work on same project. And it will enable
-multiple people to simultaneously work on a single project. Each person edits
-his or her own copy of the files and chooses when to share those changes with
-the rest of the team. Thus, temporary or partial edits by one person do not
-interfere with another person's work. It will also enable one person to use
-multiple computers to work on a project. It will be able to integrate work done
-simultaneously by different team members. In most cases, edits to different
-files or even the same file will be combined without losing any work. In rare
-cases, when two people make conflicting edits to the same line of a file, then
-it will request human assistance in deciding what to do.</p>
+<p>If you are using Windows, the you'll need Mingw with zlib provided with it. If
+there is no zlib in Mingw then build the <code>pegit</code> using miniz.</p>
 
 <h2>
-<a id="3rd-stage" class="anchor" href="#3rd-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3rd Stage</h2>
+<a id="building" class="anchor" href="#building" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building</h2>
 
-<p>In the third stage, we will introduce graphical user interface into our project.</p>
+<p>Follow these instructions:</p>
 
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/jspd-group/pegit">Pegit</a> is maintained by <a href="https://github.com/jspd-group">jspd-group</a>.</span>
+<ul>
+<li>Download the source code using git as follow.</li>
+</ul>
 
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
-      </footer>
+<div class="highlight highlight-source-shell"><pre>    $ git clone https://github.com/jspd-group/pegit.git</pre></div>
 
-    </section>
+<ul>
+<li>Move to the pegit directory.</li>
+</ul>
 
-  
+<div class="highlight highlight-source-shell"><pre>    $ <span class="pl-c1">cd</span> pegit</pre></div>
+
+<ul>
+<li>Use the <code>make</code> to build the source</li>
+</ul>
+
+<div class="highlight highlight-source-shell"><pre>$ make
+<span class="pl-c"># or if you don't have zlib then execute the command as follows</span>
+$ make NO_ZLIB=1
+<span class="pl-c"># if you want to use gdb</span>
+$ make debug <span class="pl-c"># or make debug NO_ZLIB=1</span>
+<span class="pl-c"># there are also other options available which can be viewed using</span>
+$ make <span class="pl-c1">help</span></pre></div>
+
+<ul>
+<li>Install the pegit using <code>make</code>
+</li>
+</ul>
+
+<div class="highlight highlight-source-shell"><pre>% make install <span class="pl-c"># you need to be root before using this command</span></pre></div>
+        </section>
+
+        <footer>
+          Pegit is maintained by <a href="https://github.com/jspd-group">jspd-group</a><br>
+          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
   </body>
 </html>
