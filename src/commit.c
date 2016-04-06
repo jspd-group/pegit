@@ -12,6 +12,7 @@ struct commit_options {
     size_t file_modified;
     size_t new_files;
     bool progress;
+    bool count;
 } cm_opts;
 
 void commit_options_init()
@@ -22,6 +23,8 @@ void commit_options_init()
     cm_opts.deletions = 0;
     cm_opts.file_modified = 0;
     cm_opts.new_files = 0;
+    cm_opts.progress = 0;
+    cm_opts.count = 1;
 }
 
 void print_commit_stats(struct commit_options *opts, struct commit *cm)
@@ -36,6 +39,7 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
         printf("\n%s\n\n", cm->cmt_desc.buf);
     }
 #ifdef _WIN32
+    if (!cm_opts.count) return;
     printf(YELLOW" %llu"RESET" %s changed, ", opts->file_modified
         + opts->new_files,
         (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
@@ -416,14 +420,18 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     idx = cache.cache.len;
     while (node) {
         exist = find_file_index_list(*head, node->file_path.buf);
-        basic_delta_result_init(&result, NULL);
+        if (cm_opts.count)
+            basic_delta_result_init(&result, NULL);
         if (!exist) {
             // we're handling new file
             exist = make_new_index(node->file_path.buf,
                      idx, node->len, 0);
             // write to pack file
             strbuf_add(&temp, co->cc.cache_buf.buf + node->start, node->len);
-            cm_opts.insertions += count_lines(&temp);
+            if (cm_opts.count) {
+                cm_opts.insertions += count_lines(&temp);
+                cm_opts.new_files++;
+            }
             strbuf_addbuf(&cache.cache, &temp);
             sha1_update(&ctx, temp.buf, temp.len);
             strbuf_release(&temp);
@@ -431,15 +439,15 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
             new = MALLOC(struct index_list, 1);
             new->idx = exist;
             new->next = NULL;
-            cm_opts.new_files++;
             if (last) insert_index_list(&last, new);
             else {
                 *head = new;
                 last = new;
             }
-            if (cm_opts.progress) {
-                printf("\rInsertions: %llu, Deletions: %llu", cm_opts.insertions,
-                    cm_opts.deletions);
+            if (cm_opts.progress && cm_opts.count) {
+                printf("\rInsertions: %llu, Deletions: %llu, Files: %llu",
+                    cm_opts.insertions, cm_opts.deletions,
+                    cm_opts.file_modified + cm_opts.new_files );
             }
             node = node->next;
             continue;
@@ -449,22 +457,25 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
         exist->pack_len = node->len;
         exist->flags |= 0x80;
         strbuf_add(&temp, co->cc.cache_buf.buf + node->start, node->len);
-        strbuf_delta_minimal(NULL, &result, &old, &temp);
-        cm_opts.insertions += result.insertions;
-        cm_opts.deletions += result.deletions;
-        cm_opts.file_modified++;
+        if (cm_opts.count) {
+            strbuf_delta_minimal(NULL, &result, &old, &temp);
+            cm_opts.insertions += result.insertions;
+            cm_opts.deletions += result.deletions;
+            cm_opts.file_modified++;
+        }
         strbuf_addbuf(&cache.cache, &temp);
         sha1_update(&ctx, temp.buf, temp.len);
         strbuf_release(&temp);
         strbuf_release(&old);
         idx = cache.cache.len;
-        if (cm_opts.progress) {
-            printf("\rInsertions: %llu, Deletions: %llu", cm_opts.insertions,
-                cm_opts.deletions);
+        if (cm_opts.progress && cm_opts.count) {
+            printf("\rInsertions: %llu, Deletions: %llu, Files: %llu",
+                cm_opts.insertions, cm_opts.deletions,
+                cm_opts.file_modified + cm_opts.new_files );
         }
         node = node->next;
     }
-    if (cm_opts.progress)
+    if (cm_opts.progress && cm_opts.count)
         printf("\n");
     sha1_final((unsigned char*)sha1, &ctx);
     flush_pack_cache(&cache);
@@ -754,8 +765,8 @@ int commit(int argc, char *argv[])
             i++;
         } else if (!strcmp(argv[i], "-p")) {
             cm_opts.progress = 1;
-        }
-
+        } else if (!strcmp(argv[i], "--no-count"))
+            cm_opts.count = 0;
     }
     if (!msg.len)
         die("no message provided\n");
