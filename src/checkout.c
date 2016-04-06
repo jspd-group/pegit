@@ -167,31 +167,26 @@ int revert_files_commit(struct strbuf_list *list, ssize_t n)
     return 0;
 }
 
-void revert_directory(const char *path, size_t n)
+void revert_directory(struct pack_file_cache *cache, struct index_list *list,
+    const char *path, size_t n)
 {
     struct visitor v;
     struct strbuf p = STRBUF_INIT;
     struct index *i;
-    struct index_list *list;
-    struct commit_list *cl;
-    struct commit *cm;
-    struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
 
-    make_commit_list(&cl);
-    cm = get_nth_commit(cl, n);
-    cache_pack_file(&cache);
     visitor_init(&v);
     visitor_visit(&v, path);
-    make_index_list_from_commit(cm, &list);
+
     while (visitor_visit_next_entry(&v) == 0) {
         visitor_get_absolute_path(&v, &p);
-        i = find_file_index_list(list, p.buf);
-        if (!i) {
-            fprintf(stderr, YELLOW" %s, Not checked in!\n"RESET, p.buf);
-        } else if (v.entry_type == _FILE) {
-            revert_file(&cache, i);
+        if (v.entry_type == _FILE) {
+            i = find_file_index_list(list, p.buf);
+            if (!i) {
+                printf(YELLOW" %s"RESET": Not Checked in!\n", p.buf);
+            } else
+                revert_file(cache, i);
         } else if (v.entry_type == _FOLDER) {
-            revert_directory(p.buf, n);
+            revert_directory(cache, list, p.buf, n);
         }
         strbuf_setlen(&p, 0);
     }
@@ -219,7 +214,18 @@ int revert_parse_options(int argc, char *argv[])
                     die("%s: %s\n", argv[i], strerror(errno));
             }
             if (S_ISDIR(st.st_mode)) {
-                revert_directory(peg_path.buf, rev_opts.revert_count);
+                struct commit_list *cl;
+                struct commit *cm;
+                struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
+                struct index_list *list;
+
+                make_commit_list(&cl);
+                cm = get_nth_commit(cl, rev_opts.revert_count);
+                cache_pack_file(&cache);
+                make_index_list_from_commit(cm, &list);
+                revert_directory(&cache, list, peg_path.buf, rev_opts.revert_count);
+                invalidate_cache(&cache);
+                commit_list_del(&cl);
             } else if (S_ISREG(st.st_mode)) {
                 strbuf_list_add(&rev_opts.list, peg_path.buf,
                     peg_path.len, 0, 0);
