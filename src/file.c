@@ -77,7 +77,7 @@ void filespec_getfullpath(struct filespec *fs, struct strbuf *buf)
 int filespec_stat(struct filespec *fs, const char *name)
 {
     if (stat(name, &fs->st) == -1) {
-        fprintf(stderr, "fatal: %s: can't do stat\n", name);
+        fprintf(stderr, "fatal: %s: can't do stat: %s\n", name, strerror(errno));
         return -1;
     }
     return 0;
@@ -89,7 +89,7 @@ int filespec_init(struct filespec *fs, const char *name, const char *mode)
     filespec_setname_and_dir(fs, name);
     fs->file = fopen(name, mode);
     if (!fs->file) {
-        fprintf(stderr, "%s: file doesn't exists.\n", name);
+        fprintf(stderr, "%s: %s.\n", name, strerror(errno));
         clean_on_error(fs); /* remove the memory allocated */
         exit(EXIT_FAILURE);
         return -1;
