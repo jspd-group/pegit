@@ -3,28 +3,64 @@
 #include "path.h"
 #include "pack.h"
 
+struct delta_options {
+    bool minimal;
+    bool recursive;
+    bool file;
+    bool commit;
+    bool verbose;
+    bool help;
+    bool guessed;
+    char *hash_arg1;
+    char *hash_arg2;
+    char *file_name;
+};
+
+#define DELTA_OPTIONS_DEFAULT                                                  \
+    {                                                                          \
+        0, 0, 0, 0, 0, 0, 0, NULL, NULL                                        \
+    }
+
+enum delta_error {
+    ALL_GOOD,
+    MEM_ERROR,
+    INTERNAL_ERROR
+};
+
+static void release_table(enum arrow_t **table, int size)
+{
+    while (size--) {
+        free(table[size]);
+        table[size] = NULL;
+    }
+    free(table);
+}
+
 int delta_table_init(struct delta_table *table, int col, int row)
 {
-    table->table = MALLOC(enum arrow_t *, row);
+    table->table = MALLOC(enum arrow_t *, row + 1);
     if (!table->table) {
-        die("Out of memory. Can't make table:%d\n", row);
-        return -1;
+        return MEM_ERROR;
     }
 
     for (int i = 0; i <= row; i++) {
         table->table[i] = MALLOC(enum arrow_t, col);
         if (!table->table[i]) {
-            die("Out of memory. Can't make a col:%d\n", col);
-            return -1;
+            release_table(table->table, i);
+            return MEM_ERROR;
         }
         // memset(table->table[i], DELTA_DOWN, sizeof(enum arrow_t) * col);
     }
 
-    table->prev = (int *)malloc(sizeof(int) * col);
-    table->sol = (int *)malloc(sizeof(int) * col);
+    table->prev = malloc(sizeof(int) * col);
+    table->sol = malloc(sizeof(int) * col);
 
     if (!table->prev || !table->sol) {
-        die("Out of memory. Can't make a table:%d\n", col);
+        release_table(table->table, row);
+        if (table->prev)
+            free(table->prev);
+        else free(table->sol);
+        return MEM_ERROR;
     }
 
     memset(table->prev, 0, sizeof(int) * (col));
@@ -32,7 +68,7 @@ int delta_table_init(struct delta_table *table, int col, int row)
 
     table->row = row;
     table->col = col;
-    return 0;
+    return ALL_GOOD;
 }
 
 void delta_table_free(struct delta_table *table)
@@ -268,7 +304,10 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
 
     deltafile_init_strbuf(&af, a, DELIM);
     deltafile_init_strbuf(&bf, b, DELIM);
-    delta_table_init(&table, af.size, bf.size);
+    if (delta_table_init(&table, af.size, bf.size) == MEM_ERROR) {
+        fprintf(stderr, "file too big\n");
+        return false;
+    }
     delta_basic_comparison_m(&table, &af, &bf);
     if (result) {
         delta_backtrace_table_minimal(result, &table, &af, &bf);
@@ -299,7 +338,10 @@ bool strbuf_delta_enhanced(struct strbuf *out,
 
     deltafile_init_strbuf(&af, a, DELIM);
     deltafile_init_strbuf(&bf, b, DELIM);
-    delta_table_init(&table, af.size, bf.size);
+    if (delta_table_init(&table, af.size, bf.size)) {
+        perror("file too big");
+        return false;
+    }
     delta_basic_comparison_m(&table, &af, &bf);
     delta_backtrace_table(result, &table, &af, &bf);
     if (!(result->insertions || result->deletions)) return false;
@@ -653,6 +695,7 @@ static struct {
     struct index_list *il;
     bool minimal;
     struct pack_file_cache cache;
+    struct delta_options *opts;
 } directory_delta_var;
 
 int check_entry(const char *path)
@@ -663,6 +706,8 @@ int check_entry(const char *path)
     int fd;
     struct strbuf out = STRBUF_INIT;
 
+    if (directory_delta_var.opts->verbose)
+        printf("%s\n", path);
     idx = find_file_index_list(directory_delta_var.il, path);
     if (!idx) {
         return 0;
@@ -681,51 +726,35 @@ int check_entry(const char *path)
     basic_delta_result_init(&result, NULL);
     strbuf_delta_enhanced(&out, &result, &a, &b);
     if (result.insertions || result.deletions > 1) {
-        fprintf(stdout, "%s / %s\n", path, path);
+        fprintf(stdout, "[%s] [%s]\n", path, path);
         fprintf(stdout, "%s\n", out.buf);
     }
     basic_delta_result_release(&result);
     strbuf_release(&a);
     strbuf_release(&b);
+    if (close(fd) < 0)
+        perror("Can't close %s");
     return 0;
 }
 
-void do_directory_delta(const char *dir, bool minimal)
+void do_directory_delta(const char *dir, bool minimal, struct delta_options *opts)
 {
     struct commit_list *cl;
 
     make_commit_list(&cl);
-
     if (!cl) die("Nothing checked in.\n");
-
     directory_delta_var.ds.insertions = 0;
     directory_delta_var.ds.deletions = 0;
     directory_delta_var.minimal = minimal;
     directory_delta_var.il = get_head_commit_list(cl);
     directory_delta_var.cache.pack_file_path = PACK_FILE;
+    directory_delta_var.opts = opts;
     strbuf_init(&directory_delta_var.cache.cache, 0);
     cache_pack_file(&directory_delta_var.cache);
     if (for_each_file_in_directory_recurse(dir, check_entry) == -1) {
         die("error occurred while reading directory %s", dir);
     }
 }
-
-struct delta_options {
-    bool minimal;
-    bool recursive;
-    bool file;
-    bool commit;
-    bool help;
-    bool guessed;
-    char *hash_arg1;
-    char *hash_arg2;
-    char *file_name;
-};
-
-#define DELTA_OPTIONS_DEFAULT                                                  \
-    {                                                                          \
-        0, 0, 0, 0, 0, 0, NULL, NULL                                           \
-    }
 
 /**
  * following options will be provided by delta for now:
@@ -757,6 +786,8 @@ void delta_parse_single_option(struct delta_options *opts, int count,
         opts->commit = true;
     else if (is("--file") || is("-f"))
         opts->file = true;
+    else if (is("--verbose") || is("-v"))
+        opts->verbose = true;
     else if (opts->file && !opts->commit) {
         opts->file_name = argv[count];
         if (stat(opts->file_name, &st) < 0) {
@@ -812,7 +843,7 @@ void delta_parse_options(struct delta_options *opts, int argc, char *argv[])
         make_commit_list(&cl);
         struct commit *cm = get_head_commit(cl);
 
-        do_directory_delta(".", 0);
+        do_directory_delta(".", 0, opts);
         exit(0);
     }
     for (int i = 1; i < argc; i++) {
@@ -846,7 +877,7 @@ int delta_main(int argc, char *argv[])
         }
     } else if (!opts.commit && opts.file) {
         if (opts.recursive) {
-            do_directory_delta(opts.file_name, opts.minimal);
+            do_directory_delta(opts.file_name, opts.minimal, &opts);
         } else if (!opts.file_name && opts.guessed) {
             die("no sha1 or path specified.\n");
         } else if (opts.guessed || opts.file_name) {
