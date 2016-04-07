@@ -30,7 +30,7 @@ int list_directory_recursive(struct strbuf *complete)
     DIR *dp = opendir(complete->buf);
 
     if (!dp) {
-        fprintf(stderr, "fatal: %s not a directory\n", complete->buf);
+        fatal("%s not a directory: %s\n", complete->buf, strerror(errno));
         return -1;
     }
 
@@ -119,7 +119,7 @@ int list_directory_folders(struct strbuf *dir, int count_only)
     while ((entry = readdir(dp)) != NULL) {
         strbuf_addstr(dir, entry->d_name);
         ret = stat(dir->buf, &st);
-        if (ret < 0) die("fatal: %s: can't do stat\n", entry->d_name);
+        if (ret < 0) die("%s: can't do stat, %s\n", entry->d_name, strerror(errno));
         if (is_dir(&st)) {
             if (!count_only) fprintf(stdout, "%s/\n", entry->d_name);
             count++;
@@ -139,7 +139,7 @@ int list_directory_files(struct strbuf *dir, int count_only)
 
     dp = opendir(dir->buf);
     if (!dp) {
-        fprintf(stderr, "fatal: %s: not a directory\n", dir->buf);
+        fatal("%s: not a directory, %s\n", dir->buf, strerror(errno));
         return -1;
     }
     strbuf_addch(dir, '/');
@@ -147,7 +147,10 @@ int list_directory_files(struct strbuf *dir, int count_only)
     while ((entry = readdir(dp)) != NULL) {
         strbuf_addstr(dir, entry->d_name);
         ret = stat(dir->buf, &st);
-        if (ret < 0) die("fatal: %s: can't do stat\n", entry->d_name);
+        if (ret < 0) {
+            fatal("%s: can't do stat, %s\n", entry->d_name, strerror(errno));
+            return ret;
+        }
         if (is_file(&st)) {
             if (!count_only) fprintf(stdout, "%s\n", entry->d_name);
             count++;
@@ -170,7 +173,7 @@ int for_each_file_in_directory(const char *dir_name, func callback)
     strbuf_addstr(&dir, dir_name);
     dp = opendir(dir.buf);
     if (!dp) {
-        fprintf(stderr, "fatal: %s: not a directory\n", dir.buf);
+        fatal("%s: not a directory, %s\n", dir.buf, strerror(errno));
         return -1;
     }
     strbuf_addch(&dir, '/');
@@ -178,7 +181,7 @@ int for_each_file_in_directory(const char *dir_name, func callback)
     while ((entry = readdir(dp)) != NULL) {
         strbuf_addstr(&dir, entry->d_name);
         ret = stat(dir.buf, &st);
-        if (ret < 0) die("fatal: %s: can't do stat\n", entry->d_name);
+        if (ret < 0) die("%s: can't do stat, %s\n", entry->d_name, strerror(errno));
         if (is_file(&st)) {
             ret = callback(dir.buf);
             if (!ret) count++;
@@ -201,7 +204,7 @@ int for_each_file_in_directory_recurse(const char *dir_name, func callback)
 
     DIR *dp = opendir(complete.buf);
     if (!dp) {
-        fprintf(stderr, "fatal: %s not a directory\n", complete.buf);
+        fatal("%s not a directory, %s\n", complete.buf, strerror(errno));
         return -1;
     }
 
@@ -210,7 +213,8 @@ int for_each_file_in_directory_recurse(const char *dir_name, func callback)
         strbuf_addstr(&complete, entry->d_name);
         ret = stat(complete.buf, &st);
         if (ret < 0) {
-            die("fatal: %s: can't do stat.\n", complete.buf);
+            fatal("%s: can't do stat, %s\n", complete.buf, strerror(errno));
+            return ret;
         }
 
         if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..") ||
@@ -229,9 +233,9 @@ int for_each_file_in_directory_recurse(const char *dir_name, func callback)
 
             /* Unknown file, still continue */
             err_threshhold++;
-            fprintf(stderr, "fatal: %s: Is this a file?\n", complete.buf);
+            fatal("%s: Is this a file?\n", complete.buf);
             if (err_threshhold > 10) {
-                fprintf(stderr, "fatal: So many unknown files exist\n");
+                fatal("So many unknown files exist\n");
                 return -1;
             }
         }
