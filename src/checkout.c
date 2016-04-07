@@ -23,7 +23,7 @@ void create_file(struct strbuf *buf, const char *path)
     FILE *fp;
 
     fp = fopen(path, "wb");
-    if (!fp) die("unable to modify %s: %s\n", path, strerror(errno));
+    if (!fp) fatal("unable to create %s: %s\n", path, strerror(errno));
     fwrite(buf->buf, sizeof(char), buf->len, fp);
     fclose(fp);
 }
@@ -42,12 +42,12 @@ void revert_file(struct pack_file_cache *cache, struct index *i)
             create_file(&buf, i->filename);
             return;
         } else {
-            die(" %s: error: %s\n", i->filename, strerror(errno));
+            fatal(" %s: error: %s\n", i->filename, strerror(errno));
         }
     }
 
     fp = fopen(i->filename, "wb");
-    if (!fp) die("unable to create %s: %s\n", i->filename, strerror(errno));
+    if (!fp) fatal("unable to modify %s: %s\n", i->filename, strerror(errno));
     fwrite(buf.buf, sizeof(char), buf.len, fp);
     fclose(fp);
     strbuf_release(&buf);
@@ -112,6 +112,18 @@ void revert_all_files(struct index_list *i)
         node = node->next;
     }
     strbuf_release(&cache.cache);
+}
+
+void revert_files_hard()
+{
+    struct commit_list *cl;
+    struct index_list *il;
+    struct index_list *node;
+    struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
+
+    make_commit_list(&cl);
+    il = get_head_commit_list(cl);
+    revert_all_files(il);
 }
 
 struct commit *get_nth_commit(struct commit_list *cl, ssize_t n)
@@ -207,6 +219,9 @@ int revert_parse_options(int argc, char *argv[])
     for (int i = 1; i < argc; i++) {
         if (!strncmp(argv[i], "~", 1)) {
             rev_opts.revert_count = atoi(argv[i] + 1);
+        } else if (!strcmp(argv[i], "--hard") || !strcmp(argv[i], "-h")) {
+            revert_files_hard();
+            return 0;
         } else {
             get_peg_path_buf(&peg_path, argv[i]);
             if (stat(peg_path.buf, &st) < 0) {
