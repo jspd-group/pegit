@@ -27,7 +27,7 @@ char stage_usage[] = YELLOW PEG_NAME
     "        "YELLOW"-v"RESET", "YELLOW"--verbose"RESET"\n"
     "                print the name of the added files, similar to -a.\n"
     "        "YELLOW"-m"RESET", "YELLOW"--more"RESET"\n"
-    "                display more outpu t.\n"
+    "                display more output.\n"
     "\n\n"
     "Example usage: \n\t'"YELLOW PEG_NAME " insert -a " RESET
     "'(or '"YELLOW PEG_NAME " insert ." RESET "')\n"
