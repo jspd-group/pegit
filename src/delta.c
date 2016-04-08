@@ -3,6 +3,11 @@
 #include "path.h"
 #include "pack.h"
 
+#define DELTA_OPTIONS_DEFAULT                                                  \
+    {                                                                          \
+        0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL                                  \
+    }
+
 struct delta_options {
     bool minimal;
     bool recursive;
@@ -11,15 +16,12 @@ struct delta_options {
     bool verbose;
     bool help;
     bool guessed;
+    bool summary;
+    bool debug;
     char *hash_arg1;
     char *hash_arg2;
     char *file_name;
-};
-
-#define DELTA_OPTIONS_DEFAULT                                                  \
-    {                                                                          \
-        0, 0, 0, 0, 0, 0, 0, NULL, NULL                                        \
-    }
+} d_opts = DELTA_OPTIONS_DEFAULT;
 
 enum delta_error {
     ALL_GOOD,
@@ -138,11 +140,6 @@ size_t delta_basic_comparison_m(struct delta_table *out, struct deltafile *af,
             out->prev[j] = out->sol[j];
             sol = out->sol[j];
         }
-#if DEBUG
-        print_table("", out->prev, m);
-        printf("\t%d, %d", i, j);
-        printf("\n");
-#endif
 
         prev = out->prev[0];
         sol = out->sol[0];
@@ -320,9 +317,17 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
     struct deltafile af, bf;
     struct delta_table table;
     struct basic_delta_result res;
+    bool cont = false;
 
     deltafile_init_strbuf(&af, a, DELIM);
     deltafile_init_strbuf(&bf, b, DELIM);
+
+
+    if (af.size == bf.size) {
+        cont = strbuf_cmp(a, b);
+        if (!cont) return false;
+    }
+
     if (delta_table_init(&table, af.size, bf.size) == MEM_ERROR) {
         fprintf(stderr, "file too big\n");
         return false;
@@ -354,9 +359,15 @@ bool strbuf_delta_enhanced(struct strbuf *out,
     struct strbuf_list_node *node;
     struct deltafile af, bf;
     struct delta_table table;
+    bool cont = false;
 
     deltafile_init_strbuf(&af, a, DELIM);
     deltafile_init_strbuf(&bf, b, DELIM);
+
+    if (af.size == bf.size) {
+        cont = strbuf_cmp(a, b);
+        if (!cont) return false;
+    }
     if (delta_table_init(&table, af.size, bf.size)) {
         perror("file too big");
         return false;
@@ -366,6 +377,8 @@ bool strbuf_delta_enhanced(struct strbuf *out,
     if (!(result->insertions || result->deletions)) return false;
 
     node = result->diff_lines.head->next;
+
+
     while (node) {
         if (node->sign == '+') {
             strbuf_addstr(out, GREEN);
@@ -394,8 +407,8 @@ void index_delta(struct basic_delta_result *result,
     struct basic_delta_result local;
 
     basic_delta_result_init(&local, NULL);
-    strbuf_add(&a, cache->cache.buf + i1->pack_start, i1->pack_len);
-    strbuf_add(&b, cache->cache.buf + i2->pack_start, i2->pack_len);
+    get_file_content(cache, &a, i1);
+    get_file_content(cache, &b, i2);
     if (minimal) {
         if (!strbuf_delta_minimal(out, &local, &a, &b)) {
             strbuf_release(&a);
@@ -570,6 +583,8 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
         nodea = nodea->next;
     }
     nodea = b;
+
+    /* for remaining indices */
     while (nodea) {
         if (nodea->idx->flags == DELTA_FLAG) {
             nodea = nodea->next;
@@ -739,9 +754,9 @@ int check_entry(const char *path)
     ret = filespec_init(&fs, path, "r");
     if (ret < 0) {
         if (errno == ENOENT) {
+            res = count_lines(&a);
+            directory_delta_var.ds.deletions += res;
             if (directory_delta_var.minimal) {
-                res = count_lines(&a);
-                directory_delta_var.ds.deletions += res;
                 fprintf(stdout, "%s: deleted, %llu deletions\n", path, res);
             } else {
                 print_deletion_lines(&a);
@@ -763,11 +778,14 @@ int check_entry(const char *path)
     }
     if (result.insertions || result.deletions > 1) {
         fprintf(stdout, "[%s] [%s]\n", path, path);
+        directory_delta_var.ds.insertions += result.insertions;
+        directory_delta_var.ds.deletions += result.deletions;
 
         if (directory_delta_var.minimal) {
             print_delta_stat(&result);
         } else {
             fprintf(stdout, "%s\n", out.buf);
+            strbuf_release(&out);
         }
     }
     basic_delta_result_release(&result);
@@ -794,6 +812,26 @@ void do_directory_delta(const char *dir, bool minimal, struct delta_options *opt
     if (for_each_file_in_directory_recurse(dir, check_entry) == -1) {
         die("error occurred while reading directory %s", dir);
     }
+
+    if (opts->summary) {
+        fprintf(stdout, "Summary: \n");
+        size_t insertions = directory_delta_var.ds.insertions;
+        size_t deletions = directory_delta_var.ds.deletions;
+
+        if (insertions) {
+            fprintf(stdout, "%llu %s", insertions, insertions == 1 ?
+                "insertion" : "insertions");
+        }
+        if (insertions && deletions) {
+            printf(", ");
+        }
+        if (deletions) {
+            fprintf(stdout, "%llu %s", deletions, deletions == 1 ?
+                "deletion" : "deletions");
+        }
+        putchar('\n');
+    }
+    invalidate_cache(&directory_delta_var.cache);
 }
 
 /**
@@ -829,6 +867,8 @@ void delta_parse_single_option(struct delta_options *opts, int *i,
         opts->file = true;
     else if (is("--verbose") || is("-v"))
         opts->verbose = true;
+    else if (is("--summary") || is ("-s"))
+        opts->summary = true;
     else if (opts->file && !opts->commit) {
         opts->file_name = argv[count];
         if (stat(opts->file_name, &st) < 0) {
@@ -894,40 +934,38 @@ void delta_parse_options(struct delta_options *opts, int argc, char *argv[])
 
 int delta_main(int argc, char *argv[])
 {
-    struct delta_options opts = DELTA_OPTIONS_DEFAULT;
-
-    delta_parse_options(&opts, argc, argv);
-    if (opts.help) {
+    delta_parse_options(&d_opts, argc, argv);
+    if (d_opts.help) {
         printf("Usage: peg compare (path)\n");
         printf("\n");
         printf("options: \n");
         printf("\t(-h | --help) | (--file)\n");
         exit(-1);
     }
-    if (opts.commit && !opts.file) {
-        if (opts.hash_arg1 && opts.hash_arg2) {
-            commit_delta(opts.hash_arg1, opts.hash_arg2, opts.minimal);
-        } else if (opts.hash_arg1) {
-            do_single_commit_delta(opts.hash_arg1, opts.minimal, 1);
-        } else if (opts.hash_arg2) {
-            do_single_commit_delta(opts.hash_arg2, opts.minimal, 1);
-        } else if (opts.guessed) {
+    if (d_opts.commit && !d_opts.file) {
+        if (d_opts.hash_arg1 && d_opts.hash_arg2) {
+            commit_delta(d_opts.hash_arg1, d_opts.hash_arg2, d_opts.minimal);
+        } else if (d_opts.hash_arg1) {
+            do_single_commit_delta(d_opts.hash_arg1, d_opts.minimal, 1);
+        } else if (d_opts.hash_arg2) {
+            do_single_commit_delta(d_opts.hash_arg2, d_opts.minimal, 1);
+        } else if (d_opts.guessed) {
             die("no sha1 or path specified.\n");
         } else {
             die("please provide atleast one argument for sha1.\n");
         }
-    } else if (!opts.commit && opts.file) {
-        if (opts.recursive) {
-            do_directory_delta(opts.file_name, opts.minimal, &opts);
-        } else if (!opts.file_name && opts.guessed) {
+    } else if (!d_opts.commit && d_opts.file) {
+        if (d_opts.recursive) {
+            do_directory_delta(d_opts.file_name, d_opts.minimal, &d_opts);
+        } else if (!d_opts.file_name && d_opts.guessed) {
             die("no sha1 or path specified.\n");
-        } else if (opts.guessed || opts.file_name) {
-            do_single_file_delta(opts.file_name, opts.minimal);
+        } else if (d_opts.guessed || d_opts.file_name) {
+            do_single_file_delta(d_opts.file_name, d_opts.minimal);
         } else {
             die("no path specified.\n");
         }
     } else {
-        do_directory_delta(".", opts.minimal, &opts);
+        do_directory_delta(".", d_opts.minimal, &d_opts);
     }
     return 0;
 }
