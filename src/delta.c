@@ -703,7 +703,8 @@ int check_entry(const char *path)
     struct strbuf a = STRBUF_INIT, b = STRBUF_INIT;
     struct index *idx;
     struct basic_delta_result result;
-    int fd;
+    struct filespec fs;
+    int ret;
     struct strbuf out = STRBUF_INIT;
 
     if (directory_delta_var.opts->verbose)
@@ -714,15 +715,15 @@ int check_entry(const char *path)
     }
 
     get_file_content(&directory_delta_var.cache, &a, idx);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
+    ret = filespec_init(&fs, path, "r");
+    if (ret < 0) {
         if (errno == ENOENT) {
             print_deletion_lines(&a);
         } else {
             die("%s: %s\n", path, strerror(errno));
         }
     }
-    strbuf_read(&b, fd, idx->pack_len);
+    filespec_read_safe(&fs, &b);
     basic_delta_result_init(&result, NULL);
     strbuf_delta_enhanced(&out, &result, &a, &b);
     if (result.insertions || result.deletions > 1) {
@@ -732,8 +733,7 @@ int check_entry(const char *path)
     basic_delta_result_release(&result);
     strbuf_release(&a);
     strbuf_release(&b);
-    if (close(fd) < 0)
-        perror("Can't close %s");
+    filespec_free(&fs);
     return 0;
 }
 
