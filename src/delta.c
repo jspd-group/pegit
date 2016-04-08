@@ -279,6 +279,25 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
     return;
 }
 
+void print_delta_stat(struct basic_delta_result *bdr)
+{
+    size_t insertions = bdr->insertions;
+    size_t deletions = bdr->deletions;
+
+    if (insertions) {
+        fprintf(stdout, "%llu %s", insertions, insertions == 1 ?
+            "insertion" : "insertions");
+    }
+    if (insertions && deletions) {
+        printf(", ");
+    }
+    if (deletions) {
+        fprintf(stdout, "%llu %s", deletions, deletions == 1 ?
+            "deletion" : "deletions");
+    }
+    putchar('\n');
+}
+
 void delta_summary(struct basic_delta_result *bdr, struct strbuf *summary)
 {
     struct strbuf_list_node *node;
@@ -706,11 +725,13 @@ int check_entry(const char *path)
     struct filespec fs;
     int ret;
     struct strbuf out = STRBUF_INIT;
+    size_t res = 0;
 
     if (directory_delta_var.opts->verbose)
         printf("%s\n", path);
     idx = find_file_index_list(directory_delta_var.il, path);
     if (!idx) {
+        /* an untracked file */
         return 0;
     }
 
@@ -718,17 +739,36 @@ int check_entry(const char *path)
     ret = filespec_init(&fs, path, "r");
     if (ret < 0) {
         if (errno == ENOENT) {
-            print_deletion_lines(&a);
+            if (directory_delta_var.minimal) {
+                res = count_lines(&a);
+                directory_delta_var.ds.deletions += res;
+                fprintf(stdout, "%s: deleted, %llu deletions\n", path, res);
+            } else {
+                print_deletion_lines(&a);
+            }
+            strbuf_release(&a);
+            return 0;
         } else {
             die("%s: %s\n", path, strerror(errno));
         }
     }
+
     filespec_read_safe(&fs, &b);
     basic_delta_result_init(&result, NULL);
-    strbuf_delta_enhanced(&out, &result, &a, &b);
+
+    if (directory_delta_var.minimal) {
+        strbuf_delta_minimal(NULL, &result, &a, &b);
+    } else {
+        strbuf_delta_enhanced(&out, &result, &a, &b);
+    }
     if (result.insertions || result.deletions > 1) {
         fprintf(stdout, "[%s] [%s]\n", path, path);
-        fprintf(stdout, "%s\n", out.buf);
+
+        if (directory_delta_var.minimal) {
+            print_delta_stat(&result);
+        } else {
+            fprintf(stdout, "%s\n", out.buf);
+        }
     }
     basic_delta_result_release(&result);
     strbuf_release(&a);
@@ -772,11 +812,12 @@ void do_directory_delta(const char *dir, bool minimal, struct delta_options *opt
 
 #define is(option) !strcmp(option, argv[count])
 
-void delta_parse_single_option(struct delta_options *opts, int count,
+void delta_parse_single_option(struct delta_options *opts, int *i,
                                char *argv[])
 {
     struct stat st;
     struct strbuf path = STRBUF_INIT;
+    int count = *i;
 
     if (is("--help") || is("-h"))
         opts->help = true;
@@ -816,7 +857,7 @@ void delta_parse_single_option(struct delta_options *opts, int count,
             opts->commit = true;
             opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
                             : (opts->hash_arg1= argv[count]);
-            die("%s: %s\n", argv[count], strerror(errno));
+            opts->guessed = true;
             return;
         }
         if (S_ISDIR(st.st_mode)) {
@@ -847,7 +888,7 @@ void delta_parse_options(struct delta_options *opts, int argc, char *argv[])
         exit(0);
     }
     for (int i = 1; i < argc; i++) {
-        delta_parse_single_option(opts, i, argv);
+        delta_parse_single_option(opts, &i, argv);
     }
 }
 
@@ -886,11 +927,7 @@ int delta_main(int argc, char *argv[])
             die("no path specified.\n");
         }
     } else {
-        struct commit_list *cl;
-        make_commit_list(&cl);
-        struct commit *cm = get_head_commit(cl);
-
-        do_single_commit_delta(cm->sha1str, opts.minimal, true);
+        do_directory_delta(".", opts.minimal, &opts);
     }
     return 0;
 }
