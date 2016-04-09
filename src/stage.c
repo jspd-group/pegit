@@ -49,6 +49,20 @@ struct stage_options opts = {
     .cache = PACK_FILE_CACHE_INIT
 };
 
+void file_list_clear(struct file_list *head)
+{
+    struct file_list *node = head;
+    struct file_list *temp = node;
+
+    while (temp) {
+        node = node->next;
+        strbuf_release(&temp->path);
+        strbuf_release(&temp->file);
+        free(temp);
+        temp = node;
+    }
+}
+
 int read_file_from_database(const char *path, struct strbuf *buf)
 {
     struct index *idx;
@@ -58,8 +72,8 @@ int read_file_from_database(const char *path, struct strbuf *buf)
 
     idx = find_file_index_list(opts.head, path);
     if (!idx) return false;
-    strbuf_add(buf, opts.cache.cache.buf + idx->pack_start, idx->pack_len);
-    return 1;
+
+    return get_file_content(&opts.cache, buf, idx);
 }
 
 void init_stage()
@@ -169,8 +183,10 @@ void load_old_cache_file(struct cache_object *co) { cache_object_init(co); }
 bool is_marked_as_ignored(const char *name)
 {
     struct strbuf temp = STRBUF_INIT;
+    size_t len = strlen(name);
+
     for (int i = 0; i < opts.ignore; i++) {
-        if (name[0] != '.')
+        if (name[0] != '.' && len >= 2 && name[1] != '/')
             strbuf_addstr(&temp, "./");
         strbuf_addbuf(&temp, &opts.ignarr[i]);
         if (!strncmp(name, opts.ignarr[i].buf, opts.ignarr[i].len - 1) ||
@@ -282,6 +298,7 @@ void cache_files()
     if (stats.total && opts.verbose) {
         printf("\n");
     }
+    file_list_clear(head);
     cache_object_write(&cache);
 
     /* a little memory management is required here */
