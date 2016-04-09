@@ -256,6 +256,23 @@ int parse_config_file(struct peg_env *env)
     return 0;
 }
 
+int create_environment(struct peg_env *env)
+{
+    char *userprofile;
+    struct strbuf buf = STRBUF_INIT;
+
+    env->peg_state = S_STARTUP;
+    userprofile = getenv(USERPROFILE);
+    strbuf_addstr(&buf, userprofile);
+    strbuf_addstr(&buf, "/.pegconfigure");
+    env->peg_config_filepath = buf.buf;
+    env->owner = NULL;
+    strbuf_init(&env->cache, 0);
+    env->owner_email = NULL;
+    env->list = NULL;
+    return 0;
+}
+
 struct config_list *get_environment_value(struct peg_env *env, const char *key)
 {
     struct config_list *node = env->list;

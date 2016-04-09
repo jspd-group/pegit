@@ -75,4 +75,6 @@ static inline void get_global_author(struct author *a)
     strbuf_addstr(&a->email, environment.owner_email);
 }
 
+extern int create_environment(struct peg_env *env);
+
 #endif

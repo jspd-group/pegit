@@ -15,11 +15,7 @@ struct project_cache {
 
 struct peg_env environment = {
     .peg_state = S_STARTUP,
-#ifdef _WIN32
-    .peg_config_filepath = "C:\\Users\\Prince\\.pegconfigure",
-#else
-    .peg_config_filepath = "~/.pegconfigure",
-#endif
+    .peg_config_filepath = NULL,
     .owner = NULL,
     .cache = STRBUF_INIT,
     .owner_email = NULL,
