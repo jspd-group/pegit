@@ -125,7 +125,7 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #ifdef _WIN32
  #define USERPROFILE "USERPROFILE"
 #else
- #define USERPROFILE "~"
+ #define USERPROFILE "HOME"
 #endif
 
 /**
