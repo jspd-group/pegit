@@ -121,6 +121,13 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #define BG_BLUE    "\033[44m"
 #define BG_MAGENTA    "\033[45m"
 #define COLOR_BG_CYAN    "\033[46m"
+
+#ifdef _WIN32
+ #define USERPROFILE "USERPROFILE"
+#else
+ #define USERPROFILE "~"
+#endif
+
 /**
  * text attributes
  */
