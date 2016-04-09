@@ -299,6 +299,8 @@ void delta_summary(struct basic_delta_result *bdr, struct strbuf *summary)
 {
     struct strbuf_list_node *node;
     node = bdr->diff_lines.head->next;
+
+    (void) summary;
     while (node != NULL) {
         printf("%c", node->sign);
         printf("%s", node->buf.buf);
@@ -814,10 +816,12 @@ void do_directory_delta(const char *dir, bool minimal, struct delta_options *opt
     }
 
     if (opts->summary) {
-        fprintf(stdout, "Summary: \n");
         size_t insertions = directory_delta_var.ds.insertions;
         size_t deletions = directory_delta_var.ds.deletions;
 
+        if (insertions || deletions) {
+            fprintf(stdout, "Summary: \n");
+        }
         if (insertions) {
             fprintf(stdout, "%llu %s", insertions, insertions == 1 ?
                 "insertion" : "insertions");
@@ -869,6 +873,8 @@ void delta_parse_single_option(struct delta_options *opts, int *i,
         opts->verbose = true;
     else if (is("--summary") || is ("-s"))
         opts->summary = true;
+    else if (is("--debug") || is ("-d"))
+        opts->debug = true;
     else if (opts->file && !opts->commit) {
         opts->file_name = argv[count];
         if (stat(opts->file_name, &st) < 0) {
