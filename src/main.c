@@ -113,6 +113,8 @@ void warn_no_user_config()
 void create_peg_environment()
 {
     struct config_list *node;
+
+    create_environment(&environment);
     read_config_file(&environment);
     parse_config_file(&environment);
     node = get_environment_value(&environment, "username");
