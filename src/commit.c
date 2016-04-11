@@ -737,27 +737,31 @@ int commit(int argc, char *argv[])
     int16_t flags = 0;
 
     commit_options_init();
-    if (argc < 2)
-        die("empty args. See --help for usage.\n");
+    if (argc < 2) die("empty args. See --help for usage.\n");
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
             printf("Usage: "PEG_NAME" commit -m message -d description\n");
             exit(0);
-        } else
-        if (!strcmp(argv[i], "-m") || !strcmp(argv[i], "--message")) {
+        } else if (!strcmp(argv[i], "-m") || !strcmp(argv[i], "--message")) {
+            if (i + 1 >= argc) {
+                die("\"%s\" expects a message.\n", argv[i]);
+            }
             strbuf_addstr(&msg, argv[i + 1]);
             i++;
-        } else
-        if (!strcmp(argv[i], "-d")) {
+        } else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--description")) {
+            if (i + 1 >= argc) {
+                die("\"%s\" expects a message description.\n", argv[i]);
+            }
             strbuf_addstr(&desc, argv[i + 1]);
             i++;
-        } else
-        if (!strcmp(argv[i], "--log")) {
+        } else if (!strcmp(argv[i], "--log")) {
             print_commits();
             exit(0);
-        } else
-        if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--tag")) {
+        } else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--tag")) {
+            if (i + 1 >= argc) {
+                die("\"%s\" expects a tag name.\n", argv[i]);
+            }
             if (strlen(argv[i + 1]) > TAG_SIZE)
                 die("length of tag should be less than %d\n", TAG_SIZE);
             strcpy(tag, argv[i + 1]);
