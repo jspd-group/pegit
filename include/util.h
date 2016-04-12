@@ -124,8 +124,10 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 
 #ifdef _WIN32
  #define USERPROFILE "USERPROFILE"
+ #define SIZE_T_FORMAT "%llu"
 #else
- #define USERPROFILE "~"
+ #define USERPROFILE "HOME"
+ #define SIZE_T_FORMAT "%zu"
 #endif
 
 /**
