@@ -4,6 +4,7 @@
 #include "path.h"
 #include "project-init.h"
 #include "global.h"
+#include "help.h"
 
 #include <math.h>
 
@@ -272,9 +273,11 @@ void exec_cmd(enum cmd_type cmd, int argc, char **argv)
     exec_commands_args(cmd, argc, argv);
 }
 
-void print_help()
+void print_help(char *str )
 {
-    printf("no help!\n");
+    
+    display_help(str);
+    return true;
 }
 
 int main(int argc, char *argv[])
@@ -283,7 +286,7 @@ int main(int argc, char *argv[])
     enum cmd_type t;
 
     if (argc == 1 || !strcmp(argv[1], "help")) {
-        print_help();
+        print_help(argv[2]);
         exit(0);
     }
     if (strcmp(argv[1], "create")) {
