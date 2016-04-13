@@ -6,6 +6,7 @@ CFLAGS= -std=gnu11
 INC= include/
 SRC= src/
 TEST= test/
+HELP-PAGE= help-pages/
 ZLIB= -lz
 UNAME := $(shell uname)
 EXECUTABLE_NAME=peg
@@ -47,7 +48,7 @@ release: CFLAGS += -O2
 
 release: all
 
-peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o
+peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o help.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o
 	@$(CC) *.o $(ZLIB) -o $(EXECUTABLE_NAME)
 	@echo "Building for $(UNAME)"
 	@echo $@
@@ -59,6 +60,8 @@ cache.o: $(SRC)cache.c $(INC)cache.h
 commit.o: $(SRC)commit.c $(INC)commit.h $(INC)global.h
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)commit.c
 	@echo $@
+
+
 
 checkout.o: $(SRC)checkout.c $(INC)global.h
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)checkout.c
@@ -74,6 +77,10 @@ strbuf.o: $(SRC)strbuf.c $(INC)strbuf.h $(INC)util.h
 
 mz.o: $(SRC)mz.c $(INC)mz.h
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)mz.c
+	@echo $@
+
+help.o: $(SRC)help.c $(INC)help.h
+	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)help.c
 	@echo $@
 
 main.o: $(SRC)main.c
