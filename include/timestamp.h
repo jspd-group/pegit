@@ -26,4 +26,6 @@ static inline void write_time_stamp(struct timestamp *ts, FILE *f)
     fwrite(&ts->_time, sizeof(time_t), 1, f);
 }
 
+extern void time_stamp_humanise(struct timestamp *ts, struct strbuf *buf);
+
 #endif
