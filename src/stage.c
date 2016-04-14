@@ -3,12 +3,14 @@
 #include "tree.h"
 #include "file.h"
 #include "path.h"
+#include "util.h"
 
 struct stage_options {
     int all;
     int ignore;
     int all_dot;
     int verbose;
+    bool modified_only;
     int more_output;
     struct strbuf *ignarr;
     struct strbuf *add;
@@ -63,6 +65,28 @@ void file_list_clear(struct file_list *head)
     }
 }
 
+void show_node(struct cache_index_entry_list *node, size_t i)
+{
+    printf(SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t%s\n",
+        i, node->start, node->file_path.buf);
+}
+
+void show_cache_table()
+{
+    struct cache_object co;
+    struct cache_index_entry_list *node;
+    size_t i = 0;
+
+    cache_object_init(&co);
+    node = co.ci.entries;
+    while (node) {
+        if (!i)
+            printf("INDEX\tI_START\tFILE_NAME\n");
+        show_node(node, i++);
+        node = node->next;
+    }
+}
+
 int read_file_from_database(const char *path, struct strbuf *buf)
 {
     struct index *idx;
@@ -73,7 +97,7 @@ int read_file_from_database(const char *path, struct strbuf *buf)
     idx = find_file_index_list(opts.head, path);
     if (!idx) return false;
 
-    return get_file_content(&opts.cache, buf, idx);
+    return !get_file_content(&opts.cache, buf, idx);
 }
 
 void init_stage()
@@ -124,7 +148,7 @@ void print_stage_stats(struct stage_stats *data)
 
 
 #ifdef _WIN32
-    if (data->files_modified && (((int)(data->files_modified - data->ignored)) > 0)) {
+    if (data->files_modified && (((ssize_t)(data->files_modified - ignored)) > 0)) {
         fprintf(stdout, " %llu %s modified\n", data->files_modified,
                 data->files_modified <= 1 ? "file" : "files");
     }
@@ -215,6 +239,8 @@ int is_modified(const char *name)
         fprintf(stdout, GREEN "\t%s\n" RESET, name);
     }
     if (!read_file_from_database(name, &b)) {
+        if (opts.modified_only)
+            return 0;
         stats.new_files++;
         node = MALLOC(struct file_list, 1);
         if (!node) die("no memory available.\n");
@@ -230,8 +256,7 @@ int is_modified(const char *name)
         file_list_add(node);
         filespec_free(&fs);
         return 0;
-    }
-    if (strbuf_cmp(&a, &b)) {
+    } else if (strbuf_cmp(&a, &b)) {
         stats.files_modified++;
         node = MALLOC(struct file_list, 1);
         if (!node) die("no memory available.\n");
@@ -361,6 +386,8 @@ void process_argument(int i, char *argv)
         opts.more_output = 1;
     } else if (!strncmp(argv, "-i", 2) || !strncmp(argv, "--ignore", 8)) {
         parse_ignore_list(argv);
+    } else if (!strcmp(argv, "-m") || !strcmp(argv, "--modified")) {
+        opts.modified_only = true;
     } else if (!opts.all) {
         ret = is_valid_path(argv);
         switch (ret) {
