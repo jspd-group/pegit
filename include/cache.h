@@ -51,11 +51,11 @@ static inline void cache_object_clean(struct cache_object *co)
 {
     size_t size = 0;
     FILE *f = fopen(CACHE_INDEX_FILE, "wb");
-    if (!f) die("fatal: unable to clear the staged data\n\t:(\n");
+    if (!f) die("unable to clear the staged data\n");
     fwrite(&size, sizeof(size_t), 1, f);
     fclose(f);
     f = fopen(CACHE_PACK_FILE, "wb");
-    if (!f) die("fatal: unable to clear the staged data\n\t:(\n");
+    if (!f) die("unable to clear the staged data\n");
     fclose(f);
 }
 
