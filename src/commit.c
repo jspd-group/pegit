@@ -3,6 +3,7 @@
 #include "sha1-inl.h"
 
 #define IF_TAG(tag) (tag & 1)
+#define IF_HEAD(flag) (flag & HEAD_FLAG)
 
 struct commit_options {
     struct strbuf msg;
@@ -341,7 +342,19 @@ struct index_list *get_last_node(struct index_list *head)
     return prev;
 }
 
-struct index_list *get_head_commit_list(struct commit_list *head)
+struct commit *get_head_commit(struct commit_list *cl)
+{
+    struct commit_list *node = cl;
+    while (node) {
+        if (IF_HEAD(node->item->flags))
+            return node->item;
+        node = node->next;
+    }
+    return NULL;
+}
+
+
+struct index_list *get_master_commit_list(struct commit_list *head)
 {
     struct commit_list *node, *prev;
     struct index_list *ret = NULL;
@@ -353,6 +366,21 @@ struct index_list *get_head_commit_list(struct commit_list *head)
         node = node->next;
     }
     if (prev)  make_index_list_from_commit(prev->item, &ret);
+    return ret;
+}
+
+
+struct index_list *get_head_commit_list(struct commit_list *head)
+{
+    struct commit_list *node = head;
+    struct index_list *ret = NULL;
+
+    while (node) {
+        if (IF_HEAD(node->item->flags))
+            break;
+        node = node->next;
+    }
+    if (node)  make_index_list_from_commit(node->item, &ret);
     return ret;
 }
 
@@ -482,6 +510,80 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     strbuf_release(&cache.cache);
 }
 
+void set_head_commit(const char *sha1, size_t len)
+{
+    struct commit_list *cl;
+    struct commit *cm, *old;
+
+    make_commit_list(&cl);
+    if (!cl)
+        die("no enough commits!\n");
+    old = get_head_commit(cl);
+    cm = find_commit_hash_compat(cl, (char*)sha1, len);
+    if (!cm) {
+        cm = find_commit_tag(cl, sha1);
+        if (!cm) die("no such commit '%s' found.\n", sha1);
+    }
+    old->flags ^= HEAD_FLAG;
+    cm->flags |= HEAD_FLAG;
+    flush_commit_list(cl);
+    printf("Moved head commit from '");
+    print_hash_size(old->sha1, 3, stdout);
+    printf("' to '");
+    print_hash_size(cm->sha1, 3, stdout);
+    printf("'.\n");
+    printf("Use `"YELLOW"peg checkout"RESET"' to apply the changes.\n");
+}
+
+void reset_head_to_master()
+{
+    struct commit_list *cl;
+    struct commit *cm, *old;
+
+    make_commit_list(&cl);
+    if (!cl)
+        die("no enough commits!\n");
+    old = get_head_commit(cl);
+
+    if (!old)
+        fatal("no HEAD commit was there.\n");
+    cm = get_master_commit(cl);
+    if (old)
+        old->flags ^= HEAD_FLAG;
+    cm->flags |= HEAD_FLAG;
+    flush_commit_list(cl);
+
+    if (!old) {
+        printf("Resetting HEAD commit to '");
+        print_hash_size(cm->sha1, 3, stdout);
+        printf("'\n");
+        printf("HEAD: checking out files...\n");
+        revert_files_hard();
+        return;
+    }
+    printf("Moved head commit from '");
+    print_hash_size(old->sha1, 3, stdout);
+    printf("' to '");
+    print_hash_size(cm->sha1, 3, stdout);
+    printf("'.\n");
+    printf("Use `"YELLOW"peg checkout"RESET"' to apply the changes.\n");
+}
+
+void reset_head_command(int argc, char *argv[])
+{
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp("--help", argv[i]) || !strcmp("-h", argv[i])) {
+            break;
+        } else if (!strcmp("--reset", argv[i])) {
+            reset_head_to_master();
+            return;
+        } else {
+            set_head_commit(argv[i], strlen(argv[i]));
+            return;
+        }
+    }
+}
+
 void set_tag(const char *sha1, size_t len, const char *tag)
 {
     struct commit_list *cl, *node;
@@ -490,7 +592,7 @@ void set_tag(const char *sha1, size_t len, const char *tag)
     make_commit_list(&cl);
 
     if (!cl)
-        die("There is no "BLACK"commit"RESET" to tag '"YELLOW"%s"RESET"'.\n",
+        die("There is no "YELLOW"commit"RESET" to tag '"YELLOW"%s"RESET"'.\n",
             tag);
 
     if (!sha1) {
@@ -552,7 +654,7 @@ void print_index_list(struct index_list *il, int flags, const char *color)
     struct strbuf buf;
 
     while (node) {
-        printf("%s%s  " RESET, color, node->idx->filename);
+        printf("%s%20.40s  " RESET, color, node->idx->filename);
         if (flags == 0) {
             putchar('\n');
             node = node->next;
@@ -623,18 +725,22 @@ int list_index(int argc, char *argv[])
 
 int log_commit(struct commit *cm)
 {
+    struct strbuf sb = STRBUF_INIT;
+
     printf("[ "YELLOW);
     print_hash_size(cm->sha1, 3, stdout);
     if (IF_TAG(cm->flags))
         printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
     printf(RESET" ]");
-    fprintf(stdout, "  %s\n\n", cm->cmt_msg.buf);
+    fprintf(stdout, "  %s\n", cm->cmt_msg.buf);
     if (cm->cmt_desc.len)
         fprintf(stdout, "\n\t%s\n\n", cm->cmt_desc.buf);
     cm->stamp._tm = localtime(&cm->stamp._time);
-    fprintf(stdout, "Author:  %s <%s>\n", cm->auth->name.buf,
+    fprintf(stdout, "Committed by "CYAN"%s"RESET" <%s> on ", cm->auth->name.buf,
         cm->auth->email.buf);
-    fprintf(stdout, "Date:    %s\n", asctime(cm->stamp._tm));
+    time_stamp_humanise(&cm->stamp, &sb);
+    printf("%s\n\n", sb.buf);
+    strbuf_release(&sb);
     return 0;
 }
 
@@ -687,19 +793,67 @@ void finalize_commit(struct commit_list *head, struct commit *new)
     flush_commit_list(head);
 }
 
+void show_commit_node(struct commit_list *node, size_t i)
+{
+    printf("Commit_ID: %llu\n", i);
+    printf("SHA1_ID: ");
+    print_hash(node->item->sha1, stdout);
+    if (IF_HEAD(node->item->flags)) {
+        printf(" [ "CYAN"HEAD"RESET" ]\n");
+    }
+    printf("\nTAG: %s\n", IF_TAG(node->item->flags) ? node->item->tag : "NULL");
+    printf("AuthorName: %s\n", node->item->auth->name.buf);
+    printf("AuthorEmail: %s\n", node->item->auth->email.buf);
+    printf("CommitMessage: %s\n", node->item->cmt_msg.buf);
+    printf("CommitDescription: %s\n", node->item->cmt_desc.buf);
+    node->item->stamp._tm = localtime(&node->item->stamp._time);
+    printf("Time: %s", asctime(node->item->stamp._tm));
+    printf("\n");
+}
+
+void show_commit_table()
+{
+    struct commit_list *cl, *node;
+    size_t i = 0;
+
+    make_commit_list(&cl);
+    if (!cl) {
+        printf("Nothing committed\n");
+        return;
+    }
+    node = cl;
+    while (node) {
+        show_commit_node(node, i++);
+        node = node->next;
+    }
+}
+
+void show_commit_count()
+{
+    struct commit_list *cl;
+
+    make_commit_list(&cl);
+    if (!cl) {
+        printf("0\n");
+    } else {
+        printf(SIZE_T_FORMAT "\n", cl->count);
+    }
+}
+
 int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
     char tag[TAG_SIZE], int16_t flags)
 {
     struct commit_list *head = NULL;
     struct cache_object co;
     make_commit_list(&head);
-    struct commit *new = MALLOC(struct commit, 1);
-    struct index_list *head_cm = get_head_commit_list(head);
+    struct commit *new = MALLOC(struct commit, 1), *old_head;
+    struct index_list *head_cm = get_master_commit_list(head);
     struct index_list *copy = copy_index_list(head_cm);
     size_t index, start, len;
     struct author *a = MALLOC(struct author, 1);
     struct index_file_cache cache = INDEX_CACHE_INIT;
 
+    old_head = get_head_commit(head);
     author_init(a);
     cache_object_init(&co);
     if (!co.ci.entries)
@@ -710,7 +864,7 @@ int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
     cache_index_file(&cache);
     get_global_author(a);
     new->auth = a;
-    new->flags = flags;
+    new->flags = flags | HEAD_FLAG;
     if (IF_TAG(flags)) {
         strcpy(new->tag, tag);
     }
@@ -722,6 +876,12 @@ int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
     write_index_list(copy, &cache.cache);
     len = cache.cache.len - start;
     new->commit_length = len;
+
+    /* remove the old head pointer */
+    if (old_head) {
+        old_head->flags ^= HEAD_FLAG;
+    }
+
     finalize_commit(head, new);
     flush_index(&cache);
 
