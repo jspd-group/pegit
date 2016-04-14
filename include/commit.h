@@ -24,6 +24,7 @@ struct commit {
 };
 
 #define TAG_FLAG 0x1
+#define HEAD_FLAG 0x16
 
 struct commit_list {
     size_t count;
@@ -91,8 +92,9 @@ extern struct index *find_file_index_list(struct index_list *head,
     const char *file);
 
 extern struct index_list *get_head_commit_list(struct commit_list *head);
+extern struct commit *get_head_commit(struct commit_list *cl);
 
-static inline struct commit *get_head_commit(struct commit_list *cl)
+static inline struct commit *get_master_commit(struct commit_list *cl)
 {
     struct commit_list *node, *prev;
     node = cl;
@@ -140,4 +142,8 @@ extern char *path(struct d_node *);
 extern void print_status(struct node *);
 extern char *file_path(char *, char *);
 extern int list_index(int argc, char *argv[]);
+extern void show_commit_table();
+extern void show_commit_count();
+extern void revert_files_hard();
+
 #endif
