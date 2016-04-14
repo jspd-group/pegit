@@ -191,6 +191,10 @@ void revert_directory(struct pack_file_cache *cache, struct index_list *list,
 
     while (visitor_visit_next_entry(&v) == 0) {
         visitor_get_absolute_path(&v, &p);
+        if (!strcmp(v.current_entry->d_name, ".peg")) {
+            strbuf_setlen(&p, 0);
+            continue;
+        }
         if (v.entry_type == _FILE) {
             i = find_file_index_list(list, p.buf);
             if (!i) {
