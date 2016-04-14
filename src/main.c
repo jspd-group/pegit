@@ -4,6 +4,7 @@
 #include "path.h"
 #include "project-init.h"
 #include "global.h"
+#include "show-tables.h"
 
 #include <math.h>
 
@@ -14,8 +15,11 @@ enum cmd_type {
     REVERT,
     RST,
     HIST,
+    HEAD,
     STATUS,
+    SHOW,
     COMPARE,
+    CHECKOUT,
     SEE,
     TAG,
     SET,
@@ -26,28 +30,47 @@ enum cmd_type {
     UNKNOWN
 };
 
+#define CREATE_DESC "create a peg repository"
+#define INSERT_DESC "insert the files into stage area or temporary database"
+#define COMMIT_DESC "commit the changes"
+#define RESET_DESC  "remove the files present in the stage area"
+#define REVERT_DESC "revert the local changes"
+#define SHOW_DESC   "displays the tables"
+#define COMPARE_DESC "shows the changes made till the last commit"
+#define STATUS_DESC "shows the status of the project directory"
+#define HIST_DESC "logs the commits"
+#define LIST_DESC "displays the files in the last commit"
+#define TAG_DESC "apply a tag to a commit"
+#define HELP_DESC "shows the help for a command"
+#define HEAD_DESC "change the position of the head pointer"
+#define CHECKOUT_DESC "apply the version change command"
+
 struct command_type {
     enum cmd_type t;
     char *cmd;
+    char *desc;
 };
 
 static struct command_type cmds[] = {
-    { CREATE, "create" },
-    { INSERT, "insert" },
-    { COMMIT, "commit" },
-    { RST, "reset" },
-    { HIST, "hist" },
-    { STATUS, "status" },
-    { REVERT, "revert" },
-    { COMPARE, "compare" },
-    { LIST, "list" },
-    { TAG, "tag" },
-    { HELP, "help" },
+    { CREATE, "create", CREATE_DESC },
+    { INSERT, "insert", INSERT_DESC },
+    { COMMIT, "commit", COMMIT_DESC },
+    { RST, "reset", RESET_DESC },
+    { HIST, "hist", HIST_DESC },
+    { HEAD, "head", HEAD_DESC },
+    { STATUS, "status", STATUS_DESC },
+    { SHOW, "show", SHOW_DESC },
+    { REVERT, "revert", REVERT_DESC },
+    { COMPARE, "compare", COMPARE_DESC },
+    { CHECKOUT, "checkout", CHECKOUT_DESC },
+    { LIST, "list", LIST_DESC },
+    { TAG, "tag", TAG_DESC },
+    { HELP, "help", HELP_DESC },
     { SEE, "seeChanges" },
     { SET, "setAlias" }
 };
 
-#define COMMAND_COUNT 13
+#define COMMAND_COUNT 16
 
 static int argc;
 static char **argv;
@@ -97,6 +120,8 @@ struct core_commands {
  *  9) Command to set aliases
  */
 
+extern void reset_head_command(int argc, char *argv[]);
+
 void init_command(struct command *cmd)
 {
     strbuf_init(&cmd->name, 0);
@@ -104,6 +129,7 @@ void init_command(struct command *cmd)
     cmd->argc = 0;
     cmd->argv = NULL;
 }
+
 
 void warn_no_user_config()
 {
@@ -259,12 +285,23 @@ bool exec_commands_args(enum cmd_type cmd, int count, char **in)
         case LIST:
             return list_index(count, in);
 
+        case SHOW:
+            return show_tables(count, in);
+
+        case HEAD:
+            reset_head_command(count, in);
+            return 0;
+
+        case CHECKOUT:
+            revert_files_hard();
+            return 0;
+
         case USER:
         case INVALID:
         case UNKNOWN:
         {}
     }
-    return true;
+    return 0;
 }
 
 void exec_cmd(enum cmd_type cmd, int argc, char **argv)
@@ -274,7 +311,10 @@ void exec_cmd(enum cmd_type cmd, int argc, char **argv)
 
 void print_help()
 {
-    printf("no help!\n");
+    printf("Available `peg` commands: \n");
+    for (int i = 0; i < COMMAND_COUNT - 2; i++) {
+        printf("  "YELLOW"%10s"RESET"\t%s\n", cmds[i].cmd, cmds[i].desc);
+    }
 }
 
 int main(int argc, char *argv[])
