@@ -10,6 +10,7 @@ struct stage_options {
     int ignore;
     int all_dot;
     int verbose;
+    size_t bytes;
     bool modified_only;
     int more_output;
     struct strbuf *ignarr;
@@ -110,7 +111,7 @@ void init_stage()
     opts.ignarr = NULL;
     opts.add = NULL;
     opts.more_output = 0;
-
+    opts.bytes = 0;
     struct commit_list *cl;
     make_commit_list(&cl);
     opts.head = get_head_commit_list(cl);
@@ -144,8 +145,6 @@ void file_list_add(struct file_list *node)
 void print_stage_stats(struct stage_stats *data)
 {
     size_t modified = 0, added = 0, ignored = data->ignored;
-
-
 
 #ifdef _WIN32
     if (data->files_modified && (((ssize_t)(data->files_modified - ignored)) > 0)) {
@@ -235,12 +234,11 @@ int is_modified(const char *name)
     }
     filespec_init(&fs, name, "r");
     filespec_read_safe(&fs, &a);
-    if (opts.more_output) {
-        fprintf(stdout, GREEN "\t%s\n" RESET, name);
-    }
     if (!read_file_from_database(name, &b)) {
-        if (opts.modified_only)
+        if (opts.modified_only) {
+            filespec_free(&fs);
             return 0;
+        }
         stats.new_files++;
         node = MALLOC(struct file_list, 1);
         if (!node) die("no memory available.\n");
@@ -252,6 +250,13 @@ int is_modified(const char *name)
         node->file.buf = a.buf;
         node->file.len = a.len;
         node->file.alloc = a.alloc;
+        opts.bytes += a.len;
+
+        if (opts.more_output) {
+            printf("\r");
+            printf("\t\t\t\t\r");
+            print_humanised_bytes(opts.bytes);
+        }
         node->next = NULL;
         file_list_add(node);
         filespec_free(&fs);
@@ -267,6 +272,12 @@ int is_modified(const char *name)
         node->file.buf = a.buf;
         node->file.len = a.len;
         node->file.alloc = a.alloc;
+        opts.bytes += a.len;
+
+        if (opts.more_output) {
+            printf("\r");
+            print_humanised_bytes(opts.bytes);
+        }
         node->next = NULL;
         file_list_add(node);
         filespec_free(&fs);
@@ -335,6 +346,8 @@ int detect_and_add_files(const char *dir)
     size_t count;
 
     count = for_each_file_in_directory_recurse(dir, is_modified);
+    if (count > 0 && opts.more_output)
+        printf("\n");
     stats.total = count;
     return 0;
 }
