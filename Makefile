@@ -17,6 +17,10 @@ ifdef NO_ZLIB
 	ZLIB=
 endif
 
+ifdef NO_COLOR
+	CFLAGS+= -DNO_COLOR
+endif
+
 # install utils
 ifeq ($(OS), Windows_NT)
     UNAME= Win32
