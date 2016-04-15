@@ -82,6 +82,9 @@ extern void commit_list_del(struct commit_list **head);
 extern struct commit *find_commit_hash(struct commit_list *cl,
     char sha1[HASH_SIZE]);
 
+extern struct commit *find_commit_tag(struct commit_list *cl,
+    const char *tag);
+
 extern struct commit *find_commit_hash_compat(struct commit_list *cl,
     char *sha1, size_t len);
 
@@ -145,5 +148,6 @@ extern int list_index(int argc, char *argv[]);
 extern void show_commit_table();
 extern void show_commit_count();
 extern void revert_files_hard();
+extern void print_humanised_bytes(off_t bytes);
 
 #endif
