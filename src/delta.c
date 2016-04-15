@@ -5,7 +5,7 @@
 
 #define DELTA_OPTIONS_DEFAULT                                                  \
     {                                                                          \
-        0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL                                  \
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL                         \
     }
 
 struct delta_options {
@@ -16,6 +16,7 @@ struct delta_options {
     bool verbose;
     bool help;
     bool guessed;
+    bool original_diff;
     bool summary;
     bool debug;
     char *hash_arg1;
@@ -632,44 +633,6 @@ void do_file_delta_enhanced(const char *path, struct strbuf *a,
 }
 
 /*
- * compares the single file specified by its path with its HEAD's copy.
- */
-void do_single_file_delta(const char *path, bool minimal)
-{
-    struct strbuf buf = STRBUF_INIT;
-    struct strbuf filebuf = STRBUF_INIT;
-    FILE *file = fopen(path, "r");
-    bool result = find_file_from_head_commit(path, &buf);
-
-    if (result && file) {
-        /* both file exists */
-        strbuf_fread(&filebuf, file_length(file), file);
-        minimal ? do_file_delta_minimal(path, &buf, &filebuf)
-                : do_file_delta_enhanced(path, &buf, &filebuf);
-
-    } else if (result && !file) {
-        /* original file is deleted */
-        delta_index_splash(&filebuf, path, NULL);
-        fprintf(stdout, "%s", filebuf.buf);
-        minimal ? (void)print_lines(&buf, 0) : print_deletion_lines(&buf);
-    } else if (!result && file) {
-        /* new file is added */
-        delta_index_splash(&buf, NULL, path);
-        fprintf(stdout, "%s", buf.buf);
-        strbuf_fread(&filebuf, file_length(file), file);
-        minimal ? (void)print_lines(&filebuf, 1)
-                : print_insertion_lines(&filebuf);
-    } else {
-        /* none of the file exists */
-        die("%s: file doesn't exists\n", path);
-    }
-
-    if (file) fclose(file);
-    strbuf_release(&filebuf);
-    strbuf_release(&buf);
-}
-
-/*
  * commit_delta: compares two given commits
  */
 void commit_delta(char commit1_sha[HASH_SIZE], char commit2_sha[HASH_SIZE],
@@ -685,15 +648,23 @@ void commit_delta(char commit1_sha[HASH_SIZE], char commit2_sha[HASH_SIZE],
     make_commit_list(&cl);
     if ((a = find_commit_hash_compat(cl, commit1_sha, strlen(commit1_sha)))
             == NULL) {
-        fatal("commit <%s", commit1_sha);
-        printf("> doesn't exists\n");
-        exit(-1);
+        a = find_commit_tag(cl, commit1_sha);
+        if (!a) {
+            fatal("commit <");
+            printf("%s", commit1_sha);
+            fprintf(stdout, "> doesn't exists.\n");
+            exit(-1);
+        }
     }
     if ((b = find_commit_hash_compat(cl, commit2_sha, strlen(commit2_sha)))
             == NULL) {
-        fatal("commit <%s>", commit2_sha);
-        printf(" doesn't exists\n");
-        exit(-1);
+        b = find_commit_tag(cl, commit1_sha);
+        if (!b) {
+            fatal("commit <");
+            printf("%s", commit1_sha);
+            fprintf(stdout, "> doesn't exists.\n");
+            exit(-1);
+        }
     }
     do_commit_delta(a, b, minimal);
 }
@@ -717,10 +688,13 @@ void do_single_commit_delta(char *commit1_hash, bool minimal, bool noconv)
     }
 
     if ((a = find_commit_hash_compat(cl, real_sha1, len)) == NULL) {
-        fatal("commit <");
-        print_hash_size(real_sha1, len, stderr);
-        fprintf(stdout, "> doesn't exists.\n");
-        exit(-1);
+        a = find_commit_tag(cl, real_sha1);
+        if (!a) {
+            fatal("commit <");
+            print_hash_size(real_sha1, len, stderr);
+            fprintf(stdout, "> doesn't exists.\n");
+            exit(-1);
+        }
     }
     b = get_head_commit(cl);
     do_commit_delta(a, b, minimal);
@@ -730,9 +704,21 @@ static struct {
     struct delta_stat ds;
     struct index_list *il;
     bool minimal;
+    bool set;
+    bool original_diff;
     struct pack_file_cache cache;
     struct delta_options *opts;
 } directory_delta_var;
+
+void detect_display_crlf(struct strbuf *sb)
+{
+    for (int i = 0; i < sb->len; i++) {
+        if (sb->buf[i] == '\r') {
+            printf("\r detected.\n");
+            return;
+        }
+    }
+}
 
 int check_entry(const char *path)
 {
@@ -743,8 +729,11 @@ int check_entry(const char *path)
     int ret;
     struct strbuf out = STRBUF_INIT;
     size_t res = 0;
+    char cmd[1024];
+    FILE *f;
+    struct strbuf line = STRBUF_INIT;
 
-    if (directory_delta_var.opts->verbose)
+    if (d_opts.verbose)
         printf("%s\n", path);
     idx = find_file_index_list(directory_delta_var.il, path);
     if (!idx) {
@@ -753,6 +742,20 @@ int check_entry(const char *path)
     }
 
     get_file_content(&directory_delta_var.cache, &a, idx);
+    detect_display_crlf(&a);
+
+    if (d_opts.original_diff) {
+        strbuf_init(&line, 1024);
+        sprintf(cmd, "diff -u --minimal - %s", idx->filename);
+        f = popen(cmd, "w");
+        if (!f) {
+            die("can't use '%s'", cmd);
+        }
+        fwrite(a.buf, a.len, 1, f);
+        pclose(f);
+        return 0;
+    }
+
     ret = filespec_init(&fs, path, "r");
     if (ret < 0) {
         if (errno == ENOENT) {
@@ -771,6 +774,7 @@ int check_entry(const char *path)
     }
 
     filespec_read_safe(&fs, &b);
+    detect_display_crlf(&a);
     basic_delta_result_init(&result, NULL);
 
     if (directory_delta_var.minimal) {
@@ -797,9 +801,12 @@ int check_entry(const char *path)
     return 0;
 }
 
-void do_directory_delta(const char *dir, bool minimal, struct delta_options *opts)
+void prepare_file_delta(bool minimal)
 {
     struct commit_list *cl;
+
+    if (directory_delta_var.set)
+        return;
 
     make_commit_list(&cl);
     if (!cl) die("Nothing checked in.\n");
@@ -808,9 +815,48 @@ void do_directory_delta(const char *dir, bool minimal, struct delta_options *opt
     directory_delta_var.minimal = minimal;
     directory_delta_var.il = get_head_commit_list(cl);
     directory_delta_var.cache.pack_file_path = PACK_FILE;
-    directory_delta_var.opts = opts;
+    directory_delta_var.opts = NULL;
+    directory_delta_var.original_diff = d_opts.original_diff;
     strbuf_init(&directory_delta_var.cache.cache, 0);
     cache_pack_file(&directory_delta_var.cache);
+    directory_delta_var.set = true;
+
+    commit_list_del(&cl);
+}
+
+/*
+ * compares the single file specified by its path with its HEAD's copy.
+ */
+void do_single_file_delta(const char *path, bool minimal)
+{
+    prepare_file_delta(minimal);
+    check_entry(path);
+    if (d_opts.summary) {
+        size_t insertions = directory_delta_var.ds.insertions;
+        size_t deletions = directory_delta_var.ds.deletions;
+
+        if (insertions || deletions) {
+            fprintf(stdout, "Summary: \n");
+        }
+        if (insertions) {
+            fprintf(stdout, "%llu %s", insertions, insertions == 1 ?
+                "insertion" : "insertions");
+        }
+        if (insertions && deletions) {
+            printf(", ");
+        }
+        if (deletions) {
+            fprintf(stdout, "%llu %s", deletions, deletions == 1 ?
+                "deletion" : "deletions");
+        }
+        putchar('\n');
+    }
+    invalidate_cache(&directory_delta_var.cache);
+}
+
+void do_directory_delta(const char *dir, bool minimal, struct delta_options *opts)
+{
+    prepare_file_delta(minimal);
     if (for_each_file_in_directory_recurse(dir, check_entry) == -1) {
         die("error occurred while reading directory %s", dir);
     }
@@ -869,6 +915,8 @@ void delta_parse_single_option(struct delta_options *opts, int *i,
         opts->commit = true;
     else if (is("--file") || is("-f"))
         opts->file = true;
+    else if (is("--diff") || is("-od"))
+        opts->original_diff = true;
     else if (is("--verbose") || is("-v"))
         opts->verbose = true;
     else if (is("--summary") || is ("-s"))
@@ -889,17 +937,10 @@ void delta_parse_single_option(struct delta_options *opts, int *i,
         else
             die("%s: file is of unknown type.\n", argv[count]);
     } else if (opts->commit && !opts->file) {
-        if (!is_valid_hash(argv[count], strlen(argv[count])))
-            die("%s: not a valid sha1\n", argv[count]);
         opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
                         : (opts->hash_arg1 = argv[count]);
     } else if (!opts->commit || !opts->file) {
         if (stat(argv[count], &st) < 0) {
-            // now it can be a sha, check for its validity
-            if (!is_valid_hash(argv[count], strlen(argv[count]))) {
-                fatal("%s: %s\n", argv[count], strerror(errno));
-                exit(-1);
-            }
             opts->commit = true;
             opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
                             : (opts->hash_arg1= argv[count]);
@@ -940,6 +981,7 @@ void delta_parse_options(struct delta_options *opts, int argc, char *argv[])
 
 int delta_main(int argc, char *argv[])
 {
+    directory_delta_var.set = false;
     delta_parse_options(&d_opts, argc, argv);
     if (d_opts.help) {
         printf("Usage: peg compare (path)\n");
