@@ -32,7 +32,7 @@ void display_help(char *str)
 	}
 	else 
 	{
-		printf("Entered string is %s [404 : No such keyword] \n",str);
+		printf("Entered string is %s [404 : No such keyword] \nEnter peg help all to list all commands",str);
 		//ShellExecute(NULL,"open",".\\help-pages\\about.html",NULL,NULL,SW_SHOWNORMAL);	
 	}
 }
