@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!-- saved from url=(0034)http://jspd-group.github.io/pegit/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href="./Pegit by jspd-group_files/css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="./Pegit by jspd-group_files/stylesheet.css" 
+    media="screen">
+    <link rel="stylesheet" type="text/css" href="./Pegit by jspd-group_files/dark.css" 
+    media="screen">
+    <link rel="stylesheet" type="text/css" href="./Pegit by jspd-group_files/print.css"
+     media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Pegit by jspd-MANUAL HELP</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Pegit</h1>
+          <h2>A Version Control System</h2>
+        
+    
+        <section id="downloads" class="clearfix" >
+          <a href="https://github.com/jspd-group/pegit" id="view-on-github" class="button"
+           style="float: right;">
+          <span align="left">View on GitHub</span></a>
+        </section>
+        
+        </header>
+        
+
+        <section id="main_content">
+          <h1>
+<a id="-pegit---version-control-system" class="anchor" 
+href="http://jspd-group.github.io/pegit/#-pegit---version-control-system" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a> Help Manual -INSERT COMMAND</h1>
+
+<h2>
+
+<a id="introduction" class="anchor" href="http://jspd-group.github.io/pegit/#introduction" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a></h2>
+
+<h2>
+<a id="Name" class="anchor" href="http://jspd-group.github.io/pegit/#need-and-requirement" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Name</h2>
+
+<p>peg-insert - Add single file, multiples files or directories in temporary database.</p>
+<h2>
+<a id="Syntax" class="anchor" href="http://jspd-group.github.io/pegit/#need-and-requirement"
+ aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Syntax</h2>
+
+<p><b>peg insert</b> [-a][--all][-i][--ignore][-v][--verbose]<br>
+[-m][--more] [specific_file_name or directory_name ]</p>
+
+<h2>
+<a id="manual-solution" class="anchor" href="http://jspd-group.github.io/pegit/#manual-solution" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Description</h2>
+
+<p>Peg insert command - This command adds the given files or content of the directory-tree
+ into a temporary database , to prepare the contents to be staged for the next commit .After
+  making any changes to the working directory, and before running the commit command, you must 
+  use the add command to add any new or modified files to the temporary database.<br>
+ This command can be performed multiple times before a commit. It only adds the content of the
+  specified file(s)  at the time the insert command is run; if you want subsequent changes included 
+  in the next commit, then you must run peg insert again to add the new content to the index. <br>
+  The peg status command can be used to obtain a summary of which 
+  files have changes that are staged for the next commit i.e. which files have been added to 
+  temporary database which are yet to be committed .   </p>
+
+<h2>
+<a id="automated-solution-version-control-system" class="anchor"
+ href="http://jspd-group.github.io/pegit/#automated-solution-version-control-system" 
+ aria-hidden="true">
+ <span aria-hidden="true" class="octicon octicon-link"></span></a>Options</h2>
+
+<ul>
+<li>[-a] or [--all] : This options is used to add all the files and directories of the current 
+location into the temporary database . This option is very helpful as we need not to specify 
+each and every file independently, rather we can use 
+ this option .</li>
+ <li>[-i] or [--ignore] : This option is used to ignore a given file or set of files as 
+ specified by the path after using option -i .</li>
+ <li>[-v] or [--verbose] : This option , when used , adds the given file , also printed the name
+  of the added files, similar to using option -a </li>
+ <li> [-m] or [--more] : This option is used for displaying more output on  the screen terminal . </li>
+</ul>
+
+<h2>
+<a id="automated-solution-version-control-system" class="anchor" 
+href="http://jspd-group.github.io/pegit/#automated-solution-version-control-system" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Examples</h2>
+
+
+<ul>
+<li>Add a specified file into cache area i.e. temporary database.</li>
+
+
+<div class="highlight highlight-source-shell">
+<pre> $ <span class="pl-c1">peg insert given_file.txt </pre></div>
+
+<div class="highlight highlight-source-shell"><pre>$<span class="pl-c1"> peg insert -a
+<span class="pl-c"># This option adds all the files in current location into stagged 
+temporary database.</span>
+<span class="pl-c"></span>
+</pre></div>
+
+<div class="highlight highlight-source-shell">
+<pre>$ <span class="pl-c1">peg insert -i = "path/to/be/ignored"</span>
+<span class="pl-c"># This option adds all the files in current location into stagged<br>
+ temporary database except for those specified by the path.</span>
+<span class="pl-c"></span>
+</pre></div>
+
+</ul>
+        <footer>
+          Pegit is maintained by <a href="https://github.com/jspd-group">jspd-group</a><br>
+        </footer>
+
+        
+      </div>
+    </div>
+  
+
+</body></html>
