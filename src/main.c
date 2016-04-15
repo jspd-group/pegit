@@ -5,6 +5,7 @@
 #include "project-init.h"
 #include "global.h"
 #include "show-tables.h"
+#include "help.h"
 
 #include <math.h>
 
@@ -223,6 +224,8 @@ void suggest_create_usage()
 
 bool help(int argc, char **argv)
 {
+
+    display_help(argv[1]);
     return true;
 }
 
@@ -322,7 +325,7 @@ int main(int argc, char *argv[])
     struct core_commands *head;
     enum cmd_type t;
 
-    if (argc == 1 || !strcmp(argv[1], "help")) {
+    if (argc == 1 || !strcmp(argv[1], "--help")) {
         print_help();
         exit(0);
     }

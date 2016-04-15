@@ -1,4 +1,5 @@
 #include "db.h"
+#include "util.h"
 
 int die_with_error(MYSQL mysql_obj) {
   printf("Program's database terminated because %s", mysql_error(&mysql_obj));
@@ -11,12 +12,10 @@ int initialize_database(struct _database_*db, char *username, char *password) {
   fseek(fp, 0, SEEK_SET);
   fprintf(fp, "%s %s", username, password);
   fclose(fp);
-  printf("Heyy\n");
   if (mysql_init(&db->mysql) == NULL) {
     printf("Failed to create MYSQL object\n");
     die_with_error(db->mysql);
   }
-  printf("CHECK\n");
   if (!mysql_real_connect(&db->mysql, NULL, username, password, NULL, 0, NULL,
                           0)) {
     printf("Failed to connect to LocalHost: Error: %s\n",
@@ -25,7 +24,6 @@ int initialize_database(struct _database_*db, char *username, char *password) {
   } else {
     printf("Logged on to database sucessfully : %s\n", mysql_error(&db->mysql));
   }
-  printf("Hellon\n");
   return 1;
 }
 
@@ -40,18 +38,18 @@ int change_context(struct _database_ *db) {
 
 int create_schema(struct _database_ *db) {
 
-  if (mysql_query(&db->mysql, "CREATE DATABASE pegit") == 0) {
-    printf("Database created successfully\n");
+  if (mysql_query(&db->mysql, "CREATE DATABASE pegit") == 0 && printf("CREATE DATABASE pegit")) {
+    printf(GREEN".......DONE\n");
   } else {
     printf("Failed to create database : %s\n", mysql_error(&db->mysql));
     die_with_error(db->mysql);
   }
   change_context(db);
-
+  printf("CREATE TABLE project( project_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, project_name VARCHAR(30) , version_id INT NOT NULL);");
   if (mysql_query(&db->mysql, "CREATE TABLE project( project_id INT NOT NULL "
                               "AUTO_INCREMENT PRIMARY KEY, project_name "
                               "VARCHAR(30) , version_id INT NOT NULL);") == 0) {
-    printf("Project table created \n");
+    printf(GREEN"........  [DONE]\n");
   } else {
     printf("Failed to create project table : %s\n", mysql_error(&db->mysql));
     die_with_error(db->mysql);
@@ -102,7 +100,6 @@ int create_new_project(struct _database_ *db, char *project_name) {
 }
 
 char* get_project_id(struct _database_ *db, char *p_name) {
-  char username[20], password[20];
   char qu[200] = {NULL};
   change_context(db);
   strcat(qu, "SELECT project_id FROM project WHERE project_name = '");

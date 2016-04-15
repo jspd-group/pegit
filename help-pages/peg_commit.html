@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!-- saved from url=(0034)http://jspd-group.github.io/pegit/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href="./Pegit by jspd-group_files/css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="./Pegit by jspd-group_files/stylesheet.css" 
+    media="screen">
+    <link rel="stylesheet" type="text/css" href="./Pegit by jspd-group_files/dark.css" 
+    media="screen">
+    <link rel="stylesheet" type="text/css" href="./Pegit by jspd-group_files/print.css"
+     media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Pegit by jspd-MANUAL HELP</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Pegit</h1>
+          <h2>A Version Control System</h2>
+        
+    
+        <section id="downloads" class="clearfix" >
+          <a href="https://github.com/jspd-group/pegit" id="view-on-github" class="button"
+           style="float: right;">
+          <span align="left">View on GitHub</span></a>
+        </section>
+        
+        </header>
+        
+
+        <section id="main_content">
+          <h1>
+<a id="-pegit---version-control-system" class="anchor" 
+href="http://jspd-group.github.io/pegit/#-pegit---version-control-system" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a> Help Manual -COMMIT COMMAND</h1>
+
+<h2>
+
+<a id="introduction" class="anchor" href="http://jspd-group.github.io/pegit/#introduction" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a></h2>
+
+<h2>
+<a id="Name" class="anchor" href="http://jspd-group.github.io/pegit/#need-and-requirement" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Name</h2>
+
+<p>peg-commit - Permanently record changes to the repository and store them in the permanent database.</p>
+<h2>
+<a id="Syntax" class="anchor" href="http://jspd-group.github.io/pegit/#need-and-requirement"
+ aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Syntax</h2>
+
+<p><b>peg commit</b> [-m][--message][-d][--description][-t][--tag]<br> [commit_message | description | tag_value]</p>
+
+<h2>
+<a id="manual-solution" class="anchor" href="http://jspd-group.github.io/pegit/#manual-solution" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Description</h2>
+
+<p>Peg commit command - This command stores the current contents of the cache / temporary database (which was stored using <a href =".\\peg_insert.html">peg insert </a> command ) in a new commit along with a log message from the user describing the changes.<br>The content to be added can be specified in several ways:<br>
+1. By using peg insert to incremently add changes to temporary cache before using peg commit command<br>
+2. By using peg reset command to remove files from temporary cache.<br>
+Finally we use peg commit command to store the changes present in the temporary database/cache to store them as a new commit with a given message or a given tag.<br>
+  The peg status command can be used to obtain a summary of which 
+  files have changes that are staged for the next commit i.e. which files have been added to 
+  temporary database which are yet to be committed .   </p>
+
+<h2>
+<a id="automated-solution-version-control-system" class="anchor"
+ href="http://jspd-group.github.io/pegit/#automated-solution-version-control-system" 
+ aria-hidden="true">
+ <span aria-hidden="true" class="octicon octicon-link"></span></a>Options</h2>
+
+<ul>
+<li>[-m] or [--message] "message" : This option uses the given "message" as the commit message. It is often beneficial to add a commit message as it helps in easy debugging and also helps in remembering what changes were made in a paticular commit</li>
+ <li>[-d] or [--description]  "description":  This option is used to add a description alongwith every commit made . This option is followed by a description  </li>
+ <li> [-t] or [--tag] : Often we reach a point , where we can be sure of giving a new version to our project. In this case we provide a tag to the present state of the project . </li>
+</ul>
+
+<h2>
+<a id="automated-solution-version-control-system" class="anchor" 
+href="http://jspd-group.github.io/pegit/#automated-solution-version-control-system" 
+aria-hidden="true">
+<span aria-hidden="true" class="octicon octicon-link"></span></a>Examples</h2>
+
+
+<ul>
+<li>When recording your own work, the contents of modified files in your working tree are temporarily
+ stored to a staging area called the cache / temporary database with 
+ <a href =".\\peg_insert.html">peg insert</a>. A file can be reverted back, only in the index but not
+  in the working tree, to that of the last commit with peg reset command, which effectively reverts peg
+   insert and prevents the changes to this file from participating in the next commit. After building 
+   the state to be committed incrementally with these commands, peg commit (without any pathname parameter)
+    is used to record what has been staged so far. This is the most basic form of the command. 
+    An example:</li>
+
+
+<div class="highlight highlight-source-shell">
+<pre> $ <span class="pl-c1">peg insert given_file.txt </span>
+<span class="pl-c"> # This command will insert given_file.txt into cache</span>
+ $ <span class="pl-c1">peg reset </span>
+ <span class="pl-c"># This command will clear the cache / temporary database.</span>
+ $ <span class="pl-c1">peg insert another_given_file.txt </span>
+ <span class="pl-c"># This command will insert another_given_file.txt into cache .</span>
+ $<span class="pl-c1"> peg commit -m "Commit_message"</span>
+<span class="pl-c"> # This command adds all the files added using peg insert , into permanent database
+ with a given commit message.</span>
+</pre></div>
+
+
+</ul>
+        <footer>
+          Pegit is maintained by <a href="https://github.com/jspd-group">jspd-group</a><br>
+        </footer>
+
+        
+      </div>
+    </div>
+  
+
+</body></html>
