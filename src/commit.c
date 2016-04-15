@@ -16,6 +16,25 @@ struct commit_options {
     bool count;
 } cm_opts;
 
+void print_humanised_bytes(off_t bytes)
+{
+    if (bytes > 1 << 30) {
+        printf("%u.%2.2u GiB",
+                (int)(bytes >> 30),
+                (int)(bytes & ((1 << 30) - 1)) / 10737419);
+    } else if (bytes > 1 << 20) {
+        int x = bytes + 5243;  /* for rounding */
+        printf("%u.%2.2u MiB",
+                x >> 20, ((x & ((1 << 20) - 1)) * 100) >> 20);
+    } else if (bytes > 1 << 10) {
+        int x = bytes + 5;  /* for rounding */
+        printf("%u.%2.2u KiB",
+                x >> 10, ((x & ((1 << 10) - 1)) * 100) >> 10);
+    } else {
+        printf("%u bytes", (int)bytes);
+    }
+}
+
 void commit_options_init()
 {
     strbuf_init(&cm_opts.msg, 0);
@@ -307,7 +326,7 @@ struct commit *find_commit_hash_compat(struct commit_list *cl,
 
 struct commit *find_commit_tag(struct commit_list *cl, const char *tag)
 {
-    struct commit_list *node;
+    struct commit_list *node = cl;
 
     while (node) {
         if (IF_TAG(node->item->flags) && !strcmp(node->item->tag, tag))
@@ -624,25 +643,6 @@ void set_tag(const char *sha1, size_t len, const char *tag)
     flush_commit_list(cl);
 }
 
-void print_humanised_bytes(off_t bytes)
-{
-    if (bytes > 1 << 30) {
-        printf("%u.%2.2u GiB",
-                (int)(bytes >> 30),
-                (int)(bytes & ((1 << 30) - 1)) / 10737419);
-    } else if (bytes > 1 << 20) {
-        int x = bytes + 5243;  /* for rounding */
-        printf("%u.%2.2u MiB",
-                x >> 20, ((x & ((1 << 20) - 1)) * 100) >> 20);
-    } else if (bytes > 1 << 10) {
-        int x = bytes + 5;  /* for rounding */
-        printf("%u.%2.2u KiB",
-                x >> 10, ((x & ((1 << 10) - 1)) * 100) >> 10);
-    } else {
-        printf("%u bytes", (int)bytes);
-    }
-}
-
 #define F_SIZE 0x1
 #define F_PACK 0x2
 #define F_BOTH 0x4
@@ -654,22 +654,23 @@ void print_index_list(struct index_list *il, int flags, const char *color)
     struct strbuf buf;
 
     while (node) {
-        printf("%s%20.40s  " RESET, color, node->idx->filename);
+        printf("%s%s  " RESET, color, node->idx->filename);
         if (flags == 0) {
             putchar('\n');
             node = node->next;
             continue;
         }
         if (flags & F_BOTH) {
-            printf("%llu ", node->idx->pack_start);
+            printf("\t\t%llu ", node->idx->pack_start);
             print_humanised_bytes(node->idx->pack_len);
             printf(" ");
         }
         if (flags & F_PACK) {
-            printf("%llu-%llu ", node->idx->pack_start, node->idx->pack_start
+            printf("\t\t%llu-%llu ", node->idx->pack_start, node->idx->pack_start
                 + node->idx->pack_len);
         }
         if (flags & F_SIZE) {
+            printf("\t\t");
             print_humanised_bytes(node->idx->pack_len);
             printf(" ");
         }
