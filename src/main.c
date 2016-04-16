@@ -322,6 +322,7 @@ void print_help()
     for (int i = 0; i < COMMAND_COUNT - 2; i++) {
         printf("  "YELLOW"%10s"RESET"\t%s\n", cmds[i].cmd, cmds[i].desc);
     }
+    printf("( use <PEG HELP ALL> to get a list of all \ncommands with their syntax and functionality)\n ");
 }
 
 int main(int argc, char *argv[])

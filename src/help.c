@@ -3,6 +3,7 @@
 #include "util.h"
 #include <string.h>
 #include <stdio.h>
+#include <dos.h>
 
 #include <windows.h>
 
@@ -18,6 +19,7 @@ void display_help(char *str)
 	else if(strcmp(str,"create")==0)
 	{
 		printf("Opening the peg-create help page ....\n");
+		
 		ShellExecute(NULL, "open", ".\\help-pages\\create_project.html", NULL, NULL,
             SW_SHOWNORMAL);
 
@@ -33,6 +35,13 @@ void display_help(char *str)
 	{
 		printf("Opening the peg-about help page ....\n");
 		ShellExecute(NULL, "open", ".\\help-pages\\about.html", NULL, NULL,
+            SW_SHOWNORMAL);
+
+	}
+	else if(strcmp(str,"all")==0)
+	{
+		printf("Opening the peg-all help page ....\n");
+		ShellExecute(NULL, "open", ".\\help-pages\\all_help.html", NULL, NULL,
             SW_SHOWNORMAL);
 
 	}
