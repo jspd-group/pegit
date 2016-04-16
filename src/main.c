@@ -224,7 +224,11 @@ void suggest_create_usage()
 
 bool help(int argc, char **argv)
 {
-
+    if (argc == 1) {
+        usage("peg help <command>\n"
+        " (`peg --help` displays all the peg commands)\n");
+        return true;
+    }
     display_help(argv[1]);
     return true;
 }
