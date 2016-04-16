@@ -173,14 +173,23 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #endif
 
 #ifndef die
-#define die(...)                                                          \
+#define die(...)                                                               \
     do {                                                                       \
         fprintf(stderr, RED);                                                  \
         fprintf(stderr, "fatal");                                              \
         fprintf(stderr, RESET);                                                \
         fprintf(stderr, ": ");                                                 \
-        fprintf(stderr, __VA_ARGS__);                                     \
+        fprintf(stderr, __VA_ARGS__);                                          \
         exit(1);                                                               \
+    } while (0)
+#endif
+
+#ifndef usage
+    #define usage(...)                                                       \
+    do {                                                                     \
+        fprintf(stderr, CYAN"usage" RESET": ");                              \
+        fprintf(stderr, __VA_ARGS__);                                        \
+        exit(0);                                                             \
     } while (0)
 #endif
 
