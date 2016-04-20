@@ -6,16 +6,23 @@
 #include "commit.h"
 #include <malloc.h>
 
+#define CHECKED (0x1 << 5)
+#define mark_checked(x) (x->flags |= CHECKED)
+#define is_checked(x) (x->flags & CHECKED)
 
 /*
  * To implement stack by linked list of struct d_node s pionters to
  * current node , head of linked list and previous node are needed
  */
 struct d_node *d_root = NULL, *d_sptr = NULL, *d_ptr = NULL;
-int count_new = 0, count_modified = 0, count_cached = 0;
+int count_new = 0, count_modified = 0, count_cached = 0, count_deleted = 0;
+struct node *root = NULL;
 
-int status()
+int status(char *p)
 {
+    if (root) {
+        root = NULL;
+    }
     DIR *directory;   //  create  a stream to the directory , opendir() returns
                       //  object of DIR type
     char *name;       // to store name of the file
@@ -24,10 +31,10 @@ int status()
     FILE *file; // to create a stream to the file in directory
     struct strbuf buffer1, buffer2;
     char c;
-    struct node *root = NULL, *ptr = NULL, *sptr = NULL;
+    struct node *ptr = NULL, *sptr = NULL;
     int response, file_exists_db;
     struct d_node *d_tptr = NULL;
-    char *parent_dir = ".";
+    char *parent_dir = p;
     struct commit_list *cl;
     struct index_list *il;
     struct index *idx;
@@ -80,6 +87,7 @@ back:
             idx = find_file_index_list(il, name);
             if (idx) {
                 file_exists_db = 1;
+                mark_checked(idx);
                 strbuf_add(&buffer2, cache.cache.buf + idx->pack_start, idx->pack_len);
             } else {
                 file_exists_db = 0;
@@ -145,15 +153,37 @@ back:
         d_tptr = pop();
         parent_dir = path(d_tptr);
         goto back;
-    } else
-        print_status(root);
+    }
 
+    /*
+     * deleted files
+     */
+    {
+        struct index_list *node = il;
+
+        while (node) {
+            if (is_checked(node->idx)) {
+                node = node->next;
+            } else {
+                ptr = createnode();
+                intialise_node(&ptr, node->idx->filename.buf, 8, NULL);
+                insert_node(&root, &ptr, &sptr);
+                node = node->next;
+                count_deleted++;
+            }
+        }
+    }
+
+    commit_list_del(&cl);
+    invalidate_cache(&cache);
     return 0;
 }
 
 int status_main(int argc, char* argv[])  // arguments in main send to give options to the user
 {
-    status();
+    if (!root)
+        status(".");
+    print_status(root);
     return 0;
 }
 
