@@ -301,6 +301,7 @@ int revert_parse_options(int argc, char *argv[])
         if (!strncmp(argv[i], "~", 1)) {
             rev_opts.revert_count = atoi(argv[i] + 1);
         } else if (!strcmp(argv[i], "--hard") || !strcmp(argv[i], "-h")) {
+            status(".");
             revert_files_hard();
             return 0;
         } else {
@@ -309,6 +310,7 @@ int revert_parse_options(int argc, char *argv[])
                 if (errno != ENOENT)
                     die("%s: %s\n", argv[i], strerror(errno));
             }
+            status(argv[i]);
             if (S_ISDIR(st.st_mode)) {
                 struct commit_list *cl;
                 struct commit *cm;
