@@ -70,11 +70,12 @@ int read_index_node(struct cache_index *idx,
     strbuf_fread(&buf, len, idx->idxfile);
     strbuf_addbuf(&node->file_path, &buf);
     strbuf_release(&buf);
-    fread(node->sha1, sizeof(short), HASH_SIZE, idx->idxfile);
+    fread(&node->st, sizeof(struct stat), 1, idx->idxfile);
+    fread(&node->status, sizeof(node->status), 1, idx->idxfile);
     return 0;
 }
 
-int read_index_file(struct cache_index *idx)
+int read_cache_index_file(struct cache_index *idx)
 {
     size_t start, len;
     struct cache_index_entry_list *n;
@@ -85,6 +86,7 @@ int read_index_file(struct cache_index *idx)
         return -1;
     for (i = 0; i < idx->num; i++) {
         n = create_node(0, 0);
+        n->next = NULL;
         if (read_index_node(idx, n))
             die("error while reading cache\n");
         cache_index_entry_list_insert(&idx->entries, &idx->last, n);
@@ -102,7 +104,8 @@ void write_index_node(struct cache_index *idx,
     fwrite(&n->len, sizeof(size_t), 1, idx->idxfile);
     fwrite(&n->file_path.len, sizeof(size_t), 1, idx->idxfile);
     fwrite(n->file_path.buf, sizeof(char), n->file_path.len, idx->idxfile);
-    fwrite(n->sha1, sizeof(short), HASH_SIZE, idx->idxfile);
+    fwrite(&n->st, sizeof(struct stat), 1, idx->idxfile);
+    fwrite(&n->status, sizeof(n->status), 1, idx->idxfile);
 }
 
 int write_index_file(struct cache_index *idx)
@@ -216,7 +219,7 @@ void cache_object_init(struct cache_object *co)
     cache_index_init(&co->ci);
     cache_init(&co->cc);
     open_index_file(&co->ci);
-    read_index_file(&co->ci);
+    read_cache_index_file(&co->ci);
     open_cache_file(&co->cc);
     read_cache_file(&co->cc);
 }

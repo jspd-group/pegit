@@ -19,7 +19,7 @@ struct stage_options {
     struct pack_file_cache cache;
 };
 
-char stage_usage[] = YELLOW PEG_NAME
+char stage_usage[] = CYAN PEG_NAME
     " insert"RESET" : add project files to the stage area\n\n"
     "    Usage:    "YELLOW PEG_NAME " insert [options] <files...>" RESET "\n\n"
     "        options include:\n"
@@ -42,6 +42,7 @@ char stage_usage[] = YELLOW PEG_NAME
 struct stage_stats {
     size_t files_modified;
     size_t new_files;
+    size_t deleted;
     size_t ignored;
     size_t total;
 } stats = {0, 0, 0, 0};
@@ -68,8 +69,8 @@ void file_list_clear(struct file_list *head)
 
 void show_node(struct cache_index_entry_list *node, size_t i)
 {
-    printf(SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t%s\n",
-        i, node->start, node->file_path.buf);
+    printf(SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t%s\n",
+        i, node->start, node->len, node->file_path.buf);
 }
 
 void show_cache_table()
@@ -82,7 +83,7 @@ void show_cache_table()
     node = co.ci.entries;
     while (node) {
         if (!i)
-            printf("INDEX\tI_START\tFILE_NAME\n");
+            printf("INDEX\tI_START\tI_SIZE\tFILE_NAME\n");
         show_node(node, i++);
         node = node->next;
     }
@@ -123,7 +124,7 @@ void file_list_init(struct file_list *fl)
     strbuf_init(&fl->path, 0);
     strbuf_init(&fl->file, 0);
     fl->next = NULL;
-    fl->old = 0;
+    fl->status = 0;
 }
 
 void file_list_add(struct file_list *node)
@@ -228,25 +229,44 @@ int is_modified(const char *name)
     struct filespec fs;
     struct strbuf a = STRBUF_INIT, b = STRBUF_INIT;
     struct file_list *node;
+    struct stat st;
 
     if (is_marked_as_ignored(name)) {
         return 1;
     }
-    filespec_init(&fs, name, "r");
-    filespec_read_safe(&fs, &a);
     if (!read_file_from_database(name, &b)) {
         if (opts.modified_only) {
             filespec_free(&fs);
             return 0;
         }
+
+        if (stat(name, &st) < 0) {
+            stats.deleted++;
+            node = MALLOC(struct file_list, 1);
+            if (!node) die("no memory available.\n");
+            file_list_init(node);
+            node->status = DELETED;
+            strbuf_init(&node->path, 0);
+            strbuf_addstr(&node->path, name);
+            strbuf_init(&node->file, 0);
+
+            node->next = NULL;
+            file_list_add(node);
+            return 0;
+        }
+
+        filespec_init(&fs, name, "r");
+        filespec_read_safe(&fs, &a);
+
         stats.new_files++;
         node = MALLOC(struct file_list, 1);
         if (!node) die("no memory available.\n");
         file_list_init(node);
-        node->old = false;
+        node->status = NEW;
+        node->st = st;
         strbuf_init(&node->path, 0);
         strbuf_addstr(&node->path, name);
-        /* defer hash computation to later time */
+
         node->file.buf = a.buf;
         node->file.len = a.len;
         node->file.alloc = a.alloc;
@@ -261,11 +281,17 @@ int is_modified(const char *name)
         file_list_add(node);
         filespec_free(&fs);
         return 0;
+
     } else if (strbuf_cmp(&a, &b)) {
+
+        if (stat(name, &st) < 0) {
+            die("unable to stat %s, %s\n", name, strerror(errno));
+        }
+
         stats.files_modified++;
         node = MALLOC(struct file_list, 1);
         if (!node) die("no memory available.\n");
-        node->old = true;
+        node->status = MODIFIED;
         strbuf_init(&node->path, 0);
         strbuf_addstr(&node->path, name);
         strbuf_release(&b);
@@ -292,13 +318,12 @@ int is_modified(const char *name)
 void process_node(struct cache_object *cache, struct file_list *node)
 {
     struct cache_index_entry_list *n = MALLOC(struct cache_index_entry_list, 1);
-    char sha1[HASH_SIZE];
 
     n->len = node->file.len;
     strbuf_init(&n->file_path, 0);
     strbuf_addbuf(&n->file_path, &node->path);
-    strtosha1(&node->file, sha1);
-    strcpy((char *)node->sha1, (const char *)sha1);
+    n->st = node->st;
+    n->status = node->status;
     n->next = NULL;
     cache_object_addindex(cache, &node->file, n);
 }
@@ -306,7 +331,7 @@ void process_node(struct cache_object *cache, struct file_list *node)
 static inline void print_file_list_node(struct file_list *node)
 {
     printf(YELLOW);
-    printf("\t%s %s\n", node->old ? "M" : "N", node->path.buf);
+    printf(" %s   %s\n", node->status == MODIFIED ? "M" : "N", node->path.buf);
     fflush(stdout);
     printf(RESET);
 }
@@ -343,12 +368,40 @@ void cache_files()
 
 int detect_and_add_files(const char *dir)
 {
-    size_t count;
+    status((char*)dir);
+    struct file_list *node;
+    struct node *st_node = root;
+    struct stat st;
+    int fd = 0;
+    ssize_t r = 0;
 
-    count = for_each_file_in_directory_recurse(dir, is_modified);
-    if (count > 0 && opts.more_output)
-        printf("\n");
-    stats.total = count;
+    while (st_node) {
+        if (s_is_modified(st_node)) {
+            node = malloc(sizeof(struct file_list));
+            strbuf_init(&node->path, 0);
+            strbuf_addstr(&node->path, st_node->name);
+
+            if (stat(node->path.buf, &node->st) < 0) {
+                die("unable to stat %s, %s\n", node->path.buf, strerror(errno));
+            }
+            fd = open(node->path.buf, O_RDONLY);
+            if (fd < 0) {
+                die("unable to read %s, %s\n", node->path.buf, strerror(errno));
+            }
+            strbuf_init(&node->file, node->st.st_size);
+            r = read(fd, node->file.buf, node->st.st_size);
+
+            if (r < 0) {
+                die("read returned %lld\n", r);
+            }
+            node->file.len = r;
+            node->status = st_node->status;
+            node->next = NULL;
+            file_list_add(node);
+        }
+        st_node = st_node->next;
+    }
+
     return 0;
 }
 
@@ -364,18 +417,19 @@ size_t findch(char *a, char delim)
 
 void parse_ignore_list(char *argv)
 {
+    size_t i = 0, size = 0;
     struct strbuf buf = STRBUF_INIT;
+    struct strbuf entry = STRBUF_INIT;
     strbuf_addstr(&buf, argv + findch(argv, '=') + 1);
 
-    size_t size = strbuf_count(&buf, ':') + 1;
-    size_t i = 0;
+    size = strbuf_count(&buf, ':') + (buf.buf[buf.len - 1] == ':' ? 0 : 1);
     opts.ignarr = MALLOC(struct strbuf, size);
     opts.ignore = size;
     char *tok = strtok(buf.buf, ":");
 
     while (tok != NULL) {
         strbuf_init(opts.ignarr + i, 128);
-        strbuf_addstr(opts.ignarr + i, tok);
+        get_peg_path_buf(opts.ignarr + i, tok);
         tok = strtok(NULL, ":");
         i++;
     }
@@ -438,6 +492,7 @@ int stage_main(int argc, char *argv[])
     init_stage();
     parse_arguments(argc, argv);
     if (opts.all) {
+        status(".");
         detect_and_add_files(".");
     }
     cache_files();

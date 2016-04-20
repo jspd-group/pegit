@@ -14,6 +14,8 @@ struct cache_index_entry_list {
     size_t start;
     size_t len;
     struct strbuf file_path;
+    struct stat st;
+    int status;
     short sha1[HASH_SIZE];
     struct cache_index_entry_list *next;
 };

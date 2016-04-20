@@ -11,6 +11,8 @@ struct file_list {
     struct strbuf file;
     short sha1[HASH_SIZE];
     bool old;
+    int status;
+    struct stat st;
     struct file_list *next;
 };
 
