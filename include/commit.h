@@ -9,6 +9,7 @@
 #include "delta.h"
 #include "pack.h"
 #include "index.h"
+#include "status.h"
 
 struct commit {
     int16_t flags; /* various commit flags */
@@ -121,30 +122,6 @@ extern void print_commits();
 
 extern void list_tags();
 
-// Data structures used in status.c
-struct node {
-    char *name;
-    int status; // status of the file
-    struct node *next;
-};
-
-struct d_node {
-    struct strbuf name;
-    char *parent_dir;
-    struct d_node *next;
-    struct d_node *previous;
-};
-// Function declarations of status.c
-extern int status();
-extern struct node *createnode();
-extern void intialise_node(struct node **, char *, int, struct node *);
-extern void insert_node(struct node **, struct node **, struct node **);
-extern struct d_node *pop();
-extern void push(struct dirent *, char *);
-extern char *path(struct d_node *);
-extern void print_status(struct node *);
-extern char *file_path(char *, char *);
-extern int list_index(int argc, char *argv[]);
 extern void show_commit_table();
 extern void show_commit_count();
 extern void revert_files_hard();

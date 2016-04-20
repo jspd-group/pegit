@@ -5,10 +5,21 @@
 #include <string.h>
 #include "commit.h"
 #include <malloc.h>
+#include "status.h"
 
 #define CHECKED (0x1 << 5)
 #define mark_checked(x) (x->flags |= CHECKED)
 #define is_checked(x) (x->flags & CHECKED)
+
+char *file_path(char *parent_dir, char *name)
+{
+    struct strbuf buffer;
+    strbuf_init(&buffer, 0);
+    strbuf_addstr(&buffer, parent_dir);
+    strbuf_addch(&buffer, '/');
+    strbuf_addstr(&buffer, name);
+    return (buffer.buf);
+}
 
 /*
  * To implement stack by linked list of struct d_node s pionters to
@@ -166,7 +177,7 @@ back:
                 node = node->next;
             } else {
                 ptr = createnode();
-                intialise_node(&ptr, node->idx->filename.buf, 8, NULL);
+                intialise_node(&ptr, node->idx->filename, 8, NULL);
                 insert_node(&root, &ptr, &sptr);
                 node = node->next;
                 count_deleted++;
@@ -185,16 +196,6 @@ int status_main(int argc, char* argv[])  // arguments in main send to give optio
         status(".");
     print_status(root);
     return 0;
-}
-
-char *file_path(char *parent_dir, char *name)
-{
-    struct strbuf buffer;
-    strbuf_init(&buffer, 0);
-    strbuf_addstr(&buffer, parent_dir);
-    strbuf_addch(&buffer, '/');
-    strbuf_addstr(&buffer, name);
-    return (buffer.buf);
 }
 
 struct node *createnode()
