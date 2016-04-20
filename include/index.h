@@ -8,6 +8,7 @@
 
 struct index {
     char filename[256];
+    struct stat st;
     uint8_t flags;
     size_t pack_start;
     size_t pack_len;

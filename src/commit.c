@@ -479,6 +479,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
                 cm_opts.insertions += count_lines(&temp);
                 cm_opts.new_files++;
             }
+            exist->st = node->st;
             strbuf_addbuf(&cache.cache, &temp);
             sha1_update(&ctx, temp.buf, temp.len);
             strbuf_release(&temp);
@@ -502,6 +503,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
         strbuf_add(&old, cache.cache.buf + exist->pack_start, exist->pack_len);
         exist->pack_start = idx;
         exist->pack_len = node->len;
+        exist->st = node->st;
         exist->flags |= 0x80;
         strbuf_add(&temp, co->cc.cache_buf.buf + node->start, node->len);
         if (cm_opts.count) {
