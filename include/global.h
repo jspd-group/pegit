@@ -3,6 +3,7 @@
 
 #include "strbuf.h"
 #include "author.h"
+#include "sha1-inl.h"
 
 enum {
     S_STARTUP,
@@ -26,6 +27,7 @@ struct peg_env {
     struct config_list *list;
     struct strbuf cache;
     char *owner_email;
+    bool pswd;
 };
 
 extern struct peg_env environment;
@@ -73,6 +75,45 @@ static inline void get_global_author(struct author *a)
 {
     strbuf_addstr(&a->name, environment.owner);
     strbuf_addstr(&a->email, environment.owner_email);
+}
+
+static bool validate_user(const char *pswd)
+{
+    struct config_list *node;
+    struct strbuf sha = STRBUF_INIT;
+    char sha1[20];
+
+    node = get_environment_value(&environment, "password");
+
+    if (!node) {
+        return true;
+    }
+
+    return !strcmp(pswd, node->value.buf);
+    strbuf_addstr(&sha, pswd);
+    strtosha1(&sha, sha1);
+    strbuf_release(&sha);
+    strbuf_init(&sha, 41);
+    for (int i = 0; i < 20; i++) {
+        sprintf(sha.buf + sha.len, "%02x", (unsigned)sha1[i]);
+        sha.len += 2;
+    }
+    sha.buf[--sha.len] = '\0';
+
+    return !strbuf_cmp(&sha, &node->value);
+}
+
+static void vud()
+{
+    char pswd[100];
+    if (environment.pswd) {
+        printf("Enter password for \"" CYAN "%s" RESET"\": ", environment.owner);
+        gets(pswd);
+        while (!validate_user(pswd)) {
+            printf("Entered password doesn't match, try again: ");
+            gets(pswd);
+        }
+    }
 }
 
 extern int create_environment(struct peg_env *env);

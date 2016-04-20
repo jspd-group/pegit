@@ -895,11 +895,13 @@ int commit(int argc, char *argv[])
 {
     struct strbuf msg = STRBUF_INIT, desc = STRBUF_INIT;
     char tag[TAG_SIZE];
+    char pswd[100];
     int16_t flags = 0;
 
     commit_options_init();
     if (argc < 2) die("empty args. See --help for usage.\n");
 
+    vud();
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
             printf("Usage: "PEG_NAME" commit -m message -d description\n");
