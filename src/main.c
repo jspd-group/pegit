@@ -157,6 +157,15 @@ void create_peg_environment()
         die("no email provided in %s\n", environment.peg_config_filepath);
     }
     environment.owner_email = node->value.buf;
+    node = get_environment_value(&environment, "password");
+
+    if (node)
+        environment.pswd = true;
+}
+
+void set_environment_value(const char *key, const char *value)
+{
+
 }
 
 enum cmd_type find_command(struct core_commands *cmds, const char *cmd)
