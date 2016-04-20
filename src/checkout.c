@@ -18,6 +18,82 @@ struct revert_opts {
 #define MARK_CHECKOUT(flag) (flag |= 0x30)
 #define IS_MARKED(flag) (flag & 0x30)
 
+int remove_file(const char *path)
+{
+    if (remove(path) < 0) {
+        die("%s: %s, can't delete.\n", path, strerror(errno));
+    }
+    return 0;
+}
+
+int remove_directory(const char *path)
+{
+    struct dirent *entry;
+    DIR *dp;
+    struct stat st;
+    int ret = 0, count = 0;
+    struct strbuf dir = STRBUF_INIT;
+
+    strbuf_addstr(&dir, path);
+    dp = opendir(dir.buf);
+    if (!dp) {
+        die("%s: not a directory, %s\n", dir.buf, strerror(errno));
+    }
+    strbuf_addch(&dir, '/');
+
+    while ((entry = readdir(dp)) != NULL) {
+        strbuf_addstr(&dir, entry->d_name);
+
+        if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..") ||
+            !strcmp(entry->d_name, PEG_DIR)) {
+            strbuf_setlen(&dir, dir.len - strlen(entry->d_name));
+            continue;
+        }
+
+        ret = stat(dir.buf, &st);
+        if (ret < 0) die("%s: can't do stat, %s\n", entry->d_name, strerror(errno));
+        if (S_ISDIR(st.st_mode)) {
+            remove_directory(dir.buf);
+            rmdir(dir.buf);
+            if (ret) {
+                die("%s: can't delete, %s", dir.buf, strerror(errno));
+            }
+        } else if (S_ISREG(st.st_mode)) {
+            remove_file(dir.buf);
+        }
+        strbuf_setlen(&dir, dir.len - strlen(entry->d_name));
+    }
+
+    strbuf_release(&dir);
+    (void)closedir(dp);
+    return count;
+}
+
+void clean_directory(const char *path)
+{
+    struct node *node = root;
+    char ans[10];
+
+    if (root && (count_modified || count_new)) {
+        printf("Uncommitted changes exist in project: \n");
+        while (node) {
+            printf("%s %s\n", node->status == 1 ? "M" : "N",
+                                node->name);
+            node = node->next;
+        }
+        printf("Do you want to continue?\n");
+        gets(ans);
+        if (!strncmp(ans, "y", 1) || !strcmp(ans, "Y"))
+            ;
+        else {
+            printf("aborting...\n");
+            exit(0);
+        }
+    }
+    for_each_file_in_directory_recurse(path, remove_file);
+    remove_directory(path);
+}
+
 void create_file(struct strbuf *buf, const char *path)
 {
     FILE *fp;
@@ -121,6 +197,7 @@ void revert_files_hard()
     struct index_list *node;
     struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
 
+    clean_directory(".");
     make_commit_list(&cl);
     il = get_head_commit_list(cl);
     revert_all_files(il);
@@ -256,8 +333,10 @@ int revert_parse_options(int argc, char *argv[])
     return 0;
 }
 
-int checkout(int argc, char *argv[]) {
+int checkout(int argc, char *argv[])
+{
     struct commit_list *cl;
+    printf("checking status...\n");
     revert_parse_options(argc, argv);
     make_commit_list(&cl);
     if (!cl) {
