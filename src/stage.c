@@ -384,20 +384,28 @@ int detect_and_add_files(const char *dir)
             if (stat(node->path.buf, &node->st) < 0) {
                 die("unable to stat %s, %s\n", node->path.buf, strerror(errno));
             }
+            if (opts.verbose)
+                printf("opening %s\n", node->path.buf);
             fd = open(node->path.buf, O_RDONLY);
             if (fd < 0) {
                 die("unable to read %s, %s\n", node->path.buf, strerror(errno));
             }
             strbuf_init(&node->file, node->st.st_size);
             r = read(fd, node->file.buf, node->st.st_size);
-
             if (r < 0) {
                 die("read returned %lld\n", r);
             }
+            opts.bytes += node->st.st_size;
             node->file.len = r;
             node->status = st_node->status;
             node->next = NULL;
             file_list_add(node);
+            if (close(fd) < 0)
+                die("unable to close %s, %s\n", node->path.buf, strerror(errno));
+            if (opts.more_output) {
+                printf("\t\t\t\r");
+                print_humanised_bytes(opts.bytes);
+            }
         }
         st_node = st_node->next;
     }
