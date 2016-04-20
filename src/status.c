@@ -49,11 +49,9 @@ int status(char *p)
     struct commit_list *cl;
     struct index_list *il;
     struct index *idx;
-    struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
 
     make_commit_list(&cl);
     il = get_head_commit_list(cl);
-    cache_pack_file(&cache);
 back:
     directory = opendir(parent_dir); // open the current working directory
     if (directory == NULL) die("Could not open the directory %s\n", parent_dir);
@@ -83,23 +81,15 @@ back:
          * will mean modification*/
 
         if (S_ISREG(status.st_mode)) {
-
-            file = fopen(name, "r");
-
             if (file == NULL) // unable to create stream to this file
             {
                 die("Permission denied");
             }
-            strbuf_init(&buffer1,
-                        0); // initialisng two string buffers with length 0
-            strbuf_init(&buffer2, 0);
-            strbuf_fread(&buffer1, status.st_size, file);
 
             idx = find_file_index_list(il, name);
             if (idx) {
                 file_exists_db = 1;
                 mark_checked(idx);
-                strbuf_add(&buffer2, cache.cache.buf + idx->pack_start, idx->pack_len);
             } else {
                 file_exists_db = 0;
             }
@@ -107,9 +97,9 @@ back:
             //     name, &buffer2); // reading file named name(means same as the
             //                      // name of current file) from database and
             //                      // storing it in string buffer2
-            if (file_exists_db)
-                response = strcmp(buffer1.buf,
-                                  buffer2.buf); // xyz.buf has string data type
+            if (file_exists_db) {
+                response = (idx->st.st_mtime < status.st_mtime);
+            }
             // data type  of buffer1 and 2  is strbuf
 
             /* Now we need to make a linked list of all the file names and their
@@ -125,25 +115,18 @@ back:
                     ptr = createnode();
                     intialise_node(&ptr, name, 4, NULL);
                     insert_node(&root, &ptr, &sptr);
-                    strbuf_release(&buffer1);
-                    strbuf_release(&buffer2);
                 } else {
                     count_modified++;
                     ptr = createnode();
                     intialise_node(&ptr, name, 1, NULL);
                     insert_node(&root, &ptr, &sptr);
-                    strbuf_release(&buffer1);
-                    strbuf_release(&buffer2);
                 }
             } else {
-
                 count_new++;
                 ptr = createnode();
                 intialise_node(&ptr, name, 2, NULL);
                 insert_node(&root, &ptr, &sptr);
-                strbuf_release(&buffer1);
             }
-            fclose(file);
         }
         /*
         * if the current object being pointed to by dirent is a directory then
@@ -186,14 +169,16 @@ back:
     }
 
     commit_list_del(&cl);
-    invalidate_cache(&cache);
     return 0;
 }
 
 int status_main(int argc, char* argv[])  // arguments in main send to give options to the user
 {
-    if (!root)
+    if (argc > 1) {
+        status(argv[1]);
+    } else {
         status(".");
+    }
     print_status(root);
     return 0;
 }
