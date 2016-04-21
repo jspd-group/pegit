@@ -372,11 +372,12 @@ int detect_and_add_files(const char *dir)
     struct file_list *node;
     struct node *st_node = root;
     struct stat st;
+    size_t last = 0;
     int fd = 0;
     ssize_t r = 0;
 
     while (st_node) {
-        if (s_is_modified(st_node)) {
+        if (s_is_modified(st_node) && !is_marked_as_ignored(st_node->name)) {
             node = malloc(sizeof(struct file_list));
             strbuf_init(&node->path, 0);
             strbuf_addstr(&node->path, st_node->name);
@@ -395,7 +396,15 @@ int detect_and_add_files(const char *dir)
             if (r < 0) {
                 die("read returned %lld\n", r);
             }
+            last = opts.bytes;
             opts.bytes += node->st.st_size;
+            stats.total++;
+
+            if (node->status == MODIFIED) {
+                stats.files_modified++;
+            } else {
+                stats.new_files++;
+            }
             node->file.len = r;
             node->status = st_node->status;
             node->next = NULL;
@@ -403,13 +412,17 @@ int detect_and_add_files(const char *dir)
             if (close(fd) < 0)
                 die("unable to close %s, %s\n", node->path.buf, strerror(errno));
             if (opts.more_output) {
-                printf("\t\t\t\r");
+                printf("\rinsert: Adding files " SIZE_T_FORMAT " (", stats.total);
                 print_humanised_bytes(opts.bytes);
+                printf(")");
             }
         }
         st_node = st_node->next;
     }
 
+    if (opts.more_output) {
+        printf(", done.\n");
+    }
     return 0;
 }
 
