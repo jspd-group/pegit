@@ -11,6 +11,12 @@
 #define mark_checked(x) (x->flags |= CHECKED)
 #define is_checked(x) (x->flags & CHECKED)
 
+struct status_options {
+    bool new;
+    bool modified;
+    bool old;
+} status_opts;
+
 char *file_path(char *parent_dir, char *name)
 {
     struct strbuf buffer;
@@ -39,7 +45,6 @@ int status(char *p)
     char *name;       // to store name of the file
     struct dirent *d; // dirent stands for directory entry
     struct stat status;
-    FILE *file; // to create a stream to the file in directory
     struct strbuf buffer1, buffer2;
     char c;
     struct node *ptr = NULL, *sptr = NULL;
@@ -54,13 +59,16 @@ int status(char *p)
     il = get_head_commit_list(cl);
 back:
     directory = opendir(parent_dir); // open the current working directory
-    if (directory == NULL) die("Could not open the directory %s\n", parent_dir);
+    if (directory == NULL)
+        die("Could not open the directory %s, %s\n", parent_dir, strerror(errno));
 
     while ((d = readdir(directory))) // start reading the content of directory
                                      // which can be a file or a directory
     {
 
         name = d->d_name;
+        if (!strcmp(name, ".") || !strcmp(name, "..") || !strcmp(name, PEG_DIR))
+            continue;
         name = file_path(parent_dir, name);
         if (stat(name, &status) < 0)
             die("can't stat %s, %s", name, strerror(errno));
@@ -81,10 +89,6 @@ back:
          * will mean modification*/
 
         if (S_ISREG(status.st_mode)) {
-            if (file == NULL) // unable to create stream to this file
-            {
-                die("Permission denied");
-            }
 
             idx = find_file_index_list(il, name);
             if (idx) {
@@ -250,11 +254,19 @@ void print_status(struct node *root)
 {
     struct node *tptr = NULL;
     tptr = root;
-    if (count_modified) {
-        while (tptr->next != NULL) {
-            if (tptr->status == 1) {
+    if (!count_modified && !count_new && !count_deleted) {
+        printf("Working directory clean, nothing changed.\n");
+        return;
+    }
+    if (count_modified && count_deleted) {
+        printf("Changes not staged for commit, please use "
+            YELLOW"\"peg insert --all --modified\"" RESET " to add the"
+            "modified files\n");
+        while (tptr != NULL) {
+            if (tptr->status == MODIFIED || tptr->status == DELETED) {
                 printf(RED);
-                printf("\tmodified : %s\n", tptr->name);
+                printf("    %s: %s\n", tptr->status == MODIFIED ? "modified"
+                : "deleted", tptr->name);
             }
             tptr = tptr->next;
         }
@@ -265,25 +277,26 @@ void print_status(struct node *root)
         printf("Untracked files exist in project directory\n      please use "
                "'" YELLOW "peg insert <files>..." RESET "'\n");
 
-        while (tptr->next != NULL) {
+        while (tptr != NULL) {
             if (tptr->status == 2) {
-                printf(DIM);
-                printf("\tnew :  %s\n", tptr->name);
+                printf(CYAN);
+                printf("\t%s\n", tptr->name);
             }
             tptr = tptr->next;
         }
     }
     tptr = root;
+    if (status_opts.old) {
+        // printf("Changes cached but not commited \n please use '"YELLOW"peg
+        // commmit -m <...>"RESET"'");
+        while (tptr != NULL) {
+            if (tptr->status == 4) {
+                printf(BOLD_GREEN);
+                printf("\told :  %s\n", tptr->name);
+            }
 
-    // printf("Changes cached but not commited \n please use '"YELLOW"peg
-    // commmit -m <...>"RESET"'");
-    while (tptr->next != NULL) {
-        if (tptr->status == 4) {
-            printf(BOLD_GREEN);
-            printf("\told :  %s\n", tptr->name);
+            tptr = tptr->next;
         }
-
-        tptr = tptr->next;
     }
     printf(RESET);
 }
