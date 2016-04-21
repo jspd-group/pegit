@@ -178,6 +178,10 @@ void check_and_mkdir(char *name)
 
 void revert_all_files(struct index_list *i)
 {
+    if (count_new && count_modified) {
+        printf("warn: Uncommitted changes exists\n");
+        return;
+    }
     struct index_list *node = i;
     struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
 
@@ -192,6 +196,11 @@ void revert_all_files(struct index_list *i)
 
 void revert_files_hard()
 {
+    status(".");
+    if (count_new && count_modified) {
+        printf("warn: Uncommitted changes exists\n");
+        return;
+    }
     struct commit_list *cl;
     struct index_list *il;
     struct index_list *node;
@@ -259,6 +268,11 @@ int revert_files_commit(struct strbuf_list *list, ssize_t n)
 void revert_directory(struct pack_file_cache *cache, struct index_list *list,
     const char *path, size_t n)
 {
+
+    if (count_new && count_modified) {
+        printf("warn: Uncommitted changes exists\n");
+        return;
+    }
     struct visitor v;
     struct strbuf p = STRBUF_INIT;
     struct index *i;
@@ -338,7 +352,6 @@ int revert_parse_options(int argc, char *argv[])
 int checkout(int argc, char *argv[])
 {
     struct commit_list *cl;
-    printf("checking status...\n");
     revert_parse_options(argc, argv);
     make_commit_list(&cl);
     if (!cl) {
