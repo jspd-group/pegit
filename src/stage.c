@@ -11,6 +11,7 @@ struct stage_options {
     int all_dot;
     int verbose;
     size_t bytes;
+    bool quiet;
     bool modified_only;
     int more_output;
     struct strbuf *ignarr;
@@ -146,6 +147,9 @@ void file_list_add(struct file_list *node)
 void print_stage_stats(struct stage_stats *data)
 {
     size_t modified = 0, added = 0, ignored = data->ignored;
+
+    if (opts.quiet)
+        return;
 
 #ifdef _WIN32
     if (data->files_modified && (((ssize_t)(data->files_modified - ignored)) > 0)) {
@@ -383,6 +387,14 @@ int detect_and_add_files(const char *dir)
             strbuf_addstr(&node->path, st_node->name);
 
             if (stat(node->path.buf, &node->st) < 0) {
+                if (st_node->status == DELETED) {
+                    node->status = DELETED;
+                    node->next = NULL;
+                    strbuf_init(&node->file, 0);
+                    file_list_add(node);
+                    st_node = st_node->next;
+                    continue;
+                }
                 die("unable to stat %s, %s\n", node->path.buf, strerror(errno));
             }
             if (opts.verbose)
@@ -474,8 +486,10 @@ void process_argument(int i, char *argv)
         opts.more_output = 1;
     } else if (!strncmp(argv, "-i", 2) || !strncmp(argv, "--ignore", 8)) {
         parse_ignore_list(argv);
-    } else if (!strcmp(argv, "-m") || !strcmp(argv, "--modified")) {
+    } else if (!strcmp(argv, "-md") || !strcmp(argv, "--modified")) {
         opts.modified_only = true;
+    } else if (!strcmp(argv, "-q") || !strcmp(argv, "--quiet")) {
+        opts.quiet = true;
     } else if (!opts.all) {
         ret = is_valid_path(argv);
         switch (ret) {
