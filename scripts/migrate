@@ -1,0 +1,21 @@
+peg create repo
+
+COUNT=`git log --reverse --format=%H | cat | wc --words`
+DONE=0
+PERCENT=0
+
+for i in `git log --format=%H --reverse | cat`
+do
+    if [ $DONE -lt $COUNT ]
+    then
+        DONE=`python -c "print($DONE + 1)"`
+        PERCENT=`python -c "print(float($DONE) / float($COUNT) * 100.0)"`
+    else
+        echo ", done"
+        exit
+    fi
+    echo -e -n "\rmigrate: moving commits ($DONE/$COUNT), $PERCENT%"
+    git checkout --quiet $i
+    peg insert --quiet --all --ignore=./.git
+    peg commit -m "`git log --format=%s -1 $i`" --quiet
+done
