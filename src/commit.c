@@ -4,7 +4,7 @@
 
 #define IF_TAG(tag) (tag & 1)
 #define IF_HEAD(flag) (flag & HEAD_FLAG)
-
+#define if_deleted(cm) (cm->flags & (0x1 << 10))
 struct commit_options {
     struct strbuf msg;
     struct strbuf desc;
@@ -14,6 +14,7 @@ struct commit_options {
     size_t new_files;
     bool progress;
     bool count;
+    bool quiet;
 } cm_opts;
 
 void print_humanised_bytes(off_t bytes)
@@ -49,6 +50,8 @@ void commit_options_init()
 
 void print_commit_stats(struct commit_options *opts, struct commit *cm)
 {
+    if (cm_opts.quiet)
+        return;
     printf("[ "YELLOW);
     print_hash_size(cm->sha1, 3, stdout);
     if (IF_TAG(cm->flags))
@@ -421,6 +424,11 @@ struct index_list *copy_index_list(struct index_list *src)
 {
     struct index_list *node = src, *temp = NULL, *new = NULL, *last;
     while (node) {
+        if (if_deleted(node->idx)) {
+            node = node->next;
+            continue;
+        }
+
         temp = MALLOC(struct index_list, 1);
         temp->idx = make_new_index(node->idx->filename, node->idx->pack_start,
             node->idx->pack_len, node->idx->flags);
@@ -499,8 +507,21 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
             }
             node = node->next;
             continue;
+        } else if (node->status == DELETED) {
+            exist->pack_start = 0;
+            exist->pack_len = 0;
+            printf("deleted %s\n", exist->filename);
+            exist->flags |= 0x1 << 10;
+            sha1_update(&ctx, &exist->st, sizeof(exist->st));
+            get_file_content(&cache, &old, exist);
+            if (cm_opts.count) {
+                cm_opts.deletions += count_lines(&old);
+                cm_opts.file_modified++;
+            }
+            node = node->next;
+            continue;
         }
-        strbuf_add(&old, cache.cache.buf + exist->pack_start, exist->pack_len);
+        get_file_content(&cache, &old, exist);
         exist->pack_start = idx;
         exist->pack_len = node->len;
         exist->st = node->st;
@@ -730,6 +751,8 @@ int log_commit(struct commit *cm)
 {
     struct strbuf sb = STRBUF_INIT;
 
+    if (cm_opts.quiet)
+        return 0;
     printf("[ "YELLOW);
     print_hash_size(cm->sha1, 3, stdout);
     if (IF_TAG(cm->flags))
@@ -913,6 +936,10 @@ int commit(int argc, char *argv[])
                 die("\"%s\" expects a message.\n", argv[i]);
             }
             strbuf_addstr(&msg, argv[i + 1]);
+            i++;
+        } else if (!strcmp(argv[i], "-q") || !strcmp(argv[i], "--quiet")) {
+            cm_opts.quiet = 1;
+            cm_opts.count = 0;
             i++;
         } else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--description")) {
             if (i + 1 >= argc) {
