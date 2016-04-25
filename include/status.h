@@ -22,8 +22,12 @@ struct d_node {
 #define MODIFIED 0x1
 #define NEW 0x2
 
-#define s_is_modified(x) ((x->status == DELETED) || \
-    (x->status == MODIFIED) || (x->status == NEW))
+#define S_DELETED 0x800
+#define S_MODIFIED 0x100
+#define S_NEW 0x200
+
+#define s_is_modified(x) ((x->status == S_DELETED) || \
+    (x->status == S_MODIFIED) || (x->status == S_NEW))
 
 extern struct node *root;
 extern int count_new, count_modified, count_cached;

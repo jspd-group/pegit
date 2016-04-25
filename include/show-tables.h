@@ -6,6 +6,9 @@
 
 extern void show_commit_node(struct commit_list *node, size_t i);
 
+extern void print_html_page();
+extern void show_cache_table_html();
+
 static void print_head_commit()
 {
     struct commit_list *cl, *node;
@@ -38,6 +41,10 @@ static int show_tables(int argc, char *argv[])
             show_commit_count();
         else if (!strcmp(argv[i], "--head") || !strcmp(argv[i], "--HEAD"))
             print_head_commit();
+        else if (!strcmp(argv[i], "--html-commit") || !strcmp(argv[i], "-hc"))
+            print_html_page();
+        else if (!strcmp(argv[i], "--html-cached") || !strcmp(argv[i], "-hcc"))
+            show_cache_table_html();
     }
     return 0;
 }

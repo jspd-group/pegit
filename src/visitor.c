@@ -35,7 +35,8 @@ int visitor_visit_next_entry(struct visitor *v)
 
     while ((v->current_entry = readdir(v->root)) != NULL) {
         if (!strcmp(v->current_entry->d_name, ".") ||
-            !strcmp(v->current_entry->d_name, ".."))
+            !strcmp(v->current_entry->d_name, "..") ||
+            !strcmp(v->current_entry->d_name, PEG_DIR))
             continue;
         else {
             strbuf_addch(&v->path, '/');

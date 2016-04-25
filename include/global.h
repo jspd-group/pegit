@@ -95,7 +95,7 @@ static bool validate_user(const char *pswd)
     strbuf_release(&sha);
     strbuf_init(&sha, 41);
     for (int i = 0; i < 20; i++) {
-        sprintf(sha.buf + sha.len, "%02x", (unsigned)sha1[i]);
+        sprintf(sha.buf + sha.len, "%02x", (uint8_t)sha1[i]);
         sha.len += 2;
     }
     sha.buf[--sha.len] = '\0';

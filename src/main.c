@@ -309,6 +309,7 @@ bool exec_commands_args(enum cmd_type cmd, int count, char **in)
             return 0;
 
         case CHECKOUT:
+            status(".");
             revert_files_hard();
             return 0;
 
@@ -358,7 +359,7 @@ int main(int argc, char *argv[])
     t = find_command(head, argv[1]);
     if (t == UNKNOWN) {
         fprintf(stderr, "peg: '"RED"%s"RESET"' unknown command.\n", argv[1]);
-        //suggest_commands(argv[1]);
+        // suggest_commands(argv[1]);
         exit(0);
     }
     exec_cmd(t, --argc, (argv + 1));

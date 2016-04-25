@@ -178,7 +178,7 @@ void check_and_mkdir(char *name)
 
 void revert_all_files(struct index_list *i)
 {
-    if (count_new && count_modified) {
+    if (count_new && count_modified && !rev_opts.force) {
         printf("warn: Uncommitted changes exists\n");
         return;
     }
@@ -196,8 +196,7 @@ void revert_all_files(struct index_list *i)
 
 void revert_files_hard()
 {
-    status(".");
-    if (count_new && count_modified) {
+    if (count_new && count_modified && !rev_opts.force) {
         printf("warn: Uncommitted changes exists\n");
         return;
     }
@@ -269,7 +268,7 @@ void revert_directory(struct pack_file_cache *cache, struct index_list *list,
     const char *path, size_t n)
 {
 
-    if (count_new && count_modified) {
+    if (count_new && count_modified && !rev_opts.force) {
         printf("warn: Uncommitted changes exists\n");
         return;
     }
@@ -315,7 +314,7 @@ int revert_parse_options(int argc, char *argv[])
         if (!strncmp(argv[i], "~", 1)) {
             rev_opts.revert_count = atoi(argv[i] + 1);
         } else if (!strcmp(argv[i], "--hard") || !strcmp(argv[i], "-h")) {
-            status(".");
+            rev_opts.force = 1;
             revert_files_hard();
             return 0;
         } else {
@@ -324,13 +323,13 @@ int revert_parse_options(int argc, char *argv[])
                 if (errno != ENOENT)
                     die("%s: %s\n", argv[i], strerror(errno));
             }
-            status(argv[i]);
             if (S_ISDIR(st.st_mode)) {
                 struct commit_list *cl;
                 struct commit *cm;
                 struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
                 struct index_list *list;
 
+                status(argv[i]);
                 make_commit_list(&cl);
                 cm = get_nth_commit(cl, rev_opts.revert_count);
                 cache_pack_file(&cache);
@@ -351,6 +350,7 @@ int revert_parse_options(int argc, char *argv[])
 
 int checkout(int argc, char *argv[])
 {
+    status(".");
     struct commit_list *cl;
     revert_parse_options(argc, argv);
     make_commit_list(&cl);

@@ -126,5 +126,5 @@ extern void show_commit_table();
 extern void show_commit_count();
 extern void revert_files_hard();
 extern void print_humanised_bytes(off_t bytes);
-
+extern void reset_flags(struct index_list *il);
 #endif

@@ -17,6 +17,8 @@ struct status_options {
     bool old;
 } status_opts;
 
+void print_status_html(struct node *root);
+
 char *file_path(char *parent_dir, char *name)
 {
     struct strbuf buffer;
@@ -54,9 +56,11 @@ int status(char *p)
     struct commit_list *cl;
     struct index_list *il;
     struct index *idx;
+    struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
 
     make_commit_list(&cl);
     il = get_head_commit_list(cl);
+    cache_pack_file(&cache);
 back:
     directory = opendir(parent_dir); // open the current working directory
     if (directory == NULL)
@@ -103,6 +107,21 @@ back:
             //                      // storing it in string buffer2
             if (file_exists_db) {
                 response = (idx->st.st_mtime < status.st_mtime);
+                if (response) {
+                    int fd = open(name, O_RDONLY);
+                    struct strbuf buf1 = STRBUF_INIT, buf2 = STRBUF_INIT;
+                    if (fd < 0) {
+                        die("can't open %s, %s", name, strerror(errno));
+                    }
+
+                    strbuf_read(&buf1, fd, status.st_size);
+                    if (close(fd) < 0)
+                        die("can't close %s, %s", name, strerror(errno));
+                    get_file_content(&cache, &buf2, idx);
+                    response = strbuf_cmp(&buf1, &buf2);
+                    strbuf_release(&buf1);
+                    strbuf_release(&buf2);
+                }
             }
             // data type  of buffer1 and 2  is strbuf
 
@@ -117,18 +136,18 @@ back:
             if (file_exists_db) {
                 if (response == 0) {
                     ptr = createnode();
-                    intialise_node(&ptr, name, 4, NULL);
+                    intialise_node(&ptr, name, 0, NULL);
                     insert_node(&root, &ptr, &sptr);
                 } else {
                     count_modified++;
                     ptr = createnode();
-                    intialise_node(&ptr, name, 1, NULL);
+                    intialise_node(&ptr, name, S_MODIFIED, NULL);
                     insert_node(&root, &ptr, &sptr);
                 }
             } else {
                 count_new++;
                 ptr = createnode();
-                intialise_node(&ptr, name, 2, NULL);
+                intialise_node(&ptr, name, S_NEW, NULL);
                 insert_node(&root, &ptr, &sptr);
             }
         }
@@ -160,11 +179,15 @@ back:
         struct index_list *node = il;
 
         while (node) {
+            if (node->idx->flags == DELETED) {
+                node = node->next;
+                continue;
+            }
             if (is_checked(node->idx)) {
                 node = node->next;
             } else {
                 ptr = createnode();
-                intialise_node(&ptr, node->idx->filename, 8, NULL);
+                intialise_node(&ptr, node->idx->filename, S_DELETED, NULL);
                 insert_node(&root, &ptr, &sptr);
                 node = node->next;
                 count_deleted++;
@@ -179,7 +202,13 @@ back:
 int status_main(int argc, char* argv[])  // arguments in main send to give options to the user
 {
     if (argc > 1) {
-        status(argv[1]);
+        if (!strcmp(argv[1], "--html")) {
+            status(".");
+            print_status_html(root);
+            return 0;
+        }
+        else
+            status(argv[1]);
     } else {
         status(".");
     }
@@ -258,14 +287,14 @@ void print_status(struct node *root)
         printf("Working directory clean, nothing changed.\n");
         return;
     }
-    if (count_modified && count_deleted) {
+    if (count_modified || count_deleted) {
         printf("Changes not staged for commit, please use "
             YELLOW"\"peg insert --all --modified\"" RESET " to add the"
             "modified files\n");
         while (tptr != NULL) {
-            if (tptr->status == MODIFIED || tptr->status == DELETED) {
+            if (tptr->status == S_MODIFIED || tptr->status == S_DELETED) {
                 printf(RED);
-                printf("    %s: %s\n", tptr->status == MODIFIED ? "modified"
+                printf("    %s: %s\n", tptr->status == S_MODIFIED ? "modified"
                 : "deleted", tptr->name);
             }
             tptr = tptr->next;
@@ -278,12 +307,61 @@ void print_status(struct node *root)
                "'" YELLOW "peg insert <files>..." RESET "'\n");
 
         while (tptr != NULL) {
-            if (tptr->status == 2) {
+            if (tptr->status == S_NEW) {
                 printf(CYAN);
                 printf("\t%s\n", tptr->name);
             }
             tptr = tptr->next;
         }
+    }
+    tptr = root;
+    if (status_opts.old) {
+        // printf("Changes cached but not commited \n please use '"YELLOW"peg
+        // commmit -m <...>"RESET"'");
+        while (tptr != NULL) {
+            if (tptr->status == 1) {
+                printf(BOLD_GREEN);
+                printf("\told :  %s\n", tptr->name);
+            }
+
+            tptr = tptr->next;
+        }
+    }
+    printf(RESET);
+}
+
+void print_status_html(struct node *root)
+{
+    printf("<html><head><style> li#modified { color: red; } li#new { color: blue } </style>");
+    struct node *tptr = NULL;
+    tptr = root;
+    printf("<strong>status   file</strong>");
+    if (!count_modified && !count_new && !count_deleted) {
+        printf("Working directory clean, nothing changed.\n");
+        return;
+    }
+    if (count_modified || count_deleted) {
+                printf("<ul color=\"red\">");
+        while (tptr != NULL) {
+            if (tptr->status == S_MODIFIED || tptr->status == S_DELETED) {
+                printf("<li>%s: %s\n</li>", tptr->status == S_MODIFIED ? "modified"
+                : "deleted", tptr->name);
+            }
+            tptr = tptr->next;
+        }
+        printf("</ul>\n");
+    }
+
+    tptr = root;
+    if (count_new) {
+                printf("<ul bgcolor=\"#FF9494\" color=white>");
+        while (tptr != NULL) {
+            if (tptr->status == S_NEW) {
+                printf("<li id=new>new: %s</li>\n", tptr->name);
+            }
+            tptr = tptr->next;
+        }
+                printf("<ul>\n");
     }
     tptr = root;
     if (status_opts.old) {
@@ -298,5 +376,5 @@ void print_status(struct node *root)
             tptr = tptr->next;
         }
     }
-    printf(RESET);
 }
+

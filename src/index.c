@@ -13,6 +13,7 @@ struct index *make_new_index(const char *fn, size_t s,
     idx->flags = f;
     idx->pack_start = s;
     idx->pack_len = l;
+    idx->ver = 0;
     return idx;
 }
 

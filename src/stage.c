@@ -90,6 +90,30 @@ void show_cache_table()
     }
 }
 
+void show_node_html(struct cache_index_entry_list *node, size_t i)
+{
+    char *st = node->status == DELETED ? "deleted" : (node->status == MODIFIED ? "modified" : "new");
+    printf("<td>" SIZE_T_FORMAT "</td><td>%s</td><td>%s</td>\n",
+        i, st, node->file_path.buf);
+}
+
+void show_cache_table_html()
+{
+    struct cache_object co;
+    struct cache_index_entry_list *node;
+    size_t i = 0;
+
+    cache_object_init(&co);
+    node = co.ci.entries;
+    printf("<table><th>Index</th><th>FileStatus</th><th>FileName</th>\n");
+    while (node) {
+        printf("<tr>");
+        show_node_html(node, i++);
+        printf("</tr>\n");
+        node = node->next;
+    }
+}
+
 int read_file_from_database(const char *path, struct strbuf *buf)
 {
     struct index *idx;
@@ -387,8 +411,8 @@ int detect_and_add_files(const char *dir)
             strbuf_addstr(&node->path, st_node->name);
 
             if (stat(node->path.buf, &node->st) < 0) {
-                if (st_node->status == DELETED) {
-                    node->status = DELETED;
+                if (st_node->status == S_DELETED) {
+                    node->status = S_DELETED;
                     node->next = NULL;
                     strbuf_init(&node->file, 0);
                     file_list_add(node);
@@ -412,7 +436,7 @@ int detect_and_add_files(const char *dir)
             opts.bytes += node->st.st_size;
             stats.total++;
 
-            if (node->status == MODIFIED) {
+            if (node->status == S_MODIFIED) {
                 stats.files_modified++;
             } else {
                 stats.new_files++;

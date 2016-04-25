@@ -43,6 +43,7 @@ all: peg
 install: peg
 	@-$(MKDIR_CMD) $(INSTALL_DIR)
 	$(INSTALL_CMD) $(EXECUTABLE_NAME) $(INSTALL_PREFIX)
+	$(INSTALL_CMD) -d help-pages $(INSTALL_PREFIX)
 
 debug: CFLAGS += -g
 

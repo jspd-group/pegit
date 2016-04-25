@@ -4,7 +4,7 @@
 
 #define IF_TAG(tag) (tag & 1)
 #define IF_HEAD(flag) (flag & HEAD_FLAG)
-#define if_deleted(cm) (cm->flags & (0x1 << 10))
+
 struct commit_options {
     struct strbuf msg;
     struct strbuf desc;
@@ -344,6 +344,11 @@ struct index *find_file_index_list(struct index_list *head, const char *file)
     struct index_list *node = head;
 
     while (node) {
+        if (node->idx->flags == DELETED) {
+            printf("fenlfk");
+            node = node->next;
+            continue;
+        }
         if (!strcmp((const char*)node->idx->filename, file)) {
             return node->idx;
         }
@@ -424,7 +429,7 @@ struct index_list *copy_index_list(struct index_list *src)
 {
     struct index_list *node = src, *temp = NULL, *new = NULL, *last;
     while (node) {
-        if (if_deleted(node->idx)) {
+        if (node->idx->flags & DELETED) {
             node = node->next;
             continue;
         }
@@ -479,14 +484,14 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
             basic_delta_result_init(&result, NULL);
         if (!exist) {
             // we're handling new file
-            exist = make_new_index(node->file_path.buf,
-                     idx, node->len, 0);
+            exist = make_new_index(node->file_path.buf, idx, node->len, 0);
             // write to pack file
             strbuf_add(&temp, co->cc.cache_buf.buf + node->start, node->len);
             if (cm_opts.count) {
                 cm_opts.insertions += count_lines(&temp);
                 cm_opts.new_files++;
             }
+            exist->ver = 0;
             exist->st = node->st;
             strbuf_addbuf(&cache.cache, &temp);
             sha1_update(&ctx, temp.buf, temp.len);
@@ -495,6 +500,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
             new = MALLOC(struct index_list, 1);
             new->idx = exist;
             new->next = NULL;
+            exist->flags = NEW;
             if (last) insert_index_list(&last, new);
             else {
                 *head = new;
@@ -507,11 +513,10 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
             }
             node = node->next;
             continue;
-        } else if (node->status == DELETED) {
+        } else if (node->status == S_DELETED) {
             exist->pack_start = 0;
             exist->pack_len = 0;
-            printf("deleted %s\n", exist->filename);
-            exist->flags |= 0x1 << 10;
+            exist->flags = DELETED;
             sha1_update(&ctx, &exist->st, sizeof(exist->st));
             get_file_content(&cache, &old, exist);
             if (cm_opts.count) {
@@ -519,13 +524,15 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
                 cm_opts.file_modified++;
             }
             node = node->next;
+            strbuf_release(&old);
             continue;
         }
         get_file_content(&cache, &old, exist);
         exist->pack_start = idx;
         exist->pack_len = node->len;
         exist->st = node->st;
-        exist->flags |= 0x80;
+        exist->flags = MODIFIED;
+        exist->ver += 1;
         strbuf_add(&temp, co->cc.cache_buf.buf + node->start, node->len);
         if (cm_opts.count) {
             strbuf_delta_minimal(NULL, &result, &old, &temp);
@@ -552,6 +559,21 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     strbuf_release(&cache.cache);
 }
 
+struct commit *get_commit_nth(struct commit_list *cl, ssize_t n)
+{
+    struct commit_list *node = cl;
+    if (n > node->count)
+        die("You want to go way much back!\n");
+    n = node->count - n;
+    for (int i = 0; i < n - 1; i++) {
+        if (node)
+            node = node->next;
+        else
+            die("Clock was not started at that time!\n");
+    }
+    return node->item;
+}
+
 void set_head_commit(const char *sha1, size_t len)
 {
     struct commit_list *cl;
@@ -569,12 +591,23 @@ void set_head_commit(const char *sha1, size_t len)
     old->flags ^= HEAD_FLAG;
     cm->flags |= HEAD_FLAG;
     flush_commit_list(cl);
-    printf("Moved head commit from '");
-    print_hash_size(old->sha1, 3, stdout);
-    printf("' to '");
-    print_hash_size(cm->sha1, 3, stdout);
-    printf("'.\n");
-    printf("Use `"YELLOW"peg checkout"RESET"' to apply the changes.\n");
+    revert_files_hard();
+}
+
+void set_head_commit_relative(size_t n)
+{
+    struct commit_list *cl;
+    struct commit *cm, *old;
+
+    make_commit_list(&cl);
+    if (!cl)
+        die("no enough commits!\n");
+    old = get_head_commit(cl);
+    cm = get_commit_nth(cl, n);
+    old->flags ^= HEAD_FLAG;
+    cm->flags |= HEAD_FLAG;
+    flush_commit_list(cl);
+    revert_files_hard();
 }
 
 void reset_head_to_master()
@@ -603,21 +636,21 @@ void reset_head_to_master()
         revert_files_hard();
         return;
     }
-    printf("Moved head commit from '");
-    print_hash_size(old->sha1, 3, stdout);
-    printf("' to '");
-    print_hash_size(cm->sha1, 3, stdout);
-    printf("'.\n");
-    printf("Use `"YELLOW"peg checkout"RESET"' to apply the changes.\n");
+    revert_files_hard();
 }
 
 void reset_head_command(int argc, char *argv[])
 {
+    status(".");
     for (int i = 1; i < argc; i++) {
         if (!strcmp("--help", argv[i]) || !strcmp("-h", argv[i])) {
             break;
         } else if (!strcmp("--reset", argv[i])) {
             reset_head_to_master();
+            return;
+        } else if (!strncmp("master~", argv[i], 7)) {
+            size_t n = atoi(argv[i] + 7);
+            set_head_commit_relative(n);
             return;
         } else {
             set_head_commit(argv[i], strlen(argv[i]));
@@ -677,7 +710,7 @@ void print_index_list(struct index_list *il, int flags, const char *color)
     struct strbuf buf;
 
     while (node) {
-        printf("%s%s  " RESET, color, node->idx->filename);
+        printf("%c %llu\t%s%s " RESET, node->idx->flags == DELETED ? 'D' : 'M', node->idx->ver, color, node->idx->filename);
         if (flags == 0) {
             putchar('\n');
             node = node->next;
@@ -702,6 +735,26 @@ void print_index_list(struct index_list *il, int flags, const char *color)
     }
 }
 
+void print_index_list_html(struct index_list *il, int flags, const char *sha1)
+{
+    struct index_list *node = il;
+    struct strbuf buf;
+
+    while (node) {
+        printf("<tr>");
+        printf("<td>%s</td>", node->idx->filename);
+        printf("<td>");
+        print_humanised_bytes(node->idx->pack_len);
+        printf("</td><td>");
+        print_hash((char*)sha1, stdout);
+        printf("</td><td>");
+        printf("%llu", node->idx->pack_start);
+        printf("</td>");
+        printf("</tr>");
+        node = node->next;
+    }
+}
+
 int list_commit_index(struct commit *cm, int flags, const char *color)
 {
     struct index_list *il;
@@ -711,6 +764,17 @@ int list_commit_index(struct commit *cm, int flags, const char *color)
     if (!il) return 0;
     print_index_list(il, flags, color);
     return 0;
+}
+
+void print_commit_index_html(struct commit_list *cl)
+{
+    struct index_list *il;
+    printf("<body><table><th>FileName</th><th>FileSize</th><th>CommitSha1ID</th><th>FileIndex</th>");
+    for (struct commit_list *node = cl; node; node = node->next) {
+        make_index_list_from_commit(node->item, &il);
+        if (!il) return;
+        print_index_list_html(il, 0, node->item->sha1);
+    }
 }
 
 int list_index(int argc, char *argv[])
@@ -732,6 +796,9 @@ int list_index(int argc, char *argv[])
             flag |= F_BOTH;
         else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--color")) {
             color = BLUE;
+        } else if (!strcmp(argv[i], "--html") || !strcmp(argv[i], "-h")) {
+            print_commit_index_html(cl);
+            return 0;
         } else {
             cm = find_commit_hash_compat(cl, argv[i], strlen(argv[i]));
             if (!cm) {
@@ -835,6 +902,46 @@ void show_commit_node(struct commit_list *node, size_t i)
     node->item->stamp._tm = localtime(&node->item->stamp._time);
     printf("Time: %s", asctime(node->item->stamp._tm));
     printf("\n");
+}
+
+void print_html_node(struct commit_list *node, size_t i)
+{
+    struct commit *cm = node->item;
+
+    printf("<td>%llu</td>", i);
+    printf("<td>");
+    print_hash(cm->sha1, stdout);
+    printf("</td>");
+    if (IF_HEAD(cm->flags)) {
+        printf(" [ HEAD ]");
+    }
+    printf("<td>%s", IF_TAG(cm->flags) ? cm->tag : "NULL");
+    node->item->stamp._tm = localtime(&node->item->stamp._time);
+    printf("</td><td>%s</td><td>%s</td><td>%s</td><td>%s<td>%s</td>\n",
+        cm->auth->name.buf, cm->auth->email.buf, cm->cmt_msg.buf,
+        cm->cmt_desc.buf, asctime(node->item->stamp._tm));
+}
+
+void print_html_page()
+{
+    struct commit_list *cl, *node;
+    size_t i = 0;
+
+    make_commit_list(&cl);
+    if (!cl) {
+        printf("Nothing committed\n");
+        return;
+    }
+    node = cl;
+    printf("<!doctype html>\n<html>\n<head>\n<title>Commit Table</title>\n"
+        "</head><body><table><th>CommitID</th><th>SHA1</th><th>TAG</th><th>Author</th>"
+        "<th>Email</th><th>CommitMessage</th><th>Description</th><th>Time</th>");
+    while (node) {
+        printf("<tr>");
+        print_html_node(node, i++);
+        printf("</tr>\n");
+        node = node->next;
+    }
 }
 
 void show_commit_table()

@@ -178,7 +178,6 @@ int initialize_empty_project(int argc, char *argv[])
 {
     struct project_cache pc;
 
-    delayms(100000);
     project_cache_init(&pc);
     if (parse_arguments(&pc, argc, argv) < 0) return -1;
     if (make_peg_directories() < 0) return -1;
@@ -187,6 +186,5 @@ int initialize_empty_project(int argc, char *argv[])
         fprintf(stderr, BOLD_GREEN"Initialised an empty project\n"RESET);
     create_cache_files(&pc);
     create_database_files(&pc);
-    delayms(200000);
     return 0;
 }
