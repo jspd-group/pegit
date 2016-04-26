@@ -335,6 +335,80 @@ void print_help()
     printf("( use <PEG HELP ALL> to get a list of all \ncommands with their syntax and functionality)\n ");
 }
 
+//Suggetion System
+int levenshtein(const char *string1, const char *string2,
+        int w, int s, int a, int d)
+{
+    int len1 = strlen(string1), len2 = strlen(string2);
+    int *row0 = malloc(sizeof(int) * (len2 + 1));
+    int *row1 = malloc(sizeof(int) * (len2 + 1));
+    int *row2 = malloc(sizeof(int) * (len2 + 1));
+    int i, j;
+
+    for (j = 0; j <= len2; j++)
+        row1[j] = j * a;
+    for (i = 0; i < len1; i++) {
+        int *dummy;
+
+        row2[0] = (i + 1) * d;
+        for (j = 0; j < len2; j++) {
+            /* substitution */
+            row2[j + 1] = row1[j] + s * (string1[i] != string2[j]);
+            /* swap */
+            if (i > 0 && j > 0 && string1[i - 1] == string2[j] &&
+                    string1[i] == string2[j - 1] &&
+                    row2[j + 1] > row0[j - 1] + w)
+                row2[j + 1] = row0[j - 1] + w;
+            /* deletion */
+            if (row2[j + 1] > row1[j + 1] + d)
+                row2[j + 1] = row1[j + 1] + d;
+            /* insertion */
+            if (row2[j + 1] > row2[j] + a)
+                row2[j + 1] = row2[j] + a;
+        }
+
+        dummy = row0;
+        row0 = row1;
+        row1 = row2;
+        row2 = dummy;
+    }
+
+    i = row1[len2];
+    free(row0);
+    free(row1);
+    free(row2);
+
+    return i;
+}
+//
+
+enum cmd_type suggest_commands(char *cmdbuff,struct core_commands *head)
+{   struct core_commands *node=head;
+    int w,s,a,d,min=100000;
+    struct core_commands *indexsp;
+    w=s=a=d=strlen(cmdbuff);
+    while(node!=NULL)
+    {
+    node->cmd.match = levenshtein(cmdbuff, node->cmd.name.buf,w,s,a,d);
+    if((node->cmd.match)<min)
+    {
+            min=node->cmd.match;
+            indexsp=node;
+        
+        }
+        node=node->next;
+    }
+    fprintf(stderr,"%s is not a valid peg command\nDid you mean?\n\t",cmdbuff);
+    fprintf(stderr, "%s\n(y/n)\n",indexsp->cmd.name.buf);
+    char ch;
+    ch=getchar();
+    if(tolower(ch)=='y')
+        return indexsp->cmd.type;
+    else 
+        return UNKNOWN;
+}
+
+
 int main(int argc, char *argv[])
 {
     struct core_commands *head;
@@ -358,8 +432,10 @@ int main(int argc, char *argv[])
     gen_core_commands(&head);
     t = find_command(head, argv[1]);
     if (t == UNKNOWN) {
-        fprintf(stderr, "peg: '"RED"%s"RESET"' unknown command.\n", argv[1]);
-        // suggest_commands(argv[1]);
+
+        t=suggest_commands(argv[1],head);
+
+        if(t == UNKNOWN)
         exit(0);
     }
     exec_cmd(t, --argc, (argv + 1));

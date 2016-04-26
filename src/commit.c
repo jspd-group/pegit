@@ -769,7 +769,7 @@ int list_commit_index(struct commit *cm, int flags, const char *color)
 void print_commit_index_html(struct commit_list *cl)
 {
     struct index_list *il;
-    printf("<body><table><th>FileName</th><th>FileSize</th><th>CommitSha1ID</th><th>FileIndex</th>");
+    printf(",<html><head><style>td{ border: 1px solid black;}</style></head><body><table><th>FileName</th><th>FileSize</th><th>CommitSha1ID</th><th>FileIndex</th>");
     for (struct commit_list *node = cl; node; node = node->next) {
         make_index_list_from_commit(node->item, &il);
         if (!il) return;
@@ -933,7 +933,7 @@ void print_html_page()
         return;
     }
     node = cl;
-    printf("<!doctype html>\n<html>\n<head>\n<title>Commit Table</title>\n"
+    printf("<!doctype html>\n<html>\n<head>\n<title>Commit Table</title><style>td{ border: 1px solid black;}</style>\n"
         "</head><body><table><th>CommitID</th><th>SHA1</th><th>TAG</th><th>Author</th>"
         "<th>Email</th><th>CommitMessage</th><th>Description</th><th>Time</th>");
     while (node) {
