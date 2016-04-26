@@ -29,6 +29,26 @@ static void print_head_commit()
     show_commit_node(node, i);
 }
 
+static void print_head_commit_short()
+{
+    struct commit_list *cl, *node;
+    size_t i = 0;
+
+    make_commit_list(&cl);
+    node = cl;
+
+    while (node) {
+        if (node->item->flags & HEAD_FLAG) {
+            break;
+        }
+        node = node->next;
+        i++;
+    }
+    if (!node)
+        die("no head commit found.\n");
+    printf("%s %s\n", node->item->sha1str, node->item->cmt_msg.buf);
+}
+
 static int show_tables(int argc, char *argv[])
 {
     for (int i = 1; i < argc; i++) {
@@ -45,6 +65,8 @@ static int show_tables(int argc, char *argv[])
             print_html_page();
         else if (!strcmp(argv[i], "--html-cached") || !strcmp(argv[i], "-hcc"))
             show_cache_table_html();
+        else if (!strcmp(argv[i], "--head-short") || !strcmp(argv[i], "-hs"))
+            print_head_commit_short();
     }
     return 0;
 }
