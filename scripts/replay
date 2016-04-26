@@ -1,0 +1,32 @@
+echo "replay: use 'n' to go to the next commit and 'b' to go to the previous commit"
+CommitCount=`peg show --commit-count`
+i=$CommitCount
+
+if [ $CommitCount -eq 0 ]
+    then
+    echo "nothing committed"
+fi
+
+k=`input`
+
+while ! [ $k -eq 100 ] ;
+do
+    if [ $k -eq 1 ]
+        then
+        i=`expr $i - 1`
+    elif [ $k -eq 2 ]
+        then
+        i=`expr $i + 1`
+    fi
+
+    if [ $i -ge $CommitCount ]
+        then
+        echo "You are now at master commit, exiting"
+        exit
+    fi
+    echo "Checking out `expr $CommitCount - $i`th commit"
+    peg head master~$i
+    echo "HEAD is now at `peg show --head-short`"
+    k=`input`
+done
+
