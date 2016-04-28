@@ -26,6 +26,7 @@ enum cmd_type {
     SET,
     LIST,
     HELP,
+    REPLAY,
     INVALID,
     USER,
     UNKNOWN
@@ -45,6 +46,7 @@ enum cmd_type {
 #define HELP_DESC "shows the help for a command"
 #define HEAD_DESC "change the position of the head pointer"
 #define CHECKOUT_DESC "apply the version change command"
+#define REPLAY_DESC "replay the changes of a repository"
 
 struct command_type {
     enum cmd_type t;
@@ -66,6 +68,7 @@ static struct command_type cmds[] = {
     { CHECKOUT, "checkout", CHECKOUT_DESC },
     { LIST, "list", LIST_DESC },
     { TAG, "tag", TAG_DESC },
+    { REPLAY, "replay", REPLAY_DESC },
     { HELP, "help", HELP_DESC },
     { SEE, "seeChanges" },
     { SET, "setAlias" }
@@ -122,6 +125,7 @@ struct core_commands {
  */
 
 extern void reset_head_command(int argc, char *argv[]);
+extern int list_index(int argc, char *argv[]);
 
 void init_command(struct command *cmd)
 {
@@ -313,6 +317,10 @@ bool exec_commands_args(enum cmd_type cmd, int count, char **in)
             revert_files_hard();
             return 0;
 
+        case REPLAY:
+            system("bash replay");
+            exit(0);
+
         case USER:
         case INVALID:
         case UNKNOWN:
@@ -394,7 +402,7 @@ enum cmd_type suggest_commands(char *cmdbuff,struct core_commands *head)
     {
             min=node->cmd.match;
             indexsp=node;
-        
+
         }
         node=node->next;
     }
@@ -404,7 +412,7 @@ enum cmd_type suggest_commands(char *cmdbuff,struct core_commands *head)
     ch=getchar();
     if(tolower(ch)=='y')
         return indexsp->cmd.type;
-    else 
+    else
         return UNKNOWN;
 }
 
