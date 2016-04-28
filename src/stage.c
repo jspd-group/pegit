@@ -310,12 +310,28 @@ int is_modified(const char *name)
         filespec_free(&fs);
         return 0;
 
-    } else if (strbuf_cmp(&a, &b)) {
-
+    } else {
         if (stat(name, &st) < 0) {
-            die("unable to stat %s, %s\n", name, strerror(errno));
+            stats.deleted++;
+            node = MALLOC(struct file_list, 1);
+            if (!node) die("no memory available.\n");
+            file_list_init(node);
+            node->status = DELETED;
+            strbuf_init(&node->path, 0);
+            strbuf_addstr(&node->path, name);
+            strbuf_init(&node->file, 0);
+
+            node->next = NULL;
+            file_list_add(node);
+            strbuf_release(&b);
+            return 0;
         }
 
+        filespec_init(&fs, name, "r");
+        filespec_read_safe(&fs, &a);
+        if (!strbuf_cmp(&a, &b)) {
+            goto out;
+        }
         stats.files_modified++;
         node = MALLOC(struct file_list, 1);
         if (!node) die("no memory available.\n");
@@ -337,6 +353,8 @@ int is_modified(const char *name)
         filespec_free(&fs);
         return 0;
     }
+
+out:
     filespec_free(&fs);
     strbuf_release(&a);
     strbuf_release(&b);
