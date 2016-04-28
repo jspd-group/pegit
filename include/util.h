@@ -193,5 +193,8 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
     } while (0)
 #endif
 
+#define vsnprintf peg_vsnprintf
+#define snprintf peg_snprintf
+
 #define delayms(ms)
 #endif
