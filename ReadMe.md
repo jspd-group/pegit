@@ -90,3 +90,18 @@ $ make help
 ```bash
 % make install # you need to be root before using this command
 ```
+
+
+## Usage
+
+Before using `peg` commands from terminal, first create a file in your home
+directory i.e. ~/.pegconfigure in linux or C:\\Users\\{Username}\\.pegconfigure
+in windows. In that file type following information:
+
+    username=Your user name
+    email=Your email id
+
+    #optional
+    #password=Your password
+
+Save this file. Then you can use `peg` commands from terminal.
