@@ -43,7 +43,7 @@ all: peg
 install: peg
 	@-$(MKDIR_CMD) $(INSTALL_DIR)
 	$(INSTALL_CMD) $(EXECUTABLE_NAME) $(INSTALL_PREFIX)
-	$(INSTALL_CMD) -d help-pages $(INSTALL_PREFIX)
+
 
 debug: CFLAGS += -g
 
@@ -53,7 +53,7 @@ release: CFLAGS += -O2
 
 release: all
 
-peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o help.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o
+peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o
 	@$(CC) *.o $(ZLIB) -o $(EXECUTABLE_NAME)
 	@echo "Building for $(UNAME)"
 	@echo $@
@@ -82,10 +82,6 @@ strbuf.o: $(SRC)strbuf.c $(INC)strbuf.h $(INC)util.h
 
 mz.o: $(SRC)mz.c $(INC)mz.h
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)mz.c
-	@echo $@
-
-help.o: $(SRC)help.c $(INC)help.h
-	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)help.c
 	@echo $@
 
 main.o: $(SRC)main.c

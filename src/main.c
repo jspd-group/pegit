@@ -5,7 +5,6 @@
 #include "project-init.h"
 #include "global.h"
 #include "show-tables.h"
-#include "help.h"
 
 #include <math.h>
 
@@ -242,7 +241,6 @@ bool help(int argc, char **argv)
         " (`peg --help` displays all the peg commands)\n");
         return true;
     }
-    display_help(argv[1]);
     return true;
 }
 
