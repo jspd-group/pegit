@@ -21,7 +21,6 @@ int set_timer__with_handler(struct timer_t *timer, unsigned int ms,
                     handler_t handler)
 {
     struct itimerval itv;
-    clock_t prev_clock;
     struct sigaction sa;
     
     sigemptyset(&sa.sa_mask);
