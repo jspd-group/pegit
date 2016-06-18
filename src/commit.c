@@ -1,6 +1,7 @@
 #include "commit.h"
 #include "global.h"
 #include "sha1-inl.h"
+#include "timer.h"
 
 #define IF_TAG(tag) (tag & 1)
 #define IF_HEAD(flag) (flag & HEAD_FLAG)
@@ -478,7 +479,9 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     // last can be NULL also in case head is NULL;
     last = get_last_node(*head);
     idx = cache.cache.len;
+    set_timer(200);
     while (node) {
+        fflush(stdout);
         exist = find_file_index_list(*head, node->file_path.buf);
         if (cm_opts.count)
             basic_delta_result_init(&result, NULL);
@@ -506,10 +509,11 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
                 *head = new;
                 last = new;
             }
-            if (cm_opts.progress && cm_opts.count) {
+            if (cm_opts.progress && cm_opts.count && got_signal()) {
                 printf("\rInsertions: %llu, Deletions: %llu, Files: %llu",
                     cm_opts.insertions, cm_opts.deletions,
                     cm_opts.file_modified + cm_opts.new_files );
+                reset_signal();
             }
             node = node->next;
             continue;
@@ -545,13 +549,15 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
         strbuf_release(&temp);
         strbuf_release(&old);
         idx = cache.cache.len;
-        if (cm_opts.progress && cm_opts.count) {
+        if (cm_opts.progress && cm_opts.count && got_signal()) {
             printf("\rInsertions: %llu, Deletions: %llu, Files: %llu",
                 cm_opts.insertions, cm_opts.deletions,
                 cm_opts.file_modified + cm_opts.new_files );
+            reset_signal();
         }
         node = node->next;
     }
+    stop_timer();
     if (cm_opts.progress && cm_opts.count)
         printf("\n");
     sha1_final((unsigned char*)sha1, &ctx);
