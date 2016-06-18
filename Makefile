@@ -53,8 +53,8 @@ release: CFLAGS += -O2
 
 release: all
 
-peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o
-	@$(CC) *.o $(ZLIB) -o $(EXECUTABLE_NAME)
+peg: strbuf.o main.o cache.o file.o mz.o index.o visitor.o delta.o delta-file.o timestamp.o commit.o path.o project-init.o project-config.o stage.o checkout.o tree.o status.o timer.o
+	@$(CC) $^ $(ZLIB) -o $@
 	@echo "Building for $(UNAME)"
 	@echo $@
 
@@ -65,8 +65,6 @@ cache.o: $(SRC)cache.c $(INC)cache.h
 commit.o: $(SRC)commit.c $(INC)commit.h $(INC)global.h
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)commit.c
 	@echo $@
-
-
 
 checkout.o: $(SRC)checkout.c $(INC)global.h
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)checkout.c
@@ -130,6 +128,10 @@ visitor.o:$(SRC)visitor.c $(INC)visitor.h
 
 status.o: $(SRC)status.c
 	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)status.c
+	@echo $@
+
+timer.o: $(SRC)timer.c $(INC)timer.h
+	@$(CC) -I $(INC) $(CFLAGS) -c $(SRC)timer.c
 	@echo $@
 
 help:
