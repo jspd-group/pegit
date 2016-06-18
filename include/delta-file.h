@@ -2,8 +2,8 @@
 #define DELTA_FILE_H_
 
 #include "file.h"
-#include "util.h"
 #include "strbuf.h"
+#include "util.h"
 
 /**
  * store the whole file in the strbuf array. Each element in the array

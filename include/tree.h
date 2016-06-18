@@ -1,8 +1,8 @@
 #ifndef TREE_H_
 #define TREE_H_
 
-#include "util.h"
 #include "file.h"
+#include "util.h"
 
 #include <dirent.h>
 #include <sys/stat.h>

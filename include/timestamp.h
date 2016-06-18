@@ -1,8 +1,8 @@
 #ifndef TIME_STAMP_H_
 #define TIME_STAMP_H_
 
-#include "util.h"
 #include "strbuf.h"
+#include "util.h"
 
 #include <time.h>
 

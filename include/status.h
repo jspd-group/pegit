@@ -1,8 +1,8 @@
 #ifndef STATUS_H_
 #define STATUS_H_
 
-#include "util.h"
 #include "strbuf.h"
+#include "util.h"
 
 // Data structures used in status.c
 struct node {
@@ -26,8 +26,9 @@ struct d_node {
 #define S_MODIFIED 0x100
 #define S_NEW 0x200
 
-#define s_is_modified(x) ((x->status == S_DELETED) || \
-    (x->status == S_MODIFIED) || (x->status == S_NEW))
+#define s_is_modified(x)                                                       \
+    ((x->status == S_DELETED) || (x->status == S_MODIFIED) ||                  \
+     (x->status == S_NEW))
 
 extern struct node *root;
 extern int count_new, count_modified, count_cached;
@@ -41,5 +42,5 @@ extern void push(struct dirent *, char *);
 extern char *path(struct d_node *);
 extern void print_status(struct node *);
 
-extern int status_main(int argc, char* argv[]);
+extern int status_main(int argc, char *argv[]);
 #endif

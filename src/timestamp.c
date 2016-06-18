@@ -2,7 +2,7 @@
 
 void time_stamp_init(struct timestamp *ts)
 {
-    ts->_time = time(NULL);    /* get current time */
+    ts->_time = time(NULL); /* get current time */
     ts->_tm = localtime(&ts->_time);
 }
 

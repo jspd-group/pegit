@@ -1,7 +1,7 @@
 #include "delta.h"
 #include "commit.h"
-#include "path.h"
 #include "pack.h"
+#include "path.h"
 
 #define DELTA_OPTIONS_DEFAULT                                                  \
     {                                                                          \
@@ -24,11 +24,7 @@ struct delta_options {
     char *file_name;
 } d_opts = DELTA_OPTIONS_DEFAULT;
 
-enum delta_error {
-    ALL_GOOD,
-    MEM_ERROR,
-    INTERNAL_ERROR
-};
+enum delta_error { ALL_GOOD, MEM_ERROR, INTERNAL_ERROR };
 
 static void release_table(enum arrow_t **table, int size)
 {
@@ -62,7 +58,8 @@ int delta_table_init(struct delta_table *table, int col, int row)
         release_table(table->table, row);
         if (table->prev)
             free(table->prev);
-        else free(table->sol);
+        else
+            free(table->sol);
         return MEM_ERROR;
     }
 
@@ -90,9 +87,11 @@ int delta_input_init(struct delta_input *di, struct filespec *fs1,
     di->fs1 = fs1;
     di->fs2 = fs2;
 
-    if (deltafile_init_filespec(&di->df1, fs1, DELIM) < 0) return -1;
+    if (deltafile_init_filespec(&di->df1, fs1, DELIM) < 0)
+        return -1;
 
-    if (deltafile_init_filespec(&di->df2, fs2, DELIM) < 0) return -1;
+    if (deltafile_init_filespec(&di->df2, fs2, DELIM) < 0)
+        return -1;
 
     return 0;
 }
@@ -256,20 +255,21 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
     }
 #ifdef _WIN32
     if (bdr->insertions || bdr->deletions == 0) {
-        strbuf_addf(stat, BOLD_GREEN SIZE_T_FORMAT RESET" %s ", bdr->insertions,
+        strbuf_addf(stat, BOLD_GREEN SIZE_T_FORMAT RESET " %s ",
+                    bdr->insertions,
                     (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
     }
     if (bdr->deletions || bdr->insertions == 0) {
-        strbuf_addf(stat, BOLD_RED SIZE_T_FORMAT RESET" %s ", bdr->deletions,
+        strbuf_addf(stat, BOLD_RED SIZE_T_FORMAT RESET " %s ", bdr->deletions,
                     (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
 #else
     if (bdr->insertions || bdr->deletions == 0) {
-        strbuf_addf(stat, BOLD_GREEN"%zu"RESET" %s ", bdr->insertions,
+        strbuf_addf(stat, BOLD_GREEN "%zu" RESET " %s ", bdr->insertions,
                     (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
     }
     if (bdr->deletions || bdr->insertions == 0) {
-        strbuf_addf(stat, BOLD_RED"%zu"RESET" %s ", bdr->deletions,
+        strbuf_addf(stat, BOLD_RED "%zu" RESET " %s ", bdr->deletions,
                     (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
 #endif
@@ -283,15 +283,15 @@ void print_delta_stat(struct basic_delta_result *bdr)
     size_t deletions = bdr->deletions;
 
     if (insertions) {
-        fprintf(stdout, SIZE_T_FORMAT" %s", insertions, insertions == 1 ?
-            "insertion" : "insertions");
+        fprintf(stdout, SIZE_T_FORMAT " %s", insertions,
+                insertions == 1 ? "insertion" : "insertions");
     }
     if (insertions && deletions) {
         printf(", ");
     }
     if (deletions) {
-        fprintf(stdout, SIZE_T_FORMAT " %s", deletions, deletions == 1 ?
-            "deletion" : "deletions");
+        fprintf(stdout, SIZE_T_FORMAT " %s", deletions,
+                deletions == 1 ? "deletion" : "deletions");
     }
     putchar('\n');
 }
@@ -301,7 +301,7 @@ void delta_summary(struct basic_delta_result *bdr, struct strbuf *summary)
     struct strbuf_list_node *node;
     node = bdr->diff_lines.head->next;
 
-    (void) summary;
+    (void)summary;
     while (node != NULL) {
         printf("%c", node->sign);
         printf("%s", node->buf.buf);
@@ -325,10 +325,10 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
     deltafile_init_strbuf(&af, a, DELIM);
     deltafile_init_strbuf(&bf, b, DELIM);
 
-
     if (af.size == bf.size) {
         cont = strbuf_cmp(a, b);
-        if (!cont) return false;
+        if (!cont)
+            return false;
     }
 
     if (delta_table_init(&table, af.size, bf.size) == MEM_ERROR) {
@@ -338,8 +338,7 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
     delta_basic_comparison_m(&table, &af, &bf);
     if (result) {
         delta_backtrace_table_minimal(result, &table, &af, &bf);
-    }
-    else {
+    } else {
         basic_delta_result_init(&res, NULL);
         delta_backtrace_table_minimal(result, &table, &af, &bf);
     }
@@ -348,7 +347,8 @@ bool strbuf_delta_minimal(struct strbuf *out, struct basic_delta_result *result,
         deltafile_free(&bf);
         return false;
     }
-    if (out) delta_stat(result, out);
+    if (out)
+        delta_stat(result, out);
     deltafile_free(&af);
     deltafile_free(&bf);
     delta_table_free(&table);
@@ -369,7 +369,8 @@ bool strbuf_delta_enhanced(struct strbuf *out,
 
     if (af.size == bf.size) {
         cont = strbuf_cmp(a, b);
-        if (!cont) return false;
+        if (!cont)
+            return false;
     }
     if (delta_table_init(&table, af.size, bf.size)) {
         perror("file too big");
@@ -377,16 +378,15 @@ bool strbuf_delta_enhanced(struct strbuf *out,
     }
     delta_basic_comparison_m(&table, &af, &bf);
     delta_backtrace_table(result, &table, &af, &bf);
-    if (!(result->insertions || result->deletions)) return false;
+    if (!(result->insertions || result->deletions))
+        return false;
 
     node = result->diff_lines.head->next;
-
 
     while (node) {
         if (node->sign == '+') {
             strbuf_addstr(out, GREEN);
-        }
-        else {
+        } else {
             strbuf_addstr(out, RED);
         }
         strbuf_addch(out, node->sign);
@@ -438,9 +438,12 @@ void delta_index_splash(struct strbuf *out, const char *i, const char *j)
      * if i is NULL, this means j was newly added.
      */
     strbuf_addstr(out, YELLOW);
-    if (i || !j) strbuf_addstr(out, i);
-    if (i && j) strbuf_addstr(out, " <--> ");
-    if (j || !i) strbuf_addstr(out, j);
+    if (i || !j)
+        strbuf_addstr(out, i);
+    if (i && j)
+        strbuf_addstr(out, " <--> ");
+    if (j || !i)
+        strbuf_addstr(out, j);
     if (!i && !j) {
         fprintf(stderr, "%s\n", out->buf);
         die("BUG: i & j both were NULL");
@@ -454,14 +457,14 @@ size_t print_lines(struct strbuf *buf, bool i_or_d)
     size_t lines = count_lines(buf);
 
 #ifdef _WIN32
-    i_or_d ? fprintf(stdout, BOLD_GREEN  SIZE_T_FORMAT RESET" %s\n", lines,
+    i_or_d ? fprintf(stdout, BOLD_GREEN SIZE_T_FORMAT RESET " %s\n", lines,
                      lines == 1 ? "addition" : "additions")
-           : fprintf(stdout, BOLD_RED SIZE_T_FORMAT RESET" %s\n", lines,
+           : fprintf(stdout, BOLD_RED SIZE_T_FORMAT RESET " %s\n", lines,
                      lines == 1 ? "deletion" : "deletions");
 #else
-    i_or_d ? fprintf(stdout, BOLD_GREEN "%zu"RESET" %s\n", lines,
+    i_or_d ? fprintf(stdout, BOLD_GREEN "%zu" RESET " %s\n", lines,
                      lines == 1 ? "addition" : "additions")
-           : fprintf(stdout, BOLD_RED"%zu"RESET" %s\n", lines,
+           : fprintf(stdout, BOLD_RED "%zu" RESET " %s\n", lines,
                      lines == 1 ? "deletion" : "deletions");
 #endif
     return lines;
@@ -475,9 +478,9 @@ void print_insertion_lines(struct strbuf *buf)
 
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_addstr(&out, GREEN"+");
+        strbuf_addstr(&out, GREEN "+");
         strbuf_add(&out, buf->buf + file.arr[i] + 1,
-                         file.arr[i + 1] - file.arr[i]);
+                   file.arr[i + 1] - file.arr[i]);
         strbuf_addstr(&out, RESET);
     }
     fprintf(stdout, "%s\n", out.buf);
@@ -491,10 +494,10 @@ void print_insertion_only(struct pack_file_cache *cache, struct index *idx)
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
 #ifdef _WIN32
-    fprintf(stdout, BOLD_GREEN SIZE_T_FORMAT RESET" %s", temp.alloc,
+    fprintf(stdout, BOLD_GREEN SIZE_T_FORMAT RESET " %s", temp.alloc,
             temp.alloc == 1 ? "addition\n" : "additions\n");
 #else
-    fprintf(stdout, BOLD_GREEN"%zu"RESET" %s", temp.alloc,
+    fprintf(stdout, BOLD_GREEN "%zu" RESET " %s", temp.alloc,
             temp.alloc == 1 ? "addition\n" : "additions\n");
 #endif
 }
@@ -507,9 +510,9 @@ void print_object_insertions(struct pack_file_cache *cache, struct index *idx)
     strbuf_add(&temp, cache->cache.buf + idx->pack_start, idx->pack_len);
     deltafile_init_strbuf(&file, &temp, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_addstr(&out, GREEN"+");
+        strbuf_addstr(&out, GREEN "+");
         strbuf_add(&out, temp.buf + file.arr[i] + 1,
-                         file.arr[i + 1] - file.arr[i]);
+                   file.arr[i + 1] - file.arr[i]);
         strbuf_addstr(&out, RESET);
     }
     fprintf(stdout, "%s\n", out.buf);
@@ -526,9 +529,9 @@ void print_deletion_lines(struct strbuf *buf)
 
     deltafile_init_strbuf(&file, buf, DELIM);
     for (int i = 0; i < file.size - 1; i++) {
-        strbuf_addstr(&out, RED"-");
+        strbuf_addstr(&out, RED "-");
         strbuf_add(&out, buf->buf + file.arr[i] + 1,
-                         file.arr[i + 1] - file.arr[i]);
+                   file.arr[i + 1] - file.arr[i]);
         strbuf_addstr(&out, RESET);
     }
     fprintf(stdout, "%s\n", out.buf);
@@ -543,10 +546,10 @@ void print_deletion_only(struct pack_file_cache *cache, struct index *idx)
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
 #ifdef _WIN32
-    fprintf(stdout, BOLD_RED SIZE_T_FORMAT RESET" %s\n", temp.alloc,
+    fprintf(stdout, BOLD_RED SIZE_T_FORMAT RESET " %s\n", temp.alloc,
             temp.alloc == 1 ? "deletion" : "deletions");
 #else
-    fprintf(stdout, BOLD_RED"%zu"RESET" %s\n", temp.alloc,
+    fprintf(stdout, BOLD_RED "%zu" RESET " %s\n", temp.alloc,
             temp.alloc == 1 ? "deletion" : "deletions");
 #endif
 }
@@ -578,10 +581,9 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
             index_delta(&result, &cache, nodea->idx, bi, &out, minimal);
             fwrite(out.buf, sizeof(char), out.len, stdout);
             strbuf_setlen(&out, 0);
-        }
-        else {
+        } else {
             delta_index_splash(&out, nodea->idx->filename, NULL);
-	    print_object_insertions(&cache, nodea->idx);
+            print_object_insertions(&cache, nodea->idx);
         }
         nodea = nodea->next;
     }
@@ -598,9 +600,9 @@ void do_commit_delta(struct commit *c1, struct commit *c2, bool minimal)
         if (!minimal)
             print_insertion_only(&cache, nodea->idx);
         else {
-	        print_object_insertions(&cache, nodea->idx);
+            print_object_insertions(&cache, nodea->idx);
         }
-	    nodea = nodea->next;
+        nodea = nodea->next;
         strbuf_setlen(&out, 0);
     }
     strbuf_release(&cache.cache);
@@ -644,10 +646,11 @@ void commit_delta(char commit1_sha[HASH_SIZE], char commit2_sha[HASH_SIZE],
     /*
      * In case both commits were same.
      */
-    if (!strcmp(commit1_sha, commit2_sha)) return;
+    if (!strcmp(commit1_sha, commit2_sha))
+        return;
     make_commit_list(&cl);
-    if ((a = find_commit_hash_compat(cl, commit1_sha, strlen(commit1_sha)))
-            == NULL) {
+    if ((a = find_commit_hash_compat(cl, commit1_sha, strlen(commit1_sha))) ==
+        NULL) {
         a = find_commit_tag(cl, commit1_sha);
         if (!a) {
             fatal("commit <");
@@ -656,8 +659,8 @@ void commit_delta(char commit1_sha[HASH_SIZE], char commit2_sha[HASH_SIZE],
             exit(-1);
         }
     }
-    if ((b = find_commit_hash_compat(cl, commit2_sha, strlen(commit2_sha)))
-            == NULL) {
+    if ((b = find_commit_hash_compat(cl, commit2_sha, strlen(commit2_sha))) ==
+        NULL) {
         b = find_commit_tag(cl, commit1_sha);
         if (!b) {
             fatal("commit <");
@@ -762,7 +765,8 @@ int check_entry(const char *path)
             res = count_lines(&a);
             directory_delta_var.ds.deletions += res;
             if (directory_delta_var.minimal) {
-                fprintf(stdout, "%s: deleted,  " SIZE_T_FORMAT "  deletions\n", path, res);
+                fprintf(stdout, "%s: deleted,  " SIZE_T_FORMAT "  deletions\n",
+                        path, res);
             } else {
                 print_deletion_lines(&a);
             }
@@ -809,7 +813,8 @@ void prepare_file_delta(bool minimal)
         return;
 
     make_commit_list(&cl);
-    if (!cl) die("Nothing checked in.\n");
+    if (!cl)
+        die("Nothing checked in.\n");
     directory_delta_var.ds.insertions = 0;
     directory_delta_var.ds.deletions = 0;
     directory_delta_var.minimal = minimal;
@@ -839,22 +844,23 @@ void do_single_file_delta(const char *path, bool minimal)
             fprintf(stdout, "Summary: \n");
         }
         if (insertions) {
-            fprintf(stdout, SIZE_T_FORMAT "  %s", insertions, insertions == 1 ?
-                "insertion" : "insertions");
+            fprintf(stdout, SIZE_T_FORMAT "  %s", insertions,
+                    insertions == 1 ? "insertion" : "insertions");
         }
         if (insertions && deletions) {
             printf(", ");
         }
         if (deletions) {
-            fprintf(stdout,  SIZE_T_FORMAT " %s", deletions, deletions == 1 ?
-                "deletion" : "deletions");
+            fprintf(stdout, SIZE_T_FORMAT " %s", deletions,
+                    deletions == 1 ? "deletion" : "deletions");
         }
         putchar('\n');
     }
     invalidate_cache(&directory_delta_var.cache);
 }
 
-void do_directory_delta(const char *dir, bool minimal, struct delta_options *opts)
+void do_directory_delta(const char *dir, bool minimal,
+                        struct delta_options *opts)
 {
     prepare_file_delta(minimal);
     if (for_each_file_in_directory_recurse(dir, check_entry) == -1) {
@@ -869,15 +875,15 @@ void do_directory_delta(const char *dir, bool minimal, struct delta_options *opt
             fprintf(stdout, "Summary: \n");
         }
         if (insertions) {
-            fprintf(stdout,  SIZE_T_FORMAT " %s", insertions, insertions == 1 ?
-                "insertion" : "insertions");
+            fprintf(stdout, SIZE_T_FORMAT " %s", insertions,
+                    insertions == 1 ? "insertion" : "insertions");
         }
         if (insertions && deletions) {
             printf(", ");
         }
         if (deletions) {
-            fprintf(stdout,  SIZE_T_FORMAT " %s", deletions, deletions == 1 ?
-                "deletion" : "deletions");
+            fprintf(stdout, SIZE_T_FORMAT " %s", deletions,
+                    deletions == 1 ? "deletion" : "deletions");
         }
         putchar('\n');
     }
@@ -900,8 +906,7 @@ void do_directory_delta(const char *dir, bool minimal, struct delta_options *opt
 
 #define is(option) !strcmp(option, argv[count])
 
-void delta_parse_single_option(struct delta_options *opts, int *i,
-                               char *argv[])
+void delta_parse_single_option(struct delta_options *opts, int *i, char *argv[])
 {
     struct stat st;
     struct strbuf path = STRBUF_INIT;
@@ -919,15 +924,14 @@ void delta_parse_single_option(struct delta_options *opts, int *i,
         opts->original_diff = true;
     else if (is("--verbose") || is("-v"))
         opts->verbose = true;
-    else if (is("--summary") || is ("-s"))
+    else if (is("--summary") || is("-s"))
         opts->summary = true;
-    else if (is("--debug") || is ("-d"))
+    else if (is("--debug") || is("-d"))
         opts->debug = true;
     else if (opts->file && !opts->commit) {
         opts->file_name = argv[count];
         if (stat(opts->file_name, &st) < 0) {
-            fatal("%s: %s\n", opts->file_name,
-                    strerror(errno));
+            fatal("%s: %s\n", opts->file_name, strerror(errno));
             exit(-1);
         }
         if (S_ISDIR(st.st_mode))
@@ -943,7 +947,7 @@ void delta_parse_single_option(struct delta_options *opts, int *i,
         if (stat(argv[count], &st) < 0) {
             opts->commit = true;
             opts->hash_arg1 ? (opts->hash_arg2 = argv[count])
-                            : (opts->hash_arg1= argv[count]);
+                            : (opts->hash_arg1 = argv[count]);
             opts->guessed = true;
             return;
         }

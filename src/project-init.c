@@ -1,7 +1,7 @@
-#include "util.h"
 #include "project-init.h"
-#include "timestamp.h"
 #include "global.h"
+#include "timestamp.h"
+#include "util.h"
 #include "visitor.h"
 
 #ifdef _WIN32
@@ -13,14 +13,12 @@ struct project_cache {
     struct timestamp ts;
 };
 
-struct peg_env environment = {
-    .peg_state = S_STARTUP,
-    .peg_config_filepath = NULL,
-    .owner = NULL,
-    .cache = STRBUF_INIT,
-    .owner_email = NULL,
-    .list = NULL
-};
+struct peg_env environment = {.peg_state = S_STARTUP,
+                              .peg_config_filepath = NULL,
+                              .owner = NULL,
+                              .cache = STRBUF_INIT,
+                              .owner_email = NULL,
+                              .list = NULL};
 
 int name_set, desc_set;
 
@@ -32,7 +30,8 @@ void project_cache_init(struct project_cache *pc)
 
 bool cache_valid(struct project_cache *pc)
 {
-    if (pc->pd.project_name.len == 0) return false;
+    if (pc->pd.project_name.len == 0)
+        return false;
     return true;
 }
 
@@ -41,7 +40,8 @@ int make_peg_directories()
     struct visitor vt;
     visitor_init(&vt);
     visitor_visit(&vt, ".");
-    if (visitor_make_folder(&vt, PEG_DIR) < 0) return -1;
+    if (visitor_make_folder(&vt, PEG_DIR) < 0)
+        return -1;
 #ifdef _WIN32
     SetFileAttributes(PEG_DIR, 0x2);
 #endif
@@ -49,9 +49,12 @@ int make_peg_directories()
     visitor_close(&vt);
     visitor_init(&vt);
     visitor_visit(&vt, PEG_DIR);
-    if (visitor_make_folder(&vt, CACHE_DIR) < 0) die("error occurred\n");
-    if (visitor_make_folder(&vt, DB_DIR) < 0) die("error occurred\n");
-    if (visitor_make_folder(&vt, COMMIT_DIR) < 0) die("error occurred\n");
+    if (visitor_make_folder(&vt, CACHE_DIR) < 0)
+        die("error occurred\n");
+    if (visitor_make_folder(&vt, DB_DIR) < 0)
+        die("error occurred\n");
+    if (visitor_make_folder(&vt, COMMIT_DIR) < 0)
+        die("error occurred\n");
     visitor_close(&vt);
     return 0;
 }
@@ -103,10 +106,12 @@ void create_database_files(struct project_cache *pc)
     fwrite(&size, sizeof(size_t), 1, pack);
     fclose(pack);
     pack = fopen(FILE_INDEX_FILE, "w");
-    if (!pack) die("unable to open %s\n", FILE_INDEX_FILE);
+    if (!pack)
+        die("unable to open %s\n", FILE_INDEX_FILE);
     fclose(pack);
     pack = fopen(PACK_FILE, "w");
-    if (!pack) die("unable to open %s\n", PACK_FILE);
+    if (!pack)
+        die("unable to open %s\n", PACK_FILE);
     fclose(pack);
 }
 
@@ -145,14 +150,16 @@ int parse_single_argument(struct project_cache *pc, int argc, char *argv[])
         strbuf_release(&temp);
         return 0;
     }
-    if (name_set) return 0;
+    if (name_set)
+        return 0;
     fprintf(stderr, "bad arguments\n See " PEG_NAME " init --help for usage");
     exit(0);
 }
 
 static int parse_arguments(struct project_cache *pc, int argc, char *argv[])
 {
-    if (argc < 2) die("needed atleast one argument. Use -h for usage.\n");
+    if (argc < 2)
+        die("needed atleast one argument. Use -h for usage.\n");
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             fprintf(stderr, "%s", init_usage);
@@ -165,7 +172,8 @@ static int parse_arguments(struct project_cache *pc, int argc, char *argv[])
         name_set = 1;
     }
 
-    for (int i = 1; i < argc; i++) parse_single_argument(pc, i, argv);
+    for (int i = 1; i < argc; i++)
+        parse_single_argument(pc, i, argv);
 
     if (!cache_valid(pc)) {
         fatal("error specify a project name.\n");
@@ -179,11 +187,13 @@ int initialize_empty_project(int argc, char *argv[])
     struct project_cache pc;
 
     project_cache_init(&pc);
-    if (parse_arguments(&pc, argc, argv) < 0) return -1;
-    if (make_peg_directories() < 0) return -1;
+    if (parse_arguments(&pc, argc, argv) < 0)
+        return -1;
+    if (make_peg_directories() < 0)
+        return -1;
 
     if (!create_description_file(&pc))
-        fprintf(stderr, BOLD_GREEN"Initialised an empty project\n"RESET);
+        fprintf(stderr, BOLD_GREEN "Initialised an empty project\n" RESET);
     create_cache_files(&pc);
     create_database_files(&pc);
     return 0;

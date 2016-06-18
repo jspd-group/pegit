@@ -1,17 +1,16 @@
-#include "stage.h"
 #include "cache.h"
+#include "stage.h"
 
-static inline void
-cache_index_entry_list_init(struct cache_index_entry_list *n)
+static inline void cache_index_entry_list_init(struct cache_index_entry_list *n)
 {
     strbuf_init(&n->file_path, 0);
     n->next = NULL;
 }
 
-struct cache_index_entry_list* create_node(size_t start, size_t len)
+struct cache_index_entry_list *create_node(size_t start, size_t len)
 {
     struct cache_index_entry_list *ne =
-                    MALLOC(struct cache_index_entry_list, 1);
+        MALLOC(struct cache_index_entry_list, 1);
     cache_index_entry_list_init(ne);
     if (!ne)
         die("memory not available\n");
@@ -22,8 +21,8 @@ struct cache_index_entry_list* create_node(size_t start, size_t len)
 
 void clear_list_index(struct cache_index_entry_list *list)
 {
-    for (struct cache_index_entry_list *ptr = list, *temp = NULL;
-        ptr != NULL; temp = ptr, ptr = ptr->next)
+    for (struct cache_index_entry_list *ptr = list, *temp = NULL; ptr != NULL;
+         temp = ptr, ptr = ptr->next)
         if (temp)
             free(temp);
 }
@@ -58,7 +57,7 @@ void open_index_file(struct cache_index *idx)
 }
 
 int read_index_node(struct cache_index *idx,
-    struct cache_index_entry_list *node)
+                    struct cache_index_entry_list *node)
 {
     struct strbuf buf = STRBUF_INIT;
     size_t len;
@@ -95,8 +94,7 @@ int read_cache_index_file(struct cache_index *idx)
     return (i == idx->num) ? 0 : -1;
 }
 
-void write_index_node(struct cache_index *idx,
-                      struct cache_index_entry_list *n)
+void write_index_node(struct cache_index *idx, struct cache_index_entry_list *n)
 {
     if (!n)
         die("BUG: cache_index_entry_list node was NULL\n");
@@ -141,13 +139,13 @@ void close_index_file(struct cache_index *idx)
 void make_index_entry(struct cache_index *idx, size_t pos, size_t len)
 {
     cache_index_entry_list_insert(&idx->entries, &idx->last,
-        create_node(pos, len));
+                                  create_node(pos, len));
     idx->num++;
     idx->flushed = false;
 }
 
 void make_index_entry_details(struct cache_index *idx,
-                                struct cache_index_entry_list *node)
+                              struct cache_index_entry_list *node)
 {
     cache_index_entry_list_insert(&idx->entries, &idx->last, node);
     idx->num++;
@@ -195,8 +193,8 @@ void write_cache_file(struct cache *c)
     int ret;
 
     c->cachefile = fopen(CACHE_PACK_FILE, "wb");
-    ret = fwrite(c->cache_buf.buf, sizeof(char),
-                c->cache_buf.len, c->cachefile);
+    ret =
+        fwrite(c->cache_buf.buf, sizeof(char), c->cache_buf.len, c->cachefile);
     if (ret < c->cache_buf.len)
         die("unable to write %s\n", CACHE_PACK_FILE);
     c->flushed = true;
@@ -211,7 +209,6 @@ void close_cache_file(struct cache *c)
         return;
     }
     write_cache_file(c);
-
 }
 
 void cache_object_init(struct cache_object *co)

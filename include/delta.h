@@ -99,11 +99,12 @@ extern void delta_summary(struct basic_delta_result *bdr,
 extern int delta_main(int argc, char *argv[]);
 
 extern bool strbuf_delta_minimal(struct strbuf *out,
-    struct basic_delta_result *result, struct strbuf *b, struct strbuf *a);
+                                 struct basic_delta_result *result,
+                                 struct strbuf *b, struct strbuf *a);
 
 extern bool strbuf_delta_enhanced(struct strbuf *out,
-                  struct basic_delta_result *result, struct strbuf *b,
-                  struct strbuf *a);
+                                  struct basic_delta_result *result,
+                                  struct strbuf *b, struct strbuf *a);
 
 extern void print_insertion_lines(struct strbuf *buf);
 

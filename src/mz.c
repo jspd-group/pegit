@@ -1,6 +1,6 @@
 #include "mz.h"
-#include "util.h"
 #include "file.h"
+#include "util.h"
 /*#include "../miniz/miniz.h"*/
 
 #ifdef NO_ZLIB
@@ -36,7 +36,6 @@ void zerr(int ret)
         die("zlib version mismatch!\n");
     }
 }
-
 
 int __compress__(struct strbuf *src, struct strbuf *dest, int level)
 {

@@ -1,5 +1,5 @@
-#include "strbuf.h"
 #include "global.h"
+#include "strbuf.h"
 
 void project_details_init(struct project_details *pd)
 {
@@ -23,8 +23,8 @@ void set_project_name(struct project_details *pd, const char *name)
     strbuf_addstr(&pd->project_name, name);
 }
 
-static inline bool
-match_name(const char *str1, const char *str2, int pos, int len)
+static inline bool match_name(const char *str1, const char *str2, int pos,
+                              int len)
 {
     return !strncmp(str1 + pos, str2, len);
 }
@@ -108,13 +108,7 @@ void read_config_file(struct peg_env *env)
     strbuf_read(&env->cache, config_file, 1024);
 }
 
-enum token_type {
-    INVALID,
-    STRING,
-    ASSIGN,
-    NUMBER,
-    COMMENT
-};
+enum token_type { INVALID, STRING, ASSIGN, NUMBER, COMMENT };
 
 struct lex {
     const char *str;
@@ -130,9 +124,11 @@ struct parser_state {
 
 int advance(struct lex *lex, int go)
 {
-    if (!go) return 0;
-    while (lex->pos < lex->len && (lex->str[lex->pos] == ' ' || lex->str[lex->pos] == '\n'
-        || lex->str[lex->pos] == '\t' || lex->str[lex->pos] == '\n'))
+    if (!go)
+        return 0;
+    while (lex->pos < lex->len &&
+           (lex->str[lex->pos] == ' ' || lex->str[lex->pos] == '\n' ||
+            lex->str[lex->pos] == '\t' || lex->str[lex->pos] == '\n'))
         lex->pos++;
 
     if (lex->pos >= lex->len) {
@@ -154,10 +150,7 @@ int advance(struct lex *lex, int go)
     return 0;
 }
 
-void consume(struct lex *lex, size_t n)
-{
-    lex->pos += n;
-}
+void consume(struct lex *lex, size_t n) { lex->pos += n; }
 
 void consume_comment(struct lex *lex)
 {
@@ -183,8 +176,8 @@ int parse_string(struct config_list *node, struct lex *lex, int key)
     size_t len = lex->pos;
 
     if (key)
-        while (len < lex->len && (isalnum(lex->str[len])
-            || lex->str[len] == '-')) {
+        while (len < lex->len &&
+               (isalnum(lex->str[len]) || lex->str[len] == '-')) {
             len++;
         }
     else {
@@ -201,15 +194,16 @@ int parse_string(struct config_list *node, struct lex *lex, int key)
 int parse_config_file(struct peg_env *env)
 {
     struct config_list *node = NULL;
-    struct lex lex = { NULL, 0, 0, INVALID };
-    struct parser_state state = { 0, 0 };
+    struct lex lex = {NULL, 0, 0, INVALID};
+    struct parser_state state = {0, 0};
     int should_go = 1;
 
     lex.str = env->cache.buf;
     lex.len = env->cache.len;
     lex.pos = 0;
     while (advance(&lex, should_go) >= 0) {
-        if (!state.key) node = new_config_list_node();
+        if (!state.key)
+            node = new_config_list_node();
         if (state.key && state.value) {
             config_list_insert(&env->list, node);
             state.key = 0;
@@ -236,8 +230,7 @@ int parse_config_file(struct peg_env *env)
                 parse_string(node, &lex, 0);
                 state.value = 1;
                 should_go = 0;
-            }
-            else {
+            } else {
                 parse_string(node, &lex, 1);
                 state.key = 1;
             }

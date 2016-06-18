@@ -1,8 +1,8 @@
 #ifndef PATH_H_
 #define PATH_H_
 
-#include "util.h"
 #include "strbuf.h"
+#include "util.h"
 
 enum entry_type { _ERROR_, _DIRECTORY_, _FILE_, _UNKNOWN_ };
 

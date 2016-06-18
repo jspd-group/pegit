@@ -1,10 +1,10 @@
 #ifndef STAGE_H_
 #define STAGE_H_
 
-#include "util.h"
-#include "strbuf.h"
-#include "commit.h"
 #include "cache.h"
+#include "commit.h"
+#include "strbuf.h"
+#include "util.h"
 
 struct file_list {
     struct strbuf path;
@@ -18,7 +18,7 @@ struct file_list {
 
 extern int stage_main(int argc, char *argv[]);
 
-extern int status_main(int argc, char* argv[]);
+extern int status_main(int argc, char *argv[]);
 
 extern void show_cache_table();
 #endif

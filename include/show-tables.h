@@ -1,8 +1,8 @@
 #ifndef SHOW_TABLES_H_
 #define SHOW_TABLES_H_
 
-#include "stage.h"
 #include "commit.h"
+#include "stage.h"
 
 extern void show_commit_node(struct commit_list *node, size_t i);
 
@@ -52,10 +52,11 @@ static void print_head_commit_short()
 static int show_tables(int argc, char *argv[])
 {
     for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "--cached") || !strcmp(argv[i], "--staged")
-            || !strcmp(argv[i], "--temp"))
+        if (!strcmp(argv[i], "--cached") || !strcmp(argv[i], "--staged") ||
+            !strcmp(argv[i], "--temp"))
             show_cache_table();
-        else if (!strcmp(argv[i], "--commit") || !strcmp(argv[i], "--permanent"))
+        else if (!strcmp(argv[i], "--commit") ||
+                 !strcmp(argv[i], "--permanent"))
             show_commit_table();
         else if (!strcmp(argv[i], "--commit-count") || !strcmp(argv[i], "-cc"))
             show_commit_count();

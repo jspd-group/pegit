@@ -1,8 +1,8 @@
 #include "stage.h"
-#include "sha1-inl.h"
-#include "tree.h"
 #include "file.h"
 #include "path.h"
+#include "sha1-inl.h"
+#include "tree.h"
 #include "util.h"
 
 struct stage_options {
@@ -21,22 +21,23 @@ struct stage_options {
 };
 
 char stage_usage[] = CYAN PEG_NAME
-    " insert"RESET" : add project files to the stage area\n\n"
-    "    Usage:    "YELLOW PEG_NAME " insert [options] <files...>" RESET "\n\n"
+    " insert" RESET " : add project files to the stage area\n\n"
+    "    Usage:    " YELLOW PEG_NAME " insert [options] <files...>" RESET "\n\n"
     "        options include:\n"
-    "        "YELLOW"-a"RESET", "YELLOW"--all\n"RESET
+    "        " YELLOW "-a" RESET ", " YELLOW "--all\n" RESET
     "                add all the files that have been modified,\n"
-    "        "YELLOW"-i"RESET", "YELLOW"--ignore=path1;path2..."RESET"   \n"
+    "        " YELLOW "-i" RESET ", " YELLOW "--ignore=path1;path2..." RESET
+    "   \n"
     "                ignore the given files and add all other,\n"
-    "        "YELLOW"-v"RESET", "YELLOW"--verbose"RESET"\n"
+    "        " YELLOW "-v" RESET ", " YELLOW "--verbose" RESET "\n"
     "                print the name of the added files, similar to -a.\n"
-    "        "YELLOW"-m"RESET", "YELLOW"--more"RESET"\n"
+    "        " YELLOW "-m" RESET ", " YELLOW "--more" RESET "\n"
     "                display more output.\n"
     "\n\n"
-    "Example usage: \n\t'"YELLOW PEG_NAME " insert -a " RESET
-    "'(or '"YELLOW PEG_NAME " insert ." RESET "')\n"
+    "Example usage: \n\t'" YELLOW PEG_NAME " insert -a " RESET
+    "'(or '" YELLOW PEG_NAME " insert ." RESET "')\n"
     "        will add all the files in the current directory\n\n"
-    "\t'"YELLOW PEG_NAME " insert -i=docs/file.txt docs" RESET "'\n"
+    "\t'" YELLOW PEG_NAME " insert -i=docs/file.txt docs" RESET "'\n"
     "        will add all the files in the docs directory except file.txt."
     "\n";
 
@@ -48,11 +49,8 @@ struct stage_stats {
     size_t total;
 } stats = {0, 0, 0, 0};
 
-
 struct file_list *last, *head;
-struct stage_options opts = {
-    .cache = PACK_FILE_CACHE_INIT
-};
+struct stage_options opts = {.cache = PACK_FILE_CACHE_INIT};
 
 void file_list_clear(struct file_list *head)
 {
@@ -70,8 +68,8 @@ void file_list_clear(struct file_list *head)
 
 void show_node(struct cache_index_entry_list *node, size_t i)
 {
-    printf(SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t%s\n",
-        i, node->start, node->len, node->file_path.buf);
+    printf(SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t" SIZE_T_FORMAT "\t%s\n", i,
+           node->start, node->len, node->file_path.buf);
 }
 
 void show_cache_table()
@@ -92,9 +90,11 @@ void show_cache_table()
 
 void show_node_html(struct cache_index_entry_list *node, size_t i)
 {
-    char *st = node->status == DELETED ? "deleted" : (node->status == MODIFIED ? "modified" : "new");
-    printf("<td>" SIZE_T_FORMAT "</td><td>%s</td><td>%s</td>\n",
-        i, st, node->file_path.buf);
+    char *st = node->status == DELETED
+                   ? "deleted"
+                   : (node->status == MODIFIED ? "modified" : "new");
+    printf("<td>" SIZE_T_FORMAT "</td><td>%s</td><td>%s</td>\n", i, st,
+           node->file_path.buf);
 }
 
 void show_cache_table_html()
@@ -122,7 +122,8 @@ int read_file_from_database(const char *path, struct strbuf *buf)
         return 0;
 
     idx = find_file_index_list(opts.head, path);
-    if (!idx) return false;
+    if (!idx)
+        return false;
 
     return !get_file_content(&opts.cache, buf, idx);
 }
@@ -176,7 +177,8 @@ void print_stage_stats(struct stage_stats *data)
         return;
 
 #ifdef _WIN32
-    if (data->files_modified && (((ssize_t)(data->files_modified - ignored)) > 0)) {
+    if (data->files_modified &&
+        (((ssize_t)(data->files_modified - ignored)) > 0)) {
         fprintf(stdout, " %llu %s modified\n", data->files_modified,
                 data->files_modified <= 1 ? "file" : "files");
     }
@@ -191,10 +193,10 @@ void print_stage_stats(struct stage_stats *data)
     if (data->new_files && ((int)(data->new_files - data->ignored) > 0)) {
         fprintf(stdout, " %llu %s added\n", data->new_files - data->ignored,
                 (data->new_files - data->ignored) <= 1 ? "file" : "files");
-        fprintf(stdout,
-            "    (Use '"YELLOW PEG_NAME " commit"RESET"' to commit the changes)\n");
-        fprintf(stdout,
-            "    (Use '"YELLOW PEG_NAME " reset"RESET"' to unstage the changes)\n");
+        fprintf(stdout, "    (Use '" YELLOW PEG_NAME " commit" RESET
+                        "' to commit the changes)\n");
+        fprintf(stdout, "    (Use '" YELLOW PEG_NAME " reset" RESET
+                        "' to unstage the changes)\n");
     }
 
     if (data->ignored) {
@@ -202,19 +204,19 @@ void print_stage_stats(struct stage_stats *data)
                 "Staged files exists, please commit or reset the changes\n");
         fprintf(stdout, " %llu %s ignored, already staged\n", data->ignored,
                 data->ignored <= 1 ? "file" : "files");
-        fprintf(stdout,
-            "    (Use '"YELLOW PEG_NAME " commit"RESET"' to commit the changes)\n");
-        fprintf(stdout,
-            "    (Use '"YELLOW PEG_NAME " reset'"RESET" to unstage the changes)\n");
+        fprintf(stdout, "    (Use '" YELLOW PEG_NAME " commit" RESET
+                        "' to commit the changes)\n");
+        fprintf(stdout, "    (Use '" YELLOW PEG_NAME " reset'" RESET
+                        " to unstage the changes)\n");
     }
 #else
     if (data->new_files && (data->new_files - data->ignored)) {
         fprintf(stdout, " %zu %s added\n", data->new_files - data->ignored,
                 (data->new_files - data->ignored) <= 1 ? "file" : "files");
-        fprintf(stdout,
-            "    (Use '"YELLOW PEG_NAME " commit"RESET"' to commit the changes)\n");
-        fprintf(stdout,
-            "    (Use '"YELLOW PEG_NAME " reset"RESET"' to unstage the changes)\n");
+        fprintf(stdout, "    (Use '" YELLOW PEG_NAME " commit" RESET
+                        "' to commit the changes)\n");
+        fprintf(stdout, "    (Use '" YELLOW PEG_NAME " reset" RESET
+                        "' to unstage the changes)\n");
     }
 
     if (data->ignored) {
@@ -222,10 +224,10 @@ void print_stage_stats(struct stage_stats *data)
                 "Staged files exists, please commit or reset the changes\n");
         fprintf(stdout, " %zu %s ignored, already staged\n", data->ignored,
                 data->ignored <= 1 ? "file" : "files");
+        fprintf(stdout, "    (Use '" YELLOW PEG_NAME " commit" RESET
+                        "' to commit the changes)\n");
         fprintf(stdout,
-            "    (Use '"YELLOW PEG_NAME " commit"RESET"' to commit the changes)\n");
-        fprintf(stdout,
-            "    (Use '" PEG_NAME " reset' to unstage the changes)\n");
+                "    (Use '" PEG_NAME " reset' to unstage the changes)\n");
     }
 #endif
 }
@@ -271,7 +273,8 @@ int is_modified(const char *name)
         if (stat(name, &st) < 0) {
             stats.deleted++;
             node = MALLOC(struct file_list, 1);
-            if (!node) die("no memory available.\n");
+            if (!node)
+                die("no memory available.\n");
             file_list_init(node);
             node->status = DELETED;
             strbuf_init(&node->path, 0);
@@ -288,7 +291,8 @@ int is_modified(const char *name)
 
         stats.new_files++;
         node = MALLOC(struct file_list, 1);
-        if (!node) die("no memory available.\n");
+        if (!node)
+            die("no memory available.\n");
         file_list_init(node);
         node->status = NEW;
         node->st = st;
@@ -314,7 +318,8 @@ int is_modified(const char *name)
         if (stat(name, &st) < 0) {
             stats.deleted++;
             node = MALLOC(struct file_list, 1);
-            if (!node) die("no memory available.\n");
+            if (!node)
+                die("no memory available.\n");
             file_list_init(node);
             node->status = DELETED;
             strbuf_init(&node->path, 0);
@@ -334,7 +339,8 @@ int is_modified(const char *name)
         }
         stats.files_modified++;
         node = MALLOC(struct file_list, 1);
-        if (!node) die("no memory available.\n");
+        if (!node)
+            die("no memory available.\n");
         node->status = MODIFIED;
         strbuf_init(&node->path, 0);
         strbuf_addstr(&node->path, name);
@@ -390,7 +396,8 @@ void cache_files()
     cache_object_init(&cache);
     while (node) {
         if (!find_file_from_cache(node->path.buf, &cache)) {
-            if (opts.verbose) print_file_list_node(node);
+            if (opts.verbose)
+                print_file_list_node(node);
             process_node(&cache, node);
         } else {
             if (opts.verbose) {
@@ -414,7 +421,7 @@ void cache_files()
 
 int detect_and_add_files(const char *dir)
 {
-    status((char*)dir);
+    status((char *)dir);
     struct file_list *node;
     struct node *st_node = root;
     struct stat st;
@@ -464,9 +471,11 @@ int detect_and_add_files(const char *dir)
             node->next = NULL;
             file_list_add(node);
             if (close(fd) < 0)
-                die("unable to close %s, %s\n", node->path.buf, strerror(errno));
+                die("unable to close %s, %s\n", node->path.buf,
+                    strerror(errno));
             if (opts.more_output) {
-                printf("\rinsert: Adding files " SIZE_T_FORMAT " (", stats.total);
+                printf("\rinsert: Adding files " SIZE_T_FORMAT " (",
+                       stats.total);
                 print_humanised_bytes(opts.bytes);
                 printf(")");
             }
@@ -486,7 +495,8 @@ size_t findch(char *a, char delim)
 {
     char *temp = a;
     while (*a++ != '\0')
-        if (*a == delim) return a - temp;
+        if (*a == delim)
+            return a - temp;
     return -1;
 }
 
@@ -537,7 +547,8 @@ void process_argument(int i, char *argv)
         switch (ret) {
         case _FILE_:
             get_peg_path_buf(&path, argv);
-            if (!is_modified(path.buf)) stats.total++;
+            if (!is_modified(path.buf))
+                stats.total++;
             break;
 
         case _DIRECTORY_:

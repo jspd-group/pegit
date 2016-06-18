@@ -1,14 +1,13 @@
 #ifndef CACHE_H_
 #define CACHE_H_
 
-#include "strbuf.h"
-#include "mz.h"
-#include "tree.h"
-#include "visitor.h"
-#include "util.h"
 #include "author.h"
+#include "mz.h"
+#include "strbuf.h"
 #include "timestamp.h"
-
+#include "tree.h"
+#include "util.h"
+#include "visitor.h"
 
 struct cache_index_entry_list {
     size_t start;
@@ -47,17 +46,19 @@ extern void cache_object_add(struct cache_object *co, struct strbuf *buf);
 extern void cache_object_write(struct cache_object *co);
 extern void cache_object_init(struct cache_object *co);
 extern void cache_object_addindex(struct cache_object *co, struct strbuf *buf,
-                           struct cache_index_entry_list *node);
+                                  struct cache_index_entry_list *node);
 
 static inline void cache_object_clean(struct cache_object *co)
 {
     size_t size = 0;
     FILE *f = fopen(CACHE_INDEX_FILE, "wb");
-    if (!f) die("unable to clear the staged data\n");
+    if (!f)
+        die("unable to clear the staged data\n");
     fwrite(&size, sizeof(size_t), 1, f);
     fclose(f);
     f = fopen(CACHE_PACK_FILE, "wb");
-    if (!f) die("unable to clear the staged data\n");
+    if (!f)
+        die("unable to clear the staged data\n");
     fclose(f);
 }
 

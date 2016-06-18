@@ -21,17 +21,14 @@ struct commit_options {
 void print_humanised_bytes(off_t bytes)
 {
     if (bytes > 1 << 30) {
-        printf("%u.%2.2u GiB",
-                (int)(bytes >> 30),
-                (int)(bytes & ((1 << 30) - 1)) / 10737419);
+        printf("%u.%2.2u GiB", (int)(bytes >> 30),
+               (int)(bytes & ((1 << 30) - 1)) / 10737419);
     } else if (bytes > 1 << 20) {
-        int x = bytes + 5243;  /* for rounding */
-        printf("%u.%2.2u MiB",
-                x >> 20, ((x & ((1 << 20) - 1)) * 100) >> 20);
+        int x = bytes + 5243; /* for rounding */
+        printf("%u.%2.2u MiB", x >> 20, ((x & ((1 << 20) - 1)) * 100) >> 20);
     } else if (bytes > 1 << 10) {
-        int x = bytes + 5;  /* for rounding */
-        printf("%u.%2.2u KiB",
-                x >> 10, ((x & ((1 << 10) - 1)) * 100) >> 10);
+        int x = bytes + 5; /* for rounding */
+        printf("%u.%2.2u KiB", x >> 10, ((x & ((1 << 10) - 1)) * 100) >> 10);
     } else {
         printf("%u bytes", (int)bytes);
     }
@@ -53,43 +50,44 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
 {
     if (cm_opts.quiet)
         return;
-    printf("[ "YELLOW);
+    printf("[ " YELLOW);
     print_hash_size(cm->sha1, 3, stdout);
     if (IF_TAG(cm->flags))
-        printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
-    printf(RESET" ]   %s\n", cm->cmt_msg.buf);
+        printf(RESET " (" YELLOW "%s" RESET ")", cm->tag);
+    printf(RESET " ]   %s\n", cm->cmt_msg.buf);
 
     if (cm->cmt_desc.len) {
         printf("\n%s\n\n", cm->cmt_desc.buf);
     }
 #ifdef _WIN32
-    if (!cm_opts.count) return;
-    printf(YELLOW" "SIZE_T_FORMAT""RESET" %s changed, ", opts->file_modified
-        + opts->new_files,
-        (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
+    if (!cm_opts.count)
+        return;
+    printf(YELLOW " " SIZE_T_FORMAT "" RESET " %s changed, ",
+           opts->file_modified + opts->new_files,
+           (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
 
     if (opts->insertions)
-        printf(BOLD_GREEN SIZE_T_FORMAT RESET" %s(+)", opts->insertions, opts->insertions
-            > 1 ? "additions" : "addition");
+        printf(BOLD_GREEN SIZE_T_FORMAT RESET " %s(+)", opts->insertions,
+               opts->insertions > 1 ? "additions" : "addition");
     if (opts->insertions && opts->deletions)
         printf(", ");
     if (opts->deletions)
-        printf(BOLD_RED SIZE_T_FORMAT RESET" %s(-)", opts->deletions, opts->deletions > 1
-            ? "deletions" : "deletion");
+        printf(BOLD_RED SIZE_T_FORMAT RESET " %s(-)", opts->deletions,
+               opts->deletions > 1 ? "deletions" : "deletion");
     putchar('\n');
 #else
-    printf(YELLOW" %zu"RESET" %s changed, ", opts->file_modified
-        + opts->new_files,
-        (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
+    printf(YELLOW " %zu" RESET " %s changed, ",
+           opts->file_modified + opts->new_files,
+           (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
 
     if (opts->insertions)
-        printf(BOLD_GREEN"%zu"RESET" %s(+)", opts->insertions, opts->insertions
-            > 1 ? "additions" : "addition");
+        printf(BOLD_GREEN "%zu" RESET " %s(+)", opts->insertions,
+               opts->insertions > 1 ? "additions" : "addition");
     if (opts->insertions && opts->deletions)
         printf(", ");
     if (opts->deletions)
-        printf(BOLD_RED"%zu"RESET" %s(-)", opts->deletions, opts->deletions > 1
-            ? "deletions" : "deletion");
+        printf(BOLD_RED "%zu" RESET " %s(-)", opts->deletions,
+               opts->deletions > 1 ? "deletions" : "deletion");
     putchar('\n');
 #endif
 }
@@ -105,7 +103,7 @@ void commit_init(struct commit *cm)
 }
 
 int make_commit_object(struct commit *cm, struct author *auth,
-    struct strbuf *head, struct strbuf *desc)
+                       struct strbuf *head, struct strbuf *desc)
 {
     cm->auth = auth;
     strbuf_addbuf(&cm->cmt_msg, head);
@@ -200,7 +198,8 @@ size_t make_commit_list(struct commit_list **head)
     struct commit *cm = NULL;
     FILE *f = fopen(COMMIT_INDEX_FILE, "rb");
 
-    if (!f) die("unable to open %s\n, %s", COMMIT_INDEX_FILE, strerror(errno));
+    if (!f)
+        die("unable to open %s\n, %s", COMMIT_INDEX_FILE, strerror(errno));
     fread(&count, sizeof(size_t), 1, f);
     *head = NULL;
     while (count--) {
@@ -213,8 +212,7 @@ size_t make_commit_list(struct commit_list **head)
         if (*head) {
             commit_list_add(&last, node);
             (*head)->count++;
-        }
-        else {
+        } else {
             *head = node;
             last = node;
             (*head)->count = 1;
@@ -225,13 +223,12 @@ size_t make_commit_list(struct commit_list **head)
     return 0;
 }
 
-struct commit *find_commit_hash(struct commit_list *cl,
-    char sha1[SHA_STR_SIZE])
+struct commit *find_commit_hash(struct commit_list *cl, char sha1[SHA_STR_SIZE])
 {
     struct commit_list *node = cl;
 
     while (node) {
-        if (!strcmp((const char*)node->item->sha1str, (const char*)sha1))
+        if (!strcmp((const char *)node->item->sha1str, (const char *)sha1))
             return node->item;
         node = node->next;
     }
@@ -287,14 +284,15 @@ void insert_index_list(struct index_list **last, struct index_list *node)
 
 void make_index_list_from_commit(struct commit *node, struct index_list **head)
 {
-    struct index_file_cache cache = { FILE_INDEX_FILE, STRBUF_INIT };
+    struct index_file_cache cache = {FILE_INDEX_FILE, STRBUF_INIT};
     struct index *new = NULL;
     struct index_list *last = NULL, *n = NULL;
     size_t offset = node->commit_index;
     size_t count = 0;
 
     *head = NULL;
-    if (!node) return;
+    if (!node)
+        return;
     cache_index_file(&cache);
     while (offset != (node->commit_index + node->commit_length)) {
         new = make_index_from_cache(&cache, offset);
@@ -304,7 +302,8 @@ void make_index_list_from_commit(struct commit *node, struct index_list **head)
         offset += sizeof(struct index);
         count++;
 
-        if (*head) insert_index_list(&last, n);
+        if (*head)
+            insert_index_list(&last, n);
         else {
             *head = n;
             last = n;
@@ -313,8 +312,8 @@ void make_index_list_from_commit(struct commit *node, struct index_list **head)
     strbuf_release(&cache.cache);
 }
 
-struct commit *find_commit_hash_compat(struct commit_list *cl,
-    char *sha1, size_t len)
+struct commit *find_commit_hash_compat(struct commit_list *cl, char *sha1,
+                                       size_t len)
 {
     struct commit_list *node;
 
@@ -350,7 +349,7 @@ struct index *find_file_index_list(struct index_list *head, const char *file)
             node = node->next;
             continue;
         }
-        if (!strcmp((const char*)node->idx->filename, file)) {
+        if (!strcmp((const char *)node->idx->filename, file)) {
             return node->idx;
         }
         node = node->next;
@@ -381,7 +380,6 @@ struct commit *get_head_commit(struct commit_list *cl)
     return NULL;
 }
 
-
 struct index_list *get_master_commit_list(struct commit_list *head)
 {
     struct commit_list *node, *prev;
@@ -393,10 +391,10 @@ struct index_list *get_master_commit_list(struct commit_list *head)
         prev = node;
         node = node->next;
     }
-    if (prev)  make_index_list_from_commit(prev->item, &ret);
+    if (prev)
+        make_index_list_from_commit(prev->item, &ret);
     return ret;
 }
-
 
 struct index_list *get_head_commit_list(struct commit_list *head)
 {
@@ -408,7 +406,8 @@ struct index_list *get_head_commit_list(struct commit_list *head)
             break;
         node = node->next;
     }
-    if (node)  make_index_list_from_commit(node->item, &ret);
+    if (node)
+        make_index_list_from_commit(node->item, &ret);
     return ret;
 }
 
@@ -419,7 +418,8 @@ bool find_file_from_head_commit(const char *name, struct strbuf *buf)
     make_commit_list(&head);
     struct index_list *last = get_head_commit_list(head);
     struct index *idx = find_file_index_list(last, name);
-    if (!idx) return false;
+    if (!idx)
+        return false;
     cache_pack_file(&cache);
     strbuf_add(buf, cache.cache.buf + idx->pack_start, idx->pack_len);
     strbuf_release(&cache.cache);
@@ -437,7 +437,7 @@ struct index_list *copy_index_list(struct index_list *src)
 
         temp = MALLOC(struct index_list, 1);
         temp->idx = make_new_index(node->idx->filename, node->idx->pack_start,
-            node->idx->pack_len, node->idx->flags);
+                                   node->idx->pack_len, node->idx->flags);
         temp->next = NULL;
 
         if (new)
@@ -455,13 +455,13 @@ void write_index_list(struct index_list *head, struct strbuf *cache)
 {
     struct index_list *node = head;
     while (node) {
-        strbuf_add(cache, (void*)node->idx, sizeof(struct index));
+        strbuf_add(cache, (void *)node->idx, sizeof(struct index));
         node = node->next;
     }
 }
 
 void transfer_staged_data(struct cache_object *co, struct index_list **head,
-    char *sha1)
+                          char *sha1)
 {
     struct cache_index_entry_list *node = co->ci.entries;
     struct index *exist;
@@ -504,16 +504,17 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
             new->idx = exist;
             new->next = NULL;
             exist->flags = NEW;
-            if (last) insert_index_list(&last, new);
+            if (last)
+                insert_index_list(&last, new);
             else {
                 *head = new;
                 last = new;
             }
             if (cm_opts.progress && cm_opts.count && got_signal()) {
-                printf("\rInsertions: "SIZE_T_FORMAT", Deletions: "
-                    SIZE_T_FORMAT", Files: "SIZE_T_FORMAT,
-                    cm_opts.insertions, cm_opts.deletions,
-                    cm_opts.file_modified + cm_opts.new_files );
+                printf("\rInsertions: " SIZE_T_FORMAT
+                       ", Deletions: " SIZE_T_FORMAT ", Files: " SIZE_T_FORMAT,
+                       cm_opts.insertions, cm_opts.deletions,
+                       cm_opts.file_modified + cm_opts.new_files);
                 reset_signal();
             }
             node = node->next;
@@ -551,9 +552,10 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
         strbuf_release(&old);
         idx = cache.cache.len;
         if (cm_opts.progress && cm_opts.count && got_signal()) {
-            printf("\rInsertions: "SIZE_T_FORMAT", Deletions: "SIZE_T_FORMAT", Files: "SIZE_T_FORMAT,
-                cm_opts.insertions, cm_opts.deletions,
-                cm_opts.file_modified + cm_opts.new_files );
+            printf("\rInsertions: " SIZE_T_FORMAT ", Deletions: " SIZE_T_FORMAT
+                   ", Files: " SIZE_T_FORMAT,
+                   cm_opts.insertions, cm_opts.deletions,
+                   cm_opts.file_modified + cm_opts.new_files);
             reset_signal();
         }
         node = node->next;
@@ -561,7 +563,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
     stop_timer();
     if (cm_opts.progress && cm_opts.count)
         printf("\n");
-    sha1_final((unsigned char*)sha1, &ctx);
+    sha1_final((unsigned char *)sha1, &ctx);
     flush_pack_cache(&cache);
     strbuf_release(&cache.cache);
 }
@@ -590,10 +592,11 @@ void set_head_commit(const char *sha1, size_t len)
     if (!cl)
         die("no enough commits!\n");
     old = get_head_commit(cl);
-    cm = find_commit_hash_compat(cl, (char*)sha1, len);
+    cm = find_commit_hash_compat(cl, (char *)sha1, len);
     if (!cm) {
         cm = find_commit_tag(cl, sha1);
-        if (!cm) die("no such commit '%s' found.\n", sha1);
+        if (!cm)
+            die("no such commit '%s' found.\n", sha1);
     }
     old->flags ^= HEAD_FLAG;
     cm->flags |= HEAD_FLAG;
@@ -674,7 +677,8 @@ void set_tag(const char *sha1, size_t len, const char *tag)
     make_commit_list(&cl);
 
     if (!cl)
-        die("There is no "YELLOW"commit"RESET" to tag '"YELLOW"%s"RESET"'.\n",
+        die("There is no " YELLOW "commit" RESET " to tag '" YELLOW "%s" RESET
+            "'.\n",
             tag);
 
     if (!sha1) {
@@ -688,21 +692,22 @@ void set_tag(const char *sha1, size_t len, const char *tag)
         }
         cm = prev->item;
     } else {
-        cm = find_commit_hash_compat(cl, (char*)sha1, len);
+        cm = find_commit_hash_compat(cl, (char *)sha1, len);
         if (!cm)
-            die("we found no such commit '"YELLOW"%s"RESET"'.\n", sha1);
+            die("we found no such commit '" YELLOW "%s" RESET "'.\n", sha1);
     }
     if (len >= TAG_SIZE)
-        die("good tags don't have such huge name like '"YELLOW"%s"RESET"'.\n"
+        die("good tags don't have such huge name like '" YELLOW "%s" RESET
+            "'.\n"
             "        (Try keeping small and simple tags.)\n",
             tag);
     strcpy(cm->tag, tag);
     cm->flags = TAG_FLAG;
     /* print some information */
-    printf("[ "YELLOW);
+    printf("[ " YELLOW);
     print_hash_size(cm->sha1, 3, stdout);
-    printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
-    printf(RESET" ]   %s\n", cm->cmt_msg.buf);
+    printf(RESET " (" YELLOW "%s" RESET ")", cm->tag);
+    printf(RESET " ]   %s\n", cm->cmt_msg.buf);
     flush_commit_list(cl);
 }
 
@@ -717,23 +722,23 @@ void print_index_list(struct index_list *il, int flags, const char *color)
     struct strbuf buf;
 
     while (node) {
-        printf("%c "SIZE_T_FORMAT"\t%s%s " RESET,
-             node->idx->flags == DELETED ? 'D' : 'M',
-             node->idx->ver, color, node->idx->filename);
+        printf("%c " SIZE_T_FORMAT "\t%s%s " RESET,
+               node->idx->flags == DELETED ? 'D' : 'M', node->idx->ver, color,
+               node->idx->filename);
         if (flags == 0) {
             putchar('\n');
             node = node->next;
             continue;
         }
         if (flags & F_BOTH) {
-            printf("\t\t"SIZE_T_FORMAT" ", node->idx->pack_start);
+            printf("\t\t" SIZE_T_FORMAT " ", node->idx->pack_start);
             print_humanised_bytes(node->idx->pack_len);
             printf(" ");
         }
         if (flags & F_PACK) {
-            printf("\t\t" SIZE_T_FORMAT"-"SIZE_T_FORMAT" ",
-                node->idx->pack_start, node->idx->pack_start
-                + node->idx->pack_len);
+            printf("\t\t" SIZE_T_FORMAT "-" SIZE_T_FORMAT " ",
+                   node->idx->pack_start,
+                   node->idx->pack_start + node->idx->pack_len);
         }
         if (flags & F_SIZE) {
             printf("\t\t");
@@ -756,7 +761,7 @@ void print_index_list_html(struct index_list *il, int flags, const char *sha1)
         printf("<td>");
         print_humanised_bytes(node->idx->pack_len);
         printf("</td><td>");
-        print_hash((char*)sha1, stdout);
+        print_hash((char *)sha1, stdout);
         printf("</td><td>");
         printf(SIZE_T_FORMAT, node->idx->pack_start);
         printf("</td>");
@@ -771,7 +776,8 @@ int list_commit_index(struct commit *cm, int flags, const char *color)
 
     make_index_list_from_commit(cm, &il);
 
-    if (!il) return 0;
+    if (!il)
+        return 0;
     print_index_list(il, flags, color);
     return 0;
 }
@@ -779,10 +785,13 @@ int list_commit_index(struct commit *cm, int flags, const char *color)
 void print_commit_index_html(struct commit_list *cl)
 {
     struct index_list *il;
-    printf(",<html><head><style>td{ border: 1px solid black;}</style></head><body><table><th>FileName</th><th>FileSize</th><th>CommitSha1ID</th><th>FileIndex</th>");
+    printf(",<html><head><style>td{ border: 1px solid "
+           "black;}</style></head><body><table><th>FileName</th><th>FileSize</"
+           "th><th>CommitSha1ID</th><th>FileIndex</th>");
     for (struct commit_list *node = cl; node; node = node->next) {
         make_index_list_from_commit(node->item, &il);
-        if (!il) return;
+        if (!il)
+            return;
         print_index_list_html(il, 0, node->item->sha1);
     }
 }
@@ -795,14 +804,17 @@ int list_index(int argc, char *argv[])
     char *color = WHITE;
 
     make_commit_list(&cl);
-    if (!cl) return -1;
+    if (!cl)
+        return -1;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-f=size") || !strcmp(argv[i], "--format=size"))
             flag |= F_SIZE;
-        else if (!strcmp(argv[i], "-f=pack") || !strcmp(argv[i], "--format=pack"))
+        else if (!strcmp(argv[i], "-f=pack") ||
+                 !strcmp(argv[i], "--format=pack"))
             flag |= F_PACK;
-        else if (!strcmp(argv[i], "-f=both") || !strcmp(argv[i], "--format=both"))
+        else if (!strcmp(argv[i], "-f=both") ||
+                 !strcmp(argv[i], "--format=both"))
             flag |= F_BOTH;
         else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--color")) {
             color = BLUE;
@@ -813,7 +825,8 @@ int list_index(int argc, char *argv[])
             cm = find_commit_hash_compat(cl, argv[i], strlen(argv[i]));
             if (!cm) {
                 cm = find_commit_tag(cl, argv[i]);
-                if (!cm) die("no such commit found.\n");
+                if (!cm)
+                    die("no such commit found.\n");
             }
         }
     }
@@ -830,17 +843,17 @@ int log_commit(struct commit *cm)
 
     if (cm_opts.quiet)
         return 0;
-    printf("[ "YELLOW);
+    printf("[ " YELLOW);
     print_hash_size(cm->sha1, 3, stdout);
     if (IF_TAG(cm->flags))
-        printf(RESET" ("YELLOW"%s"RESET")", cm->tag);
-    printf(RESET" ]");
+        printf(RESET " (" YELLOW "%s" RESET ")", cm->tag);
+    printf(RESET " ]");
     fprintf(stdout, "  %s\n", cm->cmt_msg.buf);
     if (cm->cmt_desc.len)
         fprintf(stdout, "\n\t%s\n\n", cm->cmt_desc.buf);
     cm->stamp._tm = localtime(&cm->stamp._time);
-    fprintf(stdout, "Committed by "CYAN"%s"RESET" <%s> on ", cm->auth->name.buf,
-        cm->auth->email.buf);
+    fprintf(stdout, "Committed by " CYAN "%s" RESET " <%s> on ",
+            cm->auth->name.buf, cm->auth->email.buf);
     time_stamp_humanise(&cm->stamp, &sb);
     printf("%s\n\n", sb.buf);
     strbuf_release(&sb);
@@ -853,12 +866,13 @@ void list_tags()
     struct commit_list *node;
 
     make_commit_list(&cl);
-    if (!cl) return;
+    if (!cl)
+        return;
 
     node = cl;
     while (node) {
         if (IF_TAG(node->item->flags))
-            fprintf(stdout, YELLOW"%s\n"RESET, node->item->tag);
+            fprintf(stdout, YELLOW "%s\n" RESET, node->item->tag);
         node = node->next;
     }
     commit_list_del(&cl);
@@ -883,8 +897,7 @@ void finalize_commit(struct commit_list *head, struct commit *new)
     if (!head) {
         head = newnode;
         head->count = 1;
-    }
-    else {
+    } else {
         while (node) {
             last = node;
             node = node->next;
@@ -898,11 +911,11 @@ void finalize_commit(struct commit_list *head, struct commit *new)
 
 void show_commit_node(struct commit_list *node, size_t i)
 {
-    printf("Commit_ID: "SIZE_T_FORMAT"\n", i);
+    printf("Commit_ID: " SIZE_T_FORMAT "\n", i);
     printf("SHA1_ID: ");
     print_hash(node->item->sha1, stdout);
     if (IF_HEAD(node->item->flags)) {
-        printf(" [ "CYAN"HEAD"RESET" ]\n");
+        printf(" [ " CYAN "HEAD" RESET " ]\n");
     }
     printf("\nTAG: %s\n", IF_TAG(node->item->flags) ? node->item->tag : "NULL");
     printf("AuthorName: %s\n", node->item->auth->name.buf);
@@ -918,7 +931,7 @@ void print_html_node(struct commit_list *node, size_t i)
 {
     struct commit *cm = node->item;
 
-    printf("<td>"SIZE_T_FORMAT"</td>", i);
+    printf("<td>" SIZE_T_FORMAT "</td>", i);
     printf("<td>");
     print_hash(cm->sha1, stdout);
     printf("</td>");
@@ -928,8 +941,8 @@ void print_html_node(struct commit_list *node, size_t i)
     printf("<td>%s", IF_TAG(cm->flags) ? cm->tag : "NULL");
     node->item->stamp._tm = localtime(&node->item->stamp._time);
     printf("</td><td>%s</td><td>%s</td><td>%s</td><td>%s<td>%s</td>\n",
-        cm->auth->name.buf, cm->auth->email.buf, cm->cmt_msg.buf,
-        cm->cmt_desc.buf, asctime(node->item->stamp._tm));
+           cm->auth->name.buf, cm->auth->email.buf, cm->cmt_msg.buf,
+           cm->cmt_desc.buf, asctime(node->item->stamp._tm));
 }
 
 void print_html_page()
@@ -943,9 +956,12 @@ void print_html_page()
         return;
     }
     node = cl;
-    printf("<!doctype html>\n<html>\n<head>\n<title>Commit Table</title><style>td{ border: 1px solid black;}</style>\n"
-        "</head><body><table><th>CommitID</th><th>SHA1</th><th>TAG</th><th>Author</th>"
-        "<th>Email</th><th>CommitMessage</th><th>Description</th><th>Time</th>");
+    printf("<!doctype html>\n<html>\n<head>\n<title>Commit "
+           "Table</title><style>td{ border: 1px solid black;}</style>\n"
+           "</head><body><table><th>CommitID</th><th>SHA1</th><th>TAG</"
+           "th><th>Author</th>"
+           "<th>Email</th><th>CommitMessage</th><th>Description</th><th>Time</"
+           "th>");
     while (node) {
         printf("<tr>");
         print_html_node(node, i++);
@@ -984,7 +1000,7 @@ void show_commit_count()
 }
 
 int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
-    char tag[TAG_SIZE], int16_t flags)
+                        char tag[TAG_SIZE], int16_t flags)
 {
     struct commit_list *head = NULL;
     struct cache_object co;
@@ -1041,12 +1057,13 @@ int commit(int argc, char *argv[])
     int16_t flags = 0;
 
     commit_options_init();
-    if (argc < 2) die("empty args. See --help for usage.\n");
+    if (argc < 2)
+        die("empty args. See --help for usage.\n");
 
     vud();
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
-            printf("Usage: "PEG_NAME" commit -m message -d description\n");
+            printf("Usage: " PEG_NAME " commit -m message -d description\n");
             exit(0);
         } else if (!strcmp(argv[i], "-m") || !strcmp(argv[i], "--message")) {
             if (i + 1 >= argc) {
@@ -1058,7 +1075,8 @@ int commit(int argc, char *argv[])
             cm_opts.quiet = 1;
             cm_opts.count = 0;
             i++;
-        } else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--description")) {
+        } else if (!strcmp(argv[i], "-d") ||
+                   !strcmp(argv[i], "--description")) {
             if (i + 1 >= argc) {
                 die("\"%s\" expects a message description.\n", argv[i]);
             }

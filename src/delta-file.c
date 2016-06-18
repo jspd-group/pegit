@@ -19,8 +19,10 @@ size_t count_lines(struct strbuf *buf)
             completely_empty = 0;
         }
     }
-    if (completely_empty) return 0;
-    if (!nl) count++;
+    if (completely_empty)
+        return 0;
+    if (!nl)
+        count++;
     return count;
 }
 
@@ -34,7 +36,8 @@ int split_in_place(struct strbuf *buf, ssize_t *arr, char delim)
             arr[count++] = i;
         }
     }
-    if (b[--i] != '\n') arr[count++] = i;
+    if (b[--i] != '\n')
+        arr[count++] = i;
 
     return count;
 }
@@ -42,7 +45,8 @@ int split_in_place(struct strbuf *buf, ssize_t *arr, char delim)
 int deltafile_init(struct deltafile *df, size_t size, char delim)
 {
     df->arr = (ssize_t *)malloc(sizeof(ssize_t) * (size + 1));
-    if (!df->arr) die("Out of memory.\n");
+    if (!df->arr)
+        die("Out of memory.\n");
 
     df->size = size;
     df->delim = delim;

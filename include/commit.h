@@ -1,27 +1,27 @@
 #ifndef COMMIT_H_
 #define COMMIT_H_
 
-#include "cache.h"
 #include "author.h"
-#include "util.h"
-#include "sha1-inl.h"
-#include "timestamp.h"
+#include "cache.h"
 #include "delta.h"
-#include "pack.h"
 #include "index.h"
+#include "pack.h"
+#include "sha1-inl.h"
 #include "status.h"
+#include "timestamp.h"
+#include "util.h"
 
 struct commit {
-    int16_t flags; /* various commit flags */
-    char sha1[HASH_SIZE];    /* sha1 hash */
-    char tag[TAG_SIZE]; /* user defined tag */
+    int16_t flags;        /* various commit flags */
+    char sha1[HASH_SIZE]; /* sha1 hash */
+    char tag[TAG_SIZE];   /* user defined tag */
     char sha1str[SHA_STR_SIZE + 1];
     struct author *auth;    /* author of the commit */
-    struct strbuf cmt_msg; /* commit message */
+    struct strbuf cmt_msg;  /* commit message */
     struct strbuf cmt_desc; /* commit description */
-    struct timestamp stamp;    /* time of commit */
+    struct timestamp stamp; /* time of commit */
     size_t commit_index;    /* pointers to the index file */
-    size_t commit_length; /* length of the commits */
+    size_t commit_length;   /* length of the commits */
 };
 
 #define TAG_FLAG 0x1
@@ -47,7 +47,7 @@ typedef bool(commit_match_fn)(struct commit *);
  *     `det' : represents the commit description, which can be empty
  */
 extern int generate_new_commit(struct strbuf *cmt, struct strbuf *det,
-    char tag[TAG_SIZE], int16_t flags);
+                               char tag[TAG_SIZE], int16_t flags);
 
 /**
  * Kind of main function for generating a new commit.
@@ -81,19 +81,18 @@ extern size_t make_commit_list(struct commit_list **head);
 extern void commit_list_del(struct commit_list **head);
 
 extern struct commit *find_commit_hash(struct commit_list *cl,
-    char sha1[HASH_SIZE]);
+                                       char sha1[HASH_SIZE]);
 
-extern struct commit *find_commit_tag(struct commit_list *cl,
-    const char *tag);
+extern struct commit *find_commit_tag(struct commit_list *cl, const char *tag);
 
 extern struct commit *find_commit_hash_compat(struct commit_list *cl,
-    char *sha1, size_t len);
+                                              char *sha1, size_t len);
 
 extern void make_index_list_from_commit(struct commit *node,
-    struct index_list **head);
+                                        struct index_list **head);
 
 extern struct index *find_file_index_list(struct index_list *head,
-    const char *file);
+                                          const char *file);
 
 extern struct index_list *get_head_commit_list(struct commit_list *head);
 extern struct commit *get_head_commit(struct commit_list *cl);

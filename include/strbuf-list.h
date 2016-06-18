@@ -21,7 +21,8 @@ static int strbuf_list_init(struct strbuf_list *sbl)
 {
     sbl->head = MALLOC(struct strbuf_list_node, 1);
 
-    if (!sbl->head) die("Out of memory\n");
+    if (!sbl->head)
+        die("Out of memory\n");
 
     sbl->head->next = NULL;
     sbl->last = sbl->head;
@@ -34,7 +35,8 @@ static int strbuf_list_add(struct strbuf_list *sbl, const void *buf,
 {
     struct strbuf_list_node *node = MALLOC(struct strbuf_list_node, 1);
 
-    if (!node) die("Out of memory\n");
+    if (!node)
+        die("Out of memory\n");
 
     strbuf_init(&node->buf, size);
     strbuf_add(&node->buf, buf, size);

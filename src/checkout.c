@@ -1,7 +1,7 @@
 #include "commit.h"
-#include "visitor.h"
-#include "stage.h"
 #include "path.h"
+#include "stage.h"
+#include "visitor.h"
 
 struct revert_opts {
     int dflt;
@@ -51,7 +51,8 @@ int remove_directory(const char *path)
         }
 
         ret = stat(dir.buf, &st);
-        if (ret < 0) die("%s: can't do stat, %s\n", entry->d_name, strerror(errno));
+        if (ret < 0)
+            die("%s: can't do stat, %s\n", entry->d_name, strerror(errno));
         if (S_ISDIR(st.st_mode)) {
             remove_directory(dir.buf);
             rmdir(dir.buf);
@@ -77,8 +78,7 @@ void clean_directory(const char *path)
     if (root && (count_modified || count_new)) {
         printf("Uncommitted changes exist in project: \n");
         while (node) {
-            printf("%s %s\n", node->status == 1 ? "M" : "N",
-                                node->name);
+            printf("%s %s\n", node->status == 1 ? "M" : "N", node->name);
             node = node->next;
         }
         printf("Do you want to continue?\n");
@@ -99,7 +99,8 @@ void create_file(struct strbuf *buf, const char *path)
     FILE *fp;
 
     fp = fopen(path, "wb");
-    if (!fp) fatal("unable to create %s: %s\n", path, strerror(errno));
+    if (!fp)
+        fatal("unable to create %s: %s\n", path, strerror(errno));
     fwrite(buf->buf, sizeof(char), buf->len, fp);
     fclose(fp);
 }
@@ -123,7 +124,8 @@ void revert_file(struct pack_file_cache *cache, struct index *i)
     }
 
     fp = fopen(i->filename, "wb");
-    if (!fp) fatal("unable to modify %s: %s\n", i->filename, strerror(errno));
+    if (!fp)
+        fatal("unable to modify %s: %s\n", i->filename, strerror(errno));
     fwrite(buf.buf, sizeof(char), buf.len, fp);
     fclose(fp);
     strbuf_release(&buf);
@@ -131,7 +133,7 @@ void revert_file(struct pack_file_cache *cache, struct index *i)
 
 void delete_file(struct index *i)
 {
-    fprintf(stdout, RED" deleting %s\n"RESET, i->filename);
+    fprintf(stdout, RED " deleting %s\n" RESET, i->filename);
     if (remove(i->filename) < 0) {
         die("%s: %s", i->filename, strerror(errno));
     }
@@ -139,7 +141,7 @@ void delete_file(struct index *i)
 
 void delete_file_str(const char *i)
 {
-    fprintf(stdout, RED" deleting %s\n"RESET, i);
+    fprintf(stdout, RED " deleting %s\n" RESET, i);
     if (remove(i) < 0) {
         die("%s: %s", i, strerror(errno));
     }
@@ -162,7 +164,8 @@ void check_and_mkdir(char *name)
             if (name[j] == '/')
                 break;
         }
-        if (j == len) break;
+        if (j == len)
+            break;
         strbuf_add(&path, name + i, j - i);
 #if defined(_WIN32)
         if (mkdir(path.buf) < 0) {
@@ -171,7 +174,8 @@ void check_and_mkdir(char *name)
 #endif
             if (errno == EEXIST || !strcmp(path.buf, "."))
                 continue;
-            else die("can't make %s, %s", path.buf, strerror(errno));
+            else
+                die("can't make %s, %s", path.buf, strerror(errno));
         }
     }
 }
@@ -252,8 +256,8 @@ int revert_files_commit(struct strbuf_list *list, ssize_t n)
     while (node) {
         i = find_file_index_list(il, node->buf.buf);
         if (!i) {
-            fprintf(stderr, YELLOW" %s, Not checked in!\n"RESET,
-                node->buf.buf);
+            fprintf(stderr, YELLOW " %s, Not checked in!\n" RESET,
+                    node->buf.buf);
         } else {
             revert_file(&cache, i);
             MARK_CHECKOUT(i->flags);
@@ -265,7 +269,7 @@ int revert_files_commit(struct strbuf_list *list, ssize_t n)
 }
 
 void revert_directory(struct pack_file_cache *cache, struct index_list *list,
-    const char *path, size_t n)
+                      const char *path, size_t n)
 {
 
     if (count_new && count_modified && !rev_opts.force) {
@@ -288,7 +292,7 @@ void revert_directory(struct pack_file_cache *cache, struct index_list *list,
         if (v.entry_type == _FILE) {
             i = find_file_index_list(list, p.buf);
             if (!i) {
-                printf(YELLOW" %s"RESET": Not Checked in!\n", p.buf);
+                printf(YELLOW " %s" RESET ": Not Checked in!\n", p.buf);
             } else
                 revert_file(cache, i);
         } else if (v.entry_type == _FOLDER) {
@@ -334,12 +338,13 @@ int revert_parse_options(int argc, char *argv[])
                 cm = get_nth_commit(cl, rev_opts.revert_count);
                 cache_pack_file(&cache);
                 make_index_list_from_commit(cm, &list);
-                revert_directory(&cache, list, peg_path.buf, rev_opts.revert_count);
+                revert_directory(&cache, list, peg_path.buf,
+                                 rev_opts.revert_count);
                 invalidate_cache(&cache);
                 commit_list_del(&cl);
             } else if (S_ISREG(st.st_mode)) {
-                strbuf_list_add(&rev_opts.list, peg_path.buf,
-                    peg_path.len, 0, 0);
+                strbuf_list_add(&rev_opts.list, peg_path.buf, peg_path.len, 0,
+                                0);
                 rev_opts.files = 1;
             }
             rev_opts.normal = 0;

@@ -1,17 +1,11 @@
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
-#include "strbuf.h"
 #include "author.h"
 #include "sha1-inl.h"
+#include "strbuf.h"
 
-enum {
-    S_STARTUP,
-    S_END,
-    S_CRITICAL,
-    S_NORMAL,
-    S_QUITABLE
-};
+enum { S_STARTUP, S_END, S_CRITICAL, S_NORMAL, S_QUITABLE };
 
 struct config_list {
     struct strbuf key;
@@ -51,21 +45,19 @@ extern void project_details_init(struct project_details *pd);
 extern void set_project_name(struct project_details *pd, const char *name);
 
 /* set the author name or add a new author */
-extern void
-set_project_author(struct project_details *pd, const char *author_name);
+extern void set_project_author(struct project_details *pd,
+                               const char *author_name);
 
 /* set the project description or append it to the old */
-extern void
-set_project_description(struct project_details *pd,
-                             struct strbuf *description, int append);
+extern void set_project_description(struct project_details *pd,
+                                    struct strbuf *description, int append);
 
 /* set the project start date */
-extern void
-set_project_start_date(struct project_details *pd, struct strbuf *date);
-
+extern void set_project_start_date(struct project_details *pd,
+                                   struct strbuf *date);
 
 extern struct config_list *get_environment_value(struct peg_env *env,
-    const char *key);
+                                                 const char *key);
 
 extern int parse_config_file(struct peg_env *env);
 
@@ -107,7 +99,8 @@ static void vud()
 {
     char pswd[100];
     if (environment.pswd) {
-        printf("Enter password for \"" CYAN "%s" RESET"\": ", environment.owner);
+        printf("Enter password for \"" CYAN "%s" RESET "\": ",
+               environment.owner);
         fgets(pswd, 100, stdin);
         while (!validate_user(pswd)) {
             printf("Entered password doesn't match, try again: ");

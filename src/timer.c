@@ -1,33 +1,27 @@
 #define _GNU_SOURCE /* Required to use signals */
 
 #include "timer.h"
-#include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
-void init_timer(struct timer_t *timer)
-{
-    memset(timer, 0, sizeof(*timer));
-}
+void init_timer(struct timer_t *timer) { memset(timer, 0, sizeof(*timer)); }
 
-struct timer_t default_timer = { .do_signal = 0, .max_signal = -1 };
+struct timer_t default_timer = {.do_signal = 0, .max_signal = -1};
 
-static void alarm_handler(int sig)
-{
-    default_timer.do_signal = 1;
-}
+static void alarm_handler(int sig) { default_timer.do_signal = 1; }
 
 int set_timer__with_handler(struct timer_t *timer, unsigned int ms,
-                    handler_t handler)
+                            handler_t handler)
 {
     struct itimerval itv;
     struct sigaction sa;
-    
+
     sigemptyset(&sa.sa_mask);
-    
+
     sa.sa_flags = SA_RESTART;
     sa.sa_handler = handler;
-    
+
     if (sigaction(SIGALRM, &sa, NULL) == -1) {
         return -1; // unable to set handler
     }
@@ -59,10 +53,7 @@ void timer_reset_signal(struct timer_t *timer)
     }
 }
 
-void reset_signal()
-{
-    timer_reset_signal(&default_timer);
-}
+void reset_signal() { timer_reset_signal(&default_timer); }
 
 void stop_timer()
 {
@@ -81,17 +72,8 @@ void stop_timer()
     }
 }
 
-int timer_got_signal(struct timer_t *timer)
-{
-    return timer->do_signal;
-}
+int timer_got_signal(struct timer_t *timer) { return timer->do_signal; }
 
-int got_signal()
-{
-    return timer_got_signal(&default_timer);
-}
+int got_signal() { return timer_got_signal(&default_timer); }
 
-void set_default_signal_count(int count)
-{
-    default_timer.max_signal = count;
-}
+void set_default_signal_count(int count) { default_timer.max_signal = count; }

@@ -4,21 +4,21 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
-#include <stdio.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdlib.h>
+#include <assert.h>
 #include <ctype.h>
-#include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
-#include <signal.h>
-#include <assert.h>
-#include <stdint.h>
-#include <stdbool.h>
 
 #define REALLOC_ARRAY(x, alloc) (x) = realloc((x), (alloc) * sizeof(*(x)))
 #define alloc_nr(x) (((x) + 16) * 3 / 2)
@@ -43,7 +43,7 @@
         }                                                                      \
     } while (0)
 
-#define MALLOC(type, size) (type *) malloc(sizeof(type) * size)
+#define MALLOC(type, size) (type *)malloc(sizeof(type) * size)
 
 #ifndef error
 #define error(...) fprintf(stderr, __VA_ARGS__);
@@ -53,8 +53,7 @@
     {                                                                          \
         fprintf(stderr, "%s: ", prefix);                                       \
         fprintf(stderr, __VA_ARGS__);                                          \
-    \
-}
+    }
 
 /**
  * This global variable stores the name of the program currently being used.
@@ -98,63 +97,63 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
  * basic colors used for output
  */
 #ifndef NO_COLOR
-    #define BLACK "\x1b[30m"
-    #define RED "\x1b[31m"
-    #define GREEN "\x1b[32m"
-    #define YELLOW "\x1b[33m"
-    #define BLUE "\x1b[34m"
-    #define MAGENTA "\x1b[35m"
-    #define CYAN "\x1b[36m"
-    #define WHITE "\x1b[37m"
-    #define RESET "\x1b[0;0m"
-    #define BROWN "\x1b[31;32m"
-    #define GREY "\u001b[90m"
-    #define BOLD        "\033[1m"
-    #define BOLD_RED    "\033[1;31m"
-    #define BOLD_GREEN    "\033[1;32m"
-    #define BOLD_YELLOW    "\033[1;33m"
-    #define BOLD_BLUE    "\033[1;34m"
-    #define BOLD_MAGENTA    "\033[1;35m"
-    #define BOLD_CYAN    "\033[1;36m"
-    #define BG_RED    "\033[41m"
-    #define BG_GREEN    "\033[42m"
-    #define BG_YELLOW    "\033[43m"
-    #define BG_BLUE    "\033[44m"
-    #define BG_MAGENTA    "\033[45m"
-    #define COLOR_BG_CYAN    "\033[46m"
+#define BLACK "\x1b[30m"
+#define RED "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define YELLOW "\x1b[33m"
+#define BLUE "\x1b[34m"
+#define MAGENTA "\x1b[35m"
+#define CYAN "\x1b[36m"
+#define WHITE "\x1b[37m"
+#define RESET "\x1b[0;0m"
+#define BROWN "\x1b[31;32m"
+#define GREY "\u001b[90m"
+#define BOLD "\033[1m"
+#define BOLD_RED "\033[1;31m"
+#define BOLD_GREEN "\033[1;32m"
+#define BOLD_YELLOW "\033[1;33m"
+#define BOLD_BLUE "\033[1;34m"
+#define BOLD_MAGENTA "\033[1;35m"
+#define BOLD_CYAN "\033[1;36m"
+#define BG_RED "\033[41m"
+#define BG_GREEN "\033[42m"
+#define BG_YELLOW "\033[43m"
+#define BG_BLUE "\033[44m"
+#define BG_MAGENTA "\033[45m"
+#define COLOR_BG_CYAN "\033[46m"
 #else
-    #define BLACK ""
-    #define RED ""
-    #define GREEN ""
-    #define YELLOW ""
-    #define BLUE ""
-    #define MAGENTA ""
-    #define CYAN ""
-    #define WHITE ""
-    #define RESET ""
-    #define BROWN ""
-    #define GREY ""
-    #define BOLD ""
-    #define BOLD_RED ""
-    #define BOLD_GREEN ""
-    #define BOLD_YELLOW ""
-    #define BOLD_BLUE ""
-    #define BOLD_MAGENTA ""
-    #define BOLD_CYAN ""
-    #define BG_RED ""
-    #define BG_GREEN ""
-    #define BG_YELLOW ""
-    #define BG_BLUE ""
-    #define BG_MAGENTA ""
-    #define COLOR_BG_CYAN ""
+#define BLACK ""
+#define RED ""
+#define GREEN ""
+#define YELLOW ""
+#define BLUE ""
+#define MAGENTA ""
+#define CYAN ""
+#define WHITE ""
+#define RESET ""
+#define BROWN ""
+#define GREY ""
+#define BOLD ""
+#define BOLD_RED ""
+#define BOLD_GREEN ""
+#define BOLD_YELLOW ""
+#define BOLD_BLUE ""
+#define BOLD_MAGENTA ""
+#define BOLD_CYAN ""
+#define BG_RED ""
+#define BG_GREEN ""
+#define BG_YELLOW ""
+#define BG_BLUE ""
+#define BG_MAGENTA ""
+#define COLOR_BG_CYAN ""
 #endif
 
 #ifdef _WIN32
- #define USERPROFILE "USERPROFILE"
- #define SIZE_T_FORMAT "%llu"
+#define USERPROFILE "USERPROFILE"
+#define SIZE_T_FORMAT "%llu"
 #else
- #define USERPROFILE "HOME"
- #define SIZE_T_FORMAT "%zu"
+#define USERPROFILE "HOME"
+#define SIZE_T_FORMAT "%zu"
 #endif
 
 /**
@@ -185,11 +184,11 @@ extern int decompress(struct strbuf *src, struct strbuf *dest);
 #endif
 
 #ifndef usage
-    #define usage(...)                                                       \
-    do {                                                                     \
-        fprintf(stderr, CYAN"usage" RESET": ");                              \
-        fprintf(stderr, __VA_ARGS__);                                        \
-        exit(0);                                                             \
+#define usage(...)                                                             \
+    do {                                                                       \
+        fprintf(stderr, CYAN "usage" RESET ": ");                              \
+        fprintf(stderr, __VA_ARGS__);                                          \
+        exit(0);                                                               \
     } while (0)
 #endif
 

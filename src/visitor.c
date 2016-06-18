@@ -10,7 +10,8 @@ void visitor_init(struct visitor *v)
 
 void visitor_close(struct visitor *v)
 {
-    if (v->root) closedir(v->root);
+    if (v->root)
+        closedir(v->root);
     strbuf_release(&v->path);
     v->root = NULL;
 }
@@ -31,7 +32,8 @@ int visitor_visit(struct visitor *v, const char *path)
 int visitor_visit_next_entry(struct visitor *v)
 {
     struct stat st;
-    if (v->visited_all) return 1;
+    if (v->visited_all)
+        return 1;
 
     while ((v->current_entry = readdir(v->root)) != NULL) {
         if (!strcmp(v->current_entry->d_name, ".") ||
@@ -42,10 +44,10 @@ int visitor_visit_next_entry(struct visitor *v)
             strbuf_addch(&v->path, '/');
             strbuf_addstr(&v->path, v->current_entry->d_name);
             if (stat(v->path.buf, &st) < 0) {
-                fatal("%s: can't do stat, %s\n", v->path.buf,
-                    strerror(errno));
-                strbuf_setlen(&v->path,
-                    v->path.len - strlen(v->current_entry->d_name) - 1);
+                fatal("%s: can't do stat, %s\n", v->path.buf, strerror(errno));
+                strbuf_setlen(&v->path, v->path.len -
+                                            strlen(v->current_entry->d_name) -
+                                            1);
                 return -1;
             }
 
@@ -77,8 +79,7 @@ int visitor_visit_child_directory(struct visitor *v)
     }
 
     if (v->entry_type != _FOLDER) {
-        die("%s: %s: not a directory\n", v->path.buf,
-                v->current_entry->d_name);
+        die("%s: %s: not a directory\n", v->path.buf, v->current_entry->d_name);
         return -1;
     }
     strbuf_addch(&v->path, '/');
@@ -98,7 +99,8 @@ int visitor_visit_parent(struct visitor *v)
         return 0;
     }
 
-    while ((v->path.len) && v->path.buf[v->path.len--] != '/') /* do nothing */;
+    while ((v->path.len) && v->path.buf[v->path.len--] != '/') /* do nothing */
+        ;
     v->path.buf[v->path.len] = '\0';
     return 0;
 }
@@ -115,8 +117,8 @@ int visitor_make_folder(struct visitor *v, const char *name)
 #else
     if (mkdir(absolute_path.buf, 0777) < 0) {
 #endif
-        die("%s: can't make a folder, %s.\n",
-                absolute_path.buf, strerror(errno));
+        die("%s: can't make a folder, %s.\n", absolute_path.buf,
+            strerror(errno));
         return -1;
     }
     return 0;

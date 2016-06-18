@@ -1,10 +1,10 @@
 #include "commit.h"
-#include "stage.h"
 #include "delta.h"
+#include "global.h"
 #include "path.h"
 #include "project-init.h"
-#include "global.h"
 #include "show-tables.h"
+#include "stage.h"
 
 #include <math.h>
 
@@ -34,9 +34,9 @@ enum cmd_type {
 #define CREATE_DESC "create a peg repository"
 #define INSERT_DESC "insert the files into stage area or temporary database"
 #define COMMIT_DESC "commit the changes"
-#define RESET_DESC  "remove the files present in the stage area"
+#define RESET_DESC "remove the files present in the stage area"
 #define REVERT_DESC "revert the local changes"
-#define SHOW_DESC   "displays the tables"
+#define SHOW_DESC "displays the tables"
 #define COMPARE_DESC "shows the changes made till the last commit"
 #define STATUS_DESC "shows the status of the project directory"
 #define HIST_DESC "logs the commits"
@@ -53,25 +53,23 @@ struct command_type {
     char *desc;
 };
 
-static struct command_type cmds[] = {
-    { CREATE, "create", CREATE_DESC },
-    { INSERT, "insert", INSERT_DESC },
-    { COMMIT, "commit", COMMIT_DESC },
-    { RST, "reset", RESET_DESC },
-    { HIST, "hist", HIST_DESC },
-    { HEAD, "head", HEAD_DESC },
-    { STATUS, "status", STATUS_DESC },
-    { SHOW, "show", SHOW_DESC },
-    { REVERT, "revert", REVERT_DESC },
-    { COMPARE, "compare", COMPARE_DESC },
-    { CHECKOUT, "checkout", CHECKOUT_DESC },
-    { LIST, "list", LIST_DESC },
-    { TAG, "tag", TAG_DESC },
-    { REPLAY, "replay", REPLAY_DESC },
-    { HELP, "help", HELP_DESC },
-    { SEE, "seeChanges" },
-    { SET, "setAlias" }
-};
+static struct command_type cmds[] = {{CREATE, "create", CREATE_DESC},
+                                     {INSERT, "insert", INSERT_DESC},
+                                     {COMMIT, "commit", COMMIT_DESC},
+                                     {RST, "reset", RESET_DESC},
+                                     {HIST, "hist", HIST_DESC},
+                                     {HEAD, "head", HEAD_DESC},
+                                     {STATUS, "status", STATUS_DESC},
+                                     {SHOW, "show", SHOW_DESC},
+                                     {REVERT, "revert", REVERT_DESC},
+                                     {COMPARE, "compare", COMPARE_DESC},
+                                     {CHECKOUT, "checkout", CHECKOUT_DESC},
+                                     {LIST, "list", LIST_DESC},
+                                     {TAG, "tag", TAG_DESC},
+                                     {REPLAY, "replay", REPLAY_DESC},
+                                     {HELP, "help", HELP_DESC},
+                                     {SEE, "seeChanges"},
+                                     {SET, "setAlias"}};
 
 #define COMMAND_COUNT 16
 
@@ -134,10 +132,9 @@ void init_command(struct command *cmd)
     cmd->argv = NULL;
 }
 
-
 void warn_no_user_config()
 {
-    fprintf(stderr, YELLOW"warning"RESET": no user name provided.\n");
+    fprintf(stderr, YELLOW "warning" RESET ": no user name provided.\n");
 }
 
 void create_peg_environment()
@@ -166,10 +163,7 @@ void create_peg_environment()
         environment.pswd = true;
 }
 
-void set_environment_value(const char *key, const char *value)
-{
-
-}
+void set_environment_value(const char *key, const char *value) {}
 
 enum cmd_type find_command(struct core_commands *cmds, const char *cmd)
 {
@@ -183,10 +177,7 @@ enum cmd_type find_command(struct core_commands *cmds, const char *cmd)
     return UNKNOWN;
 }
 
-void read_user_cmds(struct core_commands **head, struct core_commands *last)
-{
-
-}
+void read_user_cmds(struct core_commands **head, struct core_commands *last) {}
 
 void gen_core_commands(struct core_commands **head)
 {
@@ -222,11 +213,7 @@ int skip_command_prefix(struct strbuf *args)
     return i;
 }
 
-enum match_type {
-    MATCHED,
-    UNMATCH,
-    END
-};
+enum match_type { MATCHED, UNMATCH, END };
 
 void suggest_create_usage()
 {
@@ -238,16 +225,13 @@ bool help(int argc, char **argv)
 {
     if (argc == 1) {
         usage("peg help <command>\n"
-        " (`peg --help` displays all the peg commands)\n");
+              " (`peg --help` displays all the peg commands)\n");
         return true;
     }
     return true;
 }
 
-bool parse_set_cmd(int argc, char **argv)
-{
-    return true;
-}
+bool parse_set_cmd(int argc, char **argv) { return true; }
 
 bool create_tag(int argc, char *argv[])
 {
@@ -258,7 +242,8 @@ bool create_tag(int argc, char *argv[])
 
     if (argc == 2)
         set_tag(NULL, 0, argv[1]);
-    else set_tag(argv[1], strlen(argv[1]), argv[2]);
+    else
+        set_tag(argv[1], strlen(argv[1]), argv[2]);
     return true;
 }
 
@@ -266,63 +251,61 @@ bool exec_commands_args(enum cmd_type cmd, int count, char **in)
 {
     size_t peek;
     switch (cmd) {
-        case CREATE:
-            return initialize_empty_project(count, in);
-        case INSERT:
-            return stage_main(count, in);
-        case REVERT:
-            return checkout(count, in);
-        case COMMIT:
-            return commit(count, in);
-        case HELP:
-            return help(count, in);
-        case COMPARE:
-            return delta_main(count, in);
-        case SEE:
-            return delta_main(count, in);
-        case SET:
-            return parse_set_cmd(count, in);
+    case CREATE:
+        return initialize_empty_project(count, in);
+    case INSERT:
+        return stage_main(count, in);
+    case REVERT:
+        return checkout(count, in);
+    case COMMIT:
+        return commit(count, in);
+    case HELP:
+        return help(count, in);
+    case COMPARE:
+        return delta_main(count, in);
+    case SEE:
+        return delta_main(count, in);
+    case SET:
+        return parse_set_cmd(count, in);
 
-        case RST:
-            {
-                struct cache_object co;
-                cache_object_init(&co);
-                cache_object_clean(&co);
-                exit(0);
-            }
+    case RST: {
+        struct cache_object co;
+        cache_object_init(&co);
+        cache_object_clean(&co);
+        exit(0);
+    }
 
-        case STATUS:
-            return status_main(count, in);
-        case TAG:
-            return create_tag(count, in);
-        case HIST:
-        {
-            print_commits();
-            break;
-        }
-        case LIST:
-            return list_index(count, in);
+    case STATUS:
+        return status_main(count, in);
+    case TAG:
+        return create_tag(count, in);
+    case HIST: {
+        print_commits();
+        break;
+    }
+    case LIST:
+        return list_index(count, in);
 
-        case SHOW:
-            return show_tables(count, in);
+    case SHOW:
+        return show_tables(count, in);
 
-        case HEAD:
-            reset_head_command(count, in);
-            return 0;
+    case HEAD:
+        reset_head_command(count, in);
+        return 0;
 
-        case CHECKOUT:
-            status(".");
-            revert_files_hard();
-            return 0;
+    case CHECKOUT:
+        status(".");
+        revert_files_hard();
+        return 0;
 
-        case REPLAY:
-            system("bash replay");
-            exit(0);
+    case REPLAY:
+        system("bash replay");
+        exit(0);
 
-        case USER:
-        case INVALID:
-        case UNKNOWN:
-        {}
+    case USER:
+    case INVALID:
+    case UNKNOWN: {
+    }
     }
     return 0;
 }
@@ -336,14 +319,15 @@ void print_help()
 {
     printf("Available `peg` commands: \n");
     for (int i = 0; i < COMMAND_COUNT - 2; i++) {
-        printf("  "YELLOW"%10s"RESET"\t%s\n", cmds[i].cmd, cmds[i].desc);
+        printf("  " YELLOW "%10s" RESET "\t%s\n", cmds[i].cmd, cmds[i].desc);
     }
-    printf("( use <PEG HELP ALL> to get a list of all \ncommands with their syntax and functionality)\n ");
+    printf("( use <PEG HELP ALL> to get a list of all \ncommands with their "
+           "syntax and functionality)\n ");
 }
 
-//Suggetion System
-int levenshtein(const char *string1, const char *string2,
-        int w, int s, int a, int d)
+// Suggetion System
+int levenshtein(const char *string1, const char *string2, int w, int s, int a,
+                int d)
 {
     int len1 = strlen(string1), len2 = strlen(string2);
     int *row0 = malloc(sizeof(int) * (len2 + 1));
@@ -362,8 +346,7 @@ int levenshtein(const char *string1, const char *string2,
             row2[j + 1] = row1[j] + s * (string1[i] != string2[j]);
             /* swap */
             if (i > 0 && j > 0 && string1[i - 1] == string2[j] &&
-                    string1[i] == string2[j - 1] &&
-                    row2[j + 1] > row0[j - 1] + w)
+                string1[i] == string2[j - 1] && row2[j + 1] > row0[j - 1] + w)
                 row2[j + 1] = row0[j - 1] + w;
             /* deletion */
             if (row2[j + 1] > row1[j + 1] + d)
@@ -388,32 +371,30 @@ int levenshtein(const char *string1, const char *string2,
 }
 //
 
-enum cmd_type suggest_commands(char *cmdbuff,struct core_commands *head)
-{   struct core_commands *node=head;
-    int w,s,a,d,min=100000;
+enum cmd_type suggest_commands(char *cmdbuff, struct core_commands *head)
+{
+    struct core_commands *node = head;
+    int w, s, a, d, min = 100000;
     struct core_commands *indexsp;
-    w=s=a=d=strlen(cmdbuff);
-    while(node!=NULL)
-    {
-    node->cmd.match = levenshtein(cmdbuff, node->cmd.name.buf,w,s,a,d);
-    if((node->cmd.match)<min)
-    {
-            min=node->cmd.match;
-            indexsp=node;
-
+    w = s = a = d = strlen(cmdbuff);
+    while (node != NULL) {
+        node->cmd.match = levenshtein(cmdbuff, node->cmd.name.buf, w, s, a, d);
+        if ((node->cmd.match) < min) {
+            min = node->cmd.match;
+            indexsp = node;
         }
-        node=node->next;
+        node = node->next;
     }
-    fprintf(stderr,"%s is not a valid peg command\nDid you mean?\n\t",cmdbuff);
-    fprintf(stderr, "%s\n(y/n)\n",indexsp->cmd.name.buf);
+    fprintf(stderr, "%s is not a valid peg command\nDid you mean?\n\t",
+            cmdbuff);
+    fprintf(stderr, "%s\n(y/n)\n", indexsp->cmd.name.buf);
     char ch;
-    ch=getchar();
-    if(tolower(ch)=='y')
+    ch = getchar();
+    if (tolower(ch) == 'y')
         return indexsp->cmd.type;
     else
         return UNKNOWN;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -439,10 +420,10 @@ int main(int argc, char *argv[])
     t = find_command(head, argv[1]);
     if (t == UNKNOWN) {
 
-        t=suggest_commands(argv[1],head);
+        t = suggest_commands(argv[1], head);
 
-        if(t == UNKNOWN)
-        exit(0);
+        if (t == UNKNOWN)
+            exit(0);
     }
     exec_cmd(t, --argc, (argv + 1));
     return 0;

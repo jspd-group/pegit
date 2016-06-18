@@ -25,5 +25,6 @@ void get_human_path_buf(struct strbuf *bf, const char *peg_path)
 {
     if (peg_path[0] == '.' && peg_path[1] == '/')
         strbuf_add(bf, peg_path + 2, strlen(peg_path));
-    else strbuf_add(bf, peg_path, strlen(peg_path));
+    else
+        strbuf_add(bf, peg_path, strlen(peg_path));
 }

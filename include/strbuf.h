@@ -145,7 +145,8 @@ extern int strbuf_cmp(const struct strbuf *, const struct strbuf *);
  */
 static inline void strbuf_addch(struct strbuf *sb, int c)
 {
-    if (!strbuf_avail(sb)) strbuf_grow(sb, 1);
+    if (!strbuf_avail(sb))
+        strbuf_grow(sb, 1);
     sb->buf[sb->len++] = c;
     sb->buf[sb->len] = '\0';
 }
@@ -311,7 +312,8 @@ extern void extract_filename(struct strbuf *buf, const char *path);
  */
 static inline void strbuf_complete(struct strbuf *sb, char term)
 {
-    if (sb->len && sb->buf[sb->len - 1] != term) strbuf_addch(sb, term);
+    if (sb->len && sb->buf[sb->len - 1] != term)
+        strbuf_addch(sb, term);
 }
 
 static inline void strbuf_complete_line(struct strbuf *sb)
@@ -384,6 +386,6 @@ extern void strbuf_humanise_bytes(struct strbuf *buf, off_t bytes);
 
 extern int peg_snprintf(char *str, size_t maxsize, const char *format, ...);
 extern int peg_vsnprintf(char *str, size_t maxsize, const char *format,
-    va_list ap);
+                         va_list ap);
 
 #endif /* STRBUF_H */

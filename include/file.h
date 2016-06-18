@@ -1,8 +1,8 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "util.h"
 #include "strbuf.h"
+#include "util.h"
 
 /**
  *  Various file structures useful for file handling
@@ -13,8 +13,8 @@
  * (should not be used without file_spec)
  */
 struct filecache {
-    struct strbuf *data;    /* data inside the file though not always text. But can
-                             be binary data also */
+    struct strbuf *data; /* data inside the file though not always text. But can
+                          be binary data also */
 };
 
 /**
@@ -24,13 +24,13 @@ struct filecache {
  * details. This struct also do the file caching for faster reading.
  */
 struct filespec {
-    struct strbuf fname;    /* name of the file */
+    struct strbuf fname; /* name of the file */
     FILE *file;
-    time_t last_modified;    /* time of the last modified */
-    struct stat st;    /* stat of the file for additional information */
+    time_t last_modified; /* time of the last modified */
+    struct stat st;       /* stat of the file for additional information */
     struct filecache cache;
     char sha1[HASH_SIZE]; /* hash generated of the file */
-    size_t length;      /* length of the file */
+    size_t length;        /* length of the file */
 
     /**
      * (don't use in case you don't need the information of the directory)
@@ -63,16 +63,13 @@ extern size_t file_length(FILE *file);
  * -1 if failed or some error occurred. size is the number of characters to
  * read from the file. Memory will be allocated to the out->data.
  */
-extern int filecache_init_fd(struct filecache *out,
-                                 int fd, size_t size);
-
+extern int filecache_init_fd(struct filecache *out, int fd, size_t size);
 
 /**
  * Make a filecache from a given FILE pointer. Returns 0 if reading was
  * successful from the given FILE pointer, otherwise return -1 on error.
  */
-extern int filecache_init_file(struct filecache *out,
-                                   FILE *f, size_t size);
+extern int filecache_init_file(struct filecache *out, FILE *f, size_t size);
 
 /**
  * struct filespec
@@ -83,8 +80,7 @@ extern int filecache_init_file(struct filecache *out,
  * Initialise a file_spec structure from a given file_name or its path.
  * returns 0 if successful otherwise -1 on error.
  */
-extern int filespec_init(struct filespec *fs, const char *name, const char*);
-
+extern int filespec_init(struct filespec *fs, const char *name, const char *);
 
 /**
  * release the resources allocated to the fs
@@ -107,7 +103,7 @@ extern int filespec_read_safe(struct filespec *fs, struct strbuf *buf);
  * reading may be done by just copying the pointer to cached file.
  */
 extern int filespec_read_unsafe(struct filespec *fs, struct strbuf *buf,
-                                                                    int fast);
+                                int fast);
 
 /**
  * cache the file to the main memory to speed up the reading

@@ -1,13 +1,14 @@
 #include "file.h"
 
 #include "sha1-inl.h"
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 int filecache_init(struct filecache *fi)
 {
     fi->data = (struct strbuf *)malloc(sizeof(struct strbuf));
-    if (!fi->data) error("out of memory\n");
+    if (!fi->data)
+        error("out of memory\n");
     strbuf_init(fi->data, 0);
     return 0;
 }
@@ -46,7 +47,8 @@ void filespec_setname_and_dir(struct filespec *fs, const char *name)
     extract_filename(&fs->fname, name);
     strbuf_init(&fs->dir_name, 0);
 
-    if (!strcmp(name, fs->fname.buf)) strbuf_addstr(&fs->dir_name, "./");
+    if (!strcmp(name, fs->fname.buf))
+        strbuf_addstr(&fs->dir_name, "./");
 
     strbuf_add(&fs->dir_name, t.buf, t.len - fs->fname.len);
 
@@ -77,7 +79,8 @@ void filespec_getfullpath(struct filespec *fs, struct strbuf *buf)
 int filespec_stat(struct filespec *fs, const char *name)
 {
     if (stat(name, &fs->st) == -1) {
-        fprintf(stderr, "fatal: %s: can't do stat: %s\n", name, strerror(errno));
+        fprintf(stderr, "fatal: %s: can't do stat: %s\n", name,
+                strerror(errno));
         return -1;
     }
     return 0;
@@ -130,7 +133,8 @@ int filespec_read_unsafe(struct filespec *fs, struct strbuf *buf, int fast)
     int err;
     if (!fs->cached) {
         err = filespec_cachefile(fs);
-        if (err) return -1;
+        if (err)
+            return -1;
         fs->cached = 1;
     }
 
@@ -178,7 +182,8 @@ int filespec_sha1(struct filespec *fs, char sha1[20])
                 sizeof(time_t) + fs->fname.len + fs->dir_name.len + fs->length);
 
     if (!fs->cached) {
-        if (filespec_cachefile(fs) < 0) return -1;
+        if (filespec_cachefile(fs) < 0)
+            return -1;
     }
 
     strbuf_addbuf(&buf, &fs->fname);

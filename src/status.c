@@ -1,11 +1,11 @@
-#include <stdio.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include "util.h"
-#include <string.h>
-#include "commit.h"
-#include <malloc.h>
 #include "status.h"
+#include "commit.h"
+#include "util.h"
+#include <dirent.h>
+#include <malloc.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #define CHECKED (0x1 << 5)
 #define mark_checked(x) (x->flags |= CHECKED)
@@ -64,7 +64,8 @@ int status(char *p)
 back:
     directory = opendir(parent_dir); // open the current working directory
     if (directory == NULL)
-        die("Could not open the directory %s, %s\n", parent_dir, strerror(errno));
+        die("Could not open the directory %s, %s\n", parent_dir,
+            strerror(errno));
 
     while ((d = readdir(directory))) // start reading the content of directory
                                      // which can be a file or a directory
@@ -199,15 +200,16 @@ back:
     return 0;
 }
 
-int status_main(int argc, char* argv[])  // arguments in main send to give options to the user
+int status_main(
+    int argc,
+    char *argv[]) // arguments in main send to give options to the user
 {
     if (argc > 1) {
         if (!strcmp(argv[1], "--html")) {
             status(".");
             print_status_html(root);
             return 0;
-        }
-        else
+        } else
             status(argv[1]);
     } else {
         status(".");
@@ -221,7 +223,7 @@ struct node *createnode()
     return ((struct node *)malloc(sizeof(struct node)));
 }
 
-void intialise_node(struct node **node, char * name , int status,
+void intialise_node(struct node **node, char *name, int status,
                     struct node *next)
 {
     (*node)->name = name;
@@ -244,7 +246,7 @@ void insert_node(struct node **root, struct node **current_node,
 void push(struct dirent *d, char *parent_dir)
 {
     d_ptr = ((struct d_node *)malloc(sizeof(struct d_node)));
-    strbuf_init(&d_ptr->name,0);
+    strbuf_init(&d_ptr->name, 0);
     strbuf_addstr(&d_ptr->name, d->d_name);
     d_ptr->parent_dir = parent_dir;
     d_ptr->next = NULL;
@@ -288,14 +290,15 @@ void print_status(struct node *root)
         return;
     }
     if (count_modified || count_deleted) {
-        printf("Changes not staged for commit, please use "
-            YELLOW"\"peg insert --all --modified\"" RESET " to add the"
-            "modified files\n");
+        printf("Changes not staged for commit, please use " YELLOW
+               "\"peg insert --all --modified\"" RESET " to add the"
+               "modified files\n");
         while (tptr != NULL) {
             if (tptr->status == S_MODIFIED || tptr->status == S_DELETED) {
                 printf(RED);
-                printf("    %s: %s\n", tptr->status == S_MODIFIED ? "modified"
-                : "deleted", tptr->name);
+                printf("    %s: %s\n",
+                       tptr->status == S_MODIFIED ? "modified" : "deleted",
+                       tptr->name);
             }
             tptr = tptr->next;
         }
@@ -332,7 +335,8 @@ void print_status(struct node *root)
 
 void print_status_html(struct node *root)
 {
-    printf("<html><head><style> li#modified { color: red; } li#new { color: blue } </style>");
+    printf("<html><head><style> li#modified { color: red; } li#new { color: "
+           "blue } </style>");
     struct node *tptr = NULL;
     tptr = root;
     printf("<strong>status   file</strong>");
@@ -341,11 +345,12 @@ void print_status_html(struct node *root)
         return;
     }
     if (count_modified || count_deleted) {
-                printf("<ul color=\"red\">");
+        printf("<ul color=\"red\">");
         while (tptr != NULL) {
             if (tptr->status == S_MODIFIED || tptr->status == S_DELETED) {
-                printf("<li>%s: %s\n</li>", tptr->status == S_MODIFIED ? "modified"
-                : "deleted", tptr->name);
+                printf("<li>%s: %s\n</li>",
+                       tptr->status == S_MODIFIED ? "modified" : "deleted",
+                       tptr->name);
             }
             tptr = tptr->next;
         }
@@ -354,14 +359,14 @@ void print_status_html(struct node *root)
 
     tptr = root;
     if (count_new) {
-                printf("<ul bgcolor=\"#FF9494\" color=white>");
+        printf("<ul bgcolor=\"#FF9494\" color=white>");
         while (tptr != NULL) {
             if (tptr->status == S_NEW) {
                 printf("<li id=new>new: %s</li>\n", tptr->name);
             }
             tptr = tptr->next;
         }
-                printf("<ul>\n");
+        printf("<ul>\n");
     }
     tptr = root;
     if (status_opts.old) {
@@ -377,4 +382,3 @@ void print_status_html(struct node *root)
         }
     }
 }
-

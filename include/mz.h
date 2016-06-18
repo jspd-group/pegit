@@ -29,5 +29,4 @@ extern int compress_default(struct strbuf *src, struct strbuf *dest);
  */
 extern int decompress(struct strbuf *src, struct strbuf *dest);
 
-
 #endif /* MZ_WRAPPER_H_ */
