@@ -448,7 +448,7 @@ int detect_and_add_files(const char *dir)
             strbuf_init(&node->file, node->st.st_size);
             r = read(fd, node->file.buf, node->st.st_size);
             if (r < 0) {
-                die("read returned %lld\n", r);
+                die("read returned %zd\n", r);
             }
             last = opts.bytes;
             opts.bytes += node->st.st_size;

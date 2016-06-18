@@ -256,11 +256,11 @@ void delta_stat(struct basic_delta_result *bdr, struct strbuf *stat)
     }
 #ifdef _WIN32
     if (bdr->insertions || bdr->deletions == 0) {
-        strbuf_addf(stat, BOLD_GREEN"%llu"RESET" %s ", bdr->insertions,
+        strbuf_addf(stat, BOLD_GREEN SIZE_T_FORMAT RESET" %s ", bdr->insertions,
                     (bdr->insertions == 1) ? "insertion(+)" : "insertions(+)");
     }
     if (bdr->deletions || bdr->insertions == 0) {
-        strbuf_addf(stat, BOLD_RED"%llu"RESET" %s ", bdr->deletions,
+        strbuf_addf(stat, BOLD_RED SIZE_T_FORMAT RESET" %s ", bdr->deletions,
                     (bdr->deletions == 1) ? "deletion(-)" : "deletions(-)");
     }
 #else
@@ -283,14 +283,14 @@ void print_delta_stat(struct basic_delta_result *bdr)
     size_t deletions = bdr->deletions;
 
     if (insertions) {
-        fprintf(stdout, "%llu %s", insertions, insertions == 1 ?
+        fprintf(stdout, SIZE_T_FORMAT" %s", insertions, insertions == 1 ?
             "insertion" : "insertions");
     }
     if (insertions && deletions) {
         printf(", ");
     }
     if (deletions) {
-        fprintf(stdout, "%llu %s", deletions, deletions == 1 ?
+        fprintf(stdout, SIZE_T_FORMAT " %s", deletions, deletions == 1 ?
             "deletion" : "deletions");
     }
     putchar('\n');
@@ -454,9 +454,9 @@ size_t print_lines(struct strbuf *buf, bool i_or_d)
     size_t lines = count_lines(buf);
 
 #ifdef _WIN32
-    i_or_d ? fprintf(stdout, BOLD_GREEN "%llu"RESET" %s\n", lines,
+    i_or_d ? fprintf(stdout, BOLD_GREEN  SIZE_T_FORMAT RESET" %s\n", lines,
                      lines == 1 ? "addition" : "additions")
-           : fprintf(stdout, BOLD_RED"%llu"RESET" %s\n", lines,
+           : fprintf(stdout, BOLD_RED SIZE_T_FORMAT RESET" %s\n", lines,
                      lines == 1 ? "deletion" : "deletions");
 #else
     i_or_d ? fprintf(stdout, BOLD_GREEN "%zu"RESET" %s\n", lines,
@@ -491,7 +491,7 @@ void print_insertion_only(struct pack_file_cache *cache, struct index *idx)
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
 #ifdef _WIN32
-    fprintf(stdout, BOLD_GREEN"%llu"RESET" %s", temp.alloc,
+    fprintf(stdout, BOLD_GREEN SIZE_T_FORMAT RESET" %s", temp.alloc,
             temp.alloc == 1 ? "addition\n" : "additions\n");
 #else
     fprintf(stdout, BOLD_GREEN"%zu"RESET" %s", temp.alloc,
@@ -543,7 +543,7 @@ void print_deletion_only(struct pack_file_cache *cache, struct index *idx)
     temp.buf = cache->cache.buf + idx->pack_start;
     temp.alloc = count_lines(&temp);
 #ifdef _WIN32
-    fprintf(stdout, BOLD_RED"%llu"RESET" %s\n", temp.alloc,
+    fprintf(stdout, BOLD_RED SIZE_T_FORMAT RESET" %s\n", temp.alloc,
             temp.alloc == 1 ? "deletion" : "deletions");
 #else
     fprintf(stdout, BOLD_RED"%zu"RESET" %s\n", temp.alloc,
@@ -762,7 +762,7 @@ int check_entry(const char *path)
             res = count_lines(&a);
             directory_delta_var.ds.deletions += res;
             if (directory_delta_var.minimal) {
-                fprintf(stdout, "%s: deleted, %llu deletions\n", path, res);
+                fprintf(stdout, "%s: deleted,  " SIZE_T_FORMAT "  deletions\n", path, res);
             } else {
                 print_deletion_lines(&a);
             }
@@ -839,14 +839,14 @@ void do_single_file_delta(const char *path, bool minimal)
             fprintf(stdout, "Summary: \n");
         }
         if (insertions) {
-            fprintf(stdout, "%llu %s", insertions, insertions == 1 ?
+            fprintf(stdout, SIZE_T_FORMAT "  %s", insertions, insertions == 1 ?
                 "insertion" : "insertions");
         }
         if (insertions && deletions) {
             printf(", ");
         }
         if (deletions) {
-            fprintf(stdout, "%llu %s", deletions, deletions == 1 ?
+            fprintf(stdout,  SIZE_T_FORMAT " %s", deletions, deletions == 1 ?
                 "deletion" : "deletions");
         }
         putchar('\n');
@@ -869,14 +869,14 @@ void do_directory_delta(const char *dir, bool minimal, struct delta_options *opt
             fprintf(stdout, "Summary: \n");
         }
         if (insertions) {
-            fprintf(stdout, "%llu %s", insertions, insertions == 1 ?
+            fprintf(stdout,  SIZE_T_FORMAT " %s", insertions, insertions == 1 ?
                 "insertion" : "insertions");
         }
         if (insertions && deletions) {
             printf(", ");
         }
         if (deletions) {
-            fprintf(stdout, "%llu %s", deletions, deletions == 1 ?
+            fprintf(stdout,  SIZE_T_FORMAT " %s", deletions, deletions == 1 ?
                 "deletion" : "deletions");
         }
         putchar('\n');

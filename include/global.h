@@ -108,10 +108,10 @@ static void vud()
     char pswd[100];
     if (environment.pswd) {
         printf("Enter password for \"" CYAN "%s" RESET"\": ", environment.owner);
-        gets(pswd);
+        fgets(pswd, 100, stdin);
         while (!validate_user(pswd)) {
             printf("Entered password doesn't match, try again: ");
-            gets(pswd);
+            fgets(pswd, 100, stdin);
         }
     }
 }

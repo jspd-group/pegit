@@ -64,17 +64,17 @@ void print_commit_stats(struct commit_options *opts, struct commit *cm)
     }
 #ifdef _WIN32
     if (!cm_opts.count) return;
-    printf(YELLOW" %llu"RESET" %s changed, ", opts->file_modified
+    printf(YELLOW" "SIZE_T_FORMAT""RESET" %s changed, ", opts->file_modified
         + opts->new_files,
         (opts->file_modified + opts->new_files) > 1 ? "files" : "file");
 
     if (opts->insertions)
-        printf(BOLD_GREEN"%llu"RESET" %s(+)", opts->insertions, opts->insertions
+        printf(BOLD_GREEN SIZE_T_FORMAT RESET" %s(+)", opts->insertions, opts->insertions
             > 1 ? "additions" : "addition");
     if (opts->insertions && opts->deletions)
         printf(", ");
     if (opts->deletions)
-        printf(BOLD_RED"%llu"RESET" %s(-)", opts->deletions, opts->deletions > 1
+        printf(BOLD_RED SIZE_T_FORMAT RESET" %s(-)", opts->deletions, opts->deletions > 1
             ? "deletions" : "deletion");
     putchar('\n');
 #else
@@ -510,7 +510,8 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
                 last = new;
             }
             if (cm_opts.progress && cm_opts.count && got_signal()) {
-                printf("\rInsertions: %llu, Deletions: %llu, Files: %llu",
+                printf("\rInsertions: "SIZE_T_FORMAT", Deletions: "
+                    SIZE_T_FORMAT", Files: "SIZE_T_FORMAT,
                     cm_opts.insertions, cm_opts.deletions,
                     cm_opts.file_modified + cm_opts.new_files );
                 reset_signal();
@@ -550,7 +551,7 @@ void transfer_staged_data(struct cache_object *co, struct index_list **head,
         strbuf_release(&old);
         idx = cache.cache.len;
         if (cm_opts.progress && cm_opts.count && got_signal()) {
-            printf("\rInsertions: %llu, Deletions: %llu, Files: %llu",
+            printf("\rInsertions: "SIZE_T_FORMAT", Deletions: "SIZE_T_FORMAT", Files: "SIZE_T_FORMAT,
                 cm_opts.insertions, cm_opts.deletions,
                 cm_opts.file_modified + cm_opts.new_files );
             reset_signal();
@@ -716,19 +717,22 @@ void print_index_list(struct index_list *il, int flags, const char *color)
     struct strbuf buf;
 
     while (node) {
-        printf("%c %llu\t%s%s " RESET, node->idx->flags == DELETED ? 'D' : 'M', node->idx->ver, color, node->idx->filename);
+        printf("%c "SIZE_T_FORMAT"\t%s%s " RESET,
+             node->idx->flags == DELETED ? 'D' : 'M',
+             node->idx->ver, color, node->idx->filename);
         if (flags == 0) {
             putchar('\n');
             node = node->next;
             continue;
         }
         if (flags & F_BOTH) {
-            printf("\t\t%llu ", node->idx->pack_start);
+            printf("\t\t"SIZE_T_FORMAT" ", node->idx->pack_start);
             print_humanised_bytes(node->idx->pack_len);
             printf(" ");
         }
         if (flags & F_PACK) {
-            printf("\t\t%llu-%llu ", node->idx->pack_start, node->idx->pack_start
+            printf("\t\t" SIZE_T_FORMAT"-"SIZE_T_FORMAT" ",
+                node->idx->pack_start, node->idx->pack_start
                 + node->idx->pack_len);
         }
         if (flags & F_SIZE) {
@@ -754,7 +758,7 @@ void print_index_list_html(struct index_list *il, int flags, const char *sha1)
         printf("</td><td>");
         print_hash((char*)sha1, stdout);
         printf("</td><td>");
-        printf("%llu", node->idx->pack_start);
+        printf(SIZE_T_FORMAT, node->idx->pack_start);
         printf("</td>");
         printf("</tr>");
         node = node->next;
@@ -894,7 +898,7 @@ void finalize_commit(struct commit_list *head, struct commit *new)
 
 void show_commit_node(struct commit_list *node, size_t i)
 {
-    printf("Commit_ID: %llu\n", i);
+    printf("Commit_ID: "SIZE_T_FORMAT"\n", i);
     printf("SHA1_ID: ");
     print_hash(node->item->sha1, stdout);
     if (IF_HEAD(node->item->flags)) {
@@ -914,7 +918,7 @@ void print_html_node(struct commit_list *node, size_t i)
 {
     struct commit *cm = node->item;
 
-    printf("<td>%llu</td>", i);
+    printf("<td>"SIZE_T_FORMAT"</td>", i);
     printf("<td>");
     print_hash(cm->sha1, stdout);
     printf("</td>");

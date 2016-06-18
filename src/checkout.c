@@ -82,7 +82,7 @@ void clean_directory(const char *path)
             node = node->next;
         }
         printf("Do you want to continue?\n");
-        gets(ans);
+        fgets(ans, 10, stdin);
         if (!strncmp(ans, "y", 1) || !strcmp(ans, "Y"))
             ;
         else {
