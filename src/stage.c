@@ -4,6 +4,7 @@
 #include "sha1-inl.h"
 #include "tree.h"
 #include "util.h"
+#include "timer.h"
 
 struct stage_options {
     int all;
@@ -392,7 +393,10 @@ void cache_files()
 {
     struct cache_object cache;
     struct file_list *node = head;
+    bool sig = false;
+    size_t cached = 0;
 
+    set_timer(200);
     cache_object_init(&cache);
     while (node) {
         if (!find_file_from_cache(node->path.buf, &cache)) {
@@ -407,11 +411,26 @@ void cache_files()
             }
             stats.ignored++;
         }
+
+        cached++;
+        if (!sig && got_signal()) 
+            sig = true;
+        if (got_signal() && sig) {
+            printf("\rinsert: caching files: "SIZE_T_FORMAT "%%", (cached * 100 )/ count);
+            fflush(stdout);
+            reset_signal();
+        }
         node = node->next;
     }
     if (stats.total && opts.verbose) {
         printf("\n");
     }
+    if (got_signal() && sig) {
+        printf("\rinsert: caching files: "SIZE_T_FORMAT "%%", (cached * 100 )/ count);
+        fflush(stdout);
+        reset_signal();
+    }
+    stop_timer();
     file_list_clear(head);
     cache_object_write(&cache);
 
@@ -427,7 +446,9 @@ int detect_and_add_files(const char *dir)
     struct stat st;
     size_t last = 0;
     int fd = 0;
+    unsigned int signal_count = 0;
     ssize_t r = 0;
+    set_timer(300);
 
     while (st_node) {
         if (s_is_modified(st_node) && !is_marked_as_ignored(st_node->name)) {
@@ -446,8 +467,6 @@ int detect_and_add_files(const char *dir)
                 }
                 die("unable to stat %s, %s\n", node->path.buf, strerror(errno));
             }
-            if (opts.verbose)
-                printf("opening %s\n", node->path.buf);
             fd = open(node->path.buf, O_RDONLY);
             if (fd < 0) {
                 die("unable to read %s, %s\n", node->path.buf, strerror(errno));
@@ -473,17 +492,33 @@ int detect_and_add_files(const char *dir)
             if (close(fd) < 0)
                 die("unable to close %s, %s\n", node->path.buf,
                     strerror(errno));
-            if (opts.more_output) {
-                printf("\rinsert: Adding files " SIZE_T_FORMAT " (",
-                       stats.total);
+            if (opts.more_output && got_signal() && signal_count) {
+                printf("\rinsert: Adding files " SIZE_T_FORMAT 
+                    "/" SIZE_T_FORMAT " (", stats.total, count);
                 print_humanised_bytes(opts.bytes);
                 printf(")");
+                fflush(stdout);
+                reset_signal();
+            }
+
+            if (!signal_count && got_signal()) {
+                signal_count++;
+                opts.more_output = true;
             }
         }
+
         st_node = st_node->next;
     }
-
-    if (opts.more_output) {
+    if (opts.more_output && signal_count) {
+        printf("\rinsert: Adding files " SIZE_T_FORMAT 
+            "/" SIZE_T_FORMAT " (", stats.total, count);
+        print_humanised_bytes(opts.bytes);
+        printf(")");
+        fflush(stdout);
+        reset_signal();
+    }
+    stop_timer();
+    if (opts.more_output && signal_count) {
         printf(", done.\n");
     }
     return 0;
@@ -580,7 +615,6 @@ int stage_main(int argc, char *argv[])
     init_stage();
     parse_arguments(argc, argv);
     if (opts.all) {
-        status(".");
         detect_and_add_files(".");
     }
     cache_files();

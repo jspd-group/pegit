@@ -22,7 +22,7 @@ extern void stop_timer();
 
 extern void init_timer(struct timer_t *timer);
 
-extern int set_timer__with_handler(struct timer_t *timer, unsigned int ms,
+extern int set_timer_with_handler(struct timer_t *timer, unsigned int ms,
                                    handler_t handler);
 
 extern int set_timer(unsigned int ms);

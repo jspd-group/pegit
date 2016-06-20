@@ -1,11 +1,8 @@
+#define _GNU_SOURCE
 #include "status.h"
 #include "commit.h"
 #include "util.h"
-#include <dirent.h>
-#include <malloc.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
+#include "timer.h"
 
 #define CHECKED (0x1 << 5)
 #define mark_checked(x) (x->flags |= CHECKED)
@@ -16,6 +13,9 @@ struct status_options {
     bool modified;
     bool old;
 } status_opts;
+
+// number of files in the working
+size_t count = 0;
 
 void print_status_html(struct node *root);
 
@@ -36,6 +36,8 @@ char *file_path(char *parent_dir, char *name)
 struct d_node *d_root = NULL, *d_sptr = NULL, *d_ptr = NULL;
 int count_new = 0, count_modified = 0, count_cached = 0, count_deleted = 0;
 struct node *root = NULL;
+
+bool sig = false;
 
 int status(char *p)
 {
@@ -58,6 +60,7 @@ int status(char *p)
     struct index *idx;
     struct pack_file_cache cache = PACK_FILE_CACHE_INIT;
 
+    set_timer(300);
     make_commit_list(&cl);
     il = get_head_commit_list(cl);
     cache_pack_file(&cache);
@@ -70,6 +73,17 @@ back:
     while ((d = readdir(directory))) // start reading the content of directory
                                      // which can be a file or a directory
     {
+
+        if (!sig && got_signal()) {
+            sig = true;
+            reset_signal();
+        }
+
+        if (sig && got_signal()) {
+            printf("\rAnalyzing files: " SIZE_T_FORMAT, count);
+            fflush(stdout);
+            reset_signal();
+        }
 
         name = d->d_name;
         if (!strcmp(name, ".") || !strcmp(name, "..") || !strcmp(name, PEG_DIR))
@@ -145,11 +159,13 @@ back:
                     intialise_node(&ptr, name, S_MODIFIED, NULL);
                     insert_node(&root, &ptr, &sptr);
                 }
+                count++;
             } else {
                 count_new++;
                 ptr = createnode();
                 intialise_node(&ptr, name, S_NEW, NULL);
                 insert_node(&root, &ptr, &sptr);
+                count++;
             }
         }
         /*
@@ -192,11 +208,28 @@ back:
                 insert_node(&root, &ptr, &sptr);
                 node = node->next;
                 count_deleted++;
+                count++;
+            }
+            if (!sig && got_signal()) {
+                sig = true;
+            }
+
+            if (sig && got_signal()) {
+                printf("\rAnalyzing files: " SIZE_T_FORMAT, count);
+                fflush(stdout);
+                reset_signal();
             }
         }
     }
-
+    if (sig && got_signal()) {
+        printf("\rAnalyzing files: " SIZE_T_FORMAT, count);
+        fflush(stdout);
+        reset_signal();
+    }
+    if (sig)
+        printf("\n");
     commit_list_del(&cl);
+    stop_timer();
     return 0;
 }
 

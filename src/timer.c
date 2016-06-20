@@ -11,7 +11,7 @@ struct timer_t default_timer = {.do_signal = 0, .max_signal = -1};
 
 static void alarm_handler(int sig) { default_timer.do_signal = 1; }
 
-int set_timer__with_handler(struct timer_t *timer, unsigned int ms,
+int set_timer_with_handler(struct timer_t *timer, unsigned int ms,
                             handler_t handler)
 {
     struct itimerval itv;
@@ -41,7 +41,7 @@ int set_timer__with_handler(struct timer_t *timer, unsigned int ms,
 int set_timer(unsigned int ms)
 {
     default_timer.handler = alarm_handler;
-    return set_timer__with_handler(&default_timer, ms, default_timer.handler);
+    return set_timer_with_handler(&default_timer, ms, default_timer.handler);
 }
 
 void timer_reset_signal(struct timer_t *timer)

@@ -2,7 +2,7 @@
 #define STATUS_H_
 
 #include "strbuf.h"
-#include "util.h"
+#include <dirent.h>
 
 // Data structures used in status.c
 struct node {
@@ -10,6 +10,8 @@ struct node {
     int status; // status of the file
     struct node *next;
 };
+
+extern size_t count;
 
 struct d_node {
     struct strbuf name;
